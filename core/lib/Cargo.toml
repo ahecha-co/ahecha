@@ -1,0 +1,13 @@
+[package]
+name = "etagere"
+version = "0.0.1"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+backend = ["etagere_codegen/backend"]
+frontend = ["etagere_codegen/frontend"]
+
+[dependencies]
+etagere_codegen={ path="../codegen", version="*" }
+etagere_view={ path="../view", version="*" }
