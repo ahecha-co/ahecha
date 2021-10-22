@@ -1,0 +1,6 @@
+schema:
+  user:
+    validators:
+      username:
+        min: The username is too short
+        max: The username is too long
