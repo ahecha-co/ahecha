@@ -68,7 +68,7 @@ impl ToTokens for View {
       let children_tuple = self.children.as_option_of_tuples_tokens();
 
       quote! {
-        etagere::view::SimpleElement {
+        etagere::view::HtmlTag {
           tag_name: stringify!(#name),
           attributes: #attrs,
           children: #children_tuple,

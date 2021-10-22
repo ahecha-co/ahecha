@@ -30,8 +30,8 @@ impl ViewAttributes {
     }
   }
 
-  pub fn for_simple_element(&self) -> SimpleElementAttributes<'_> {
-    SimpleElementAttributes {
+  pub fn for_simple_element(&self) -> HtmlTagAttributes<'_> {
+    HtmlTagAttributes {
       attributes: &self.attributes,
     }
   }
@@ -116,11 +116,11 @@ impl<'a, 'c> ToTokens for CustomElementAttributes<'a, 'c> {
   }
 }
 
-pub struct SimpleElementAttributes<'a> {
+pub struct HtmlTagAttributes<'a> {
   attributes: &'a Attributes,
 }
 
-impl<'a> ToTokens for SimpleElementAttributes<'a> {
+impl<'a> ToTokens for HtmlTagAttributes<'a> {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
     if self.attributes.is_empty() {
       quote!(None).to_tokens(tokens);

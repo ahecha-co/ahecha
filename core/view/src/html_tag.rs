@@ -2,13 +2,13 @@ use crate::{write_attributes, Attributes, ToHtml};
 
 use std::fmt::{Result, Write};
 
-pub struct SimpleElement<'a, T: ToHtml> {
+pub struct HtmlTag<'a, T: ToHtml> {
   pub tag_name: &'a str,
   pub attributes: Attributes<'a>,
   pub children: Option<T>,
 }
 
-impl<T: ToHtml> ToHtml for SimpleElement<'_, T> {
+impl<T: ToHtml> ToHtml for HtmlTag<'_, T> {
   fn html_into<W: Write>(self, writer: &mut W) -> Result {
     match self.children {
       None => {

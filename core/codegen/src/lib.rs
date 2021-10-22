@@ -72,7 +72,7 @@ pub fn component(_metadata: TokenStream, input: TokenStream) -> TokenStream {
   let implementations = component_builder.implementations();
 
   quote! {
-    struct #ident<C: etagere::view::ToHtml> {
+    pub struct #ident<C: etagere::view::ToHtml> {
       #fields
     }
 
@@ -208,5 +208,5 @@ pub fn page(_metadata: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn html(input: TokenStream) -> TokenStream {
   let el = parse_macro_input!(input as View);
-  quote! { #el }.into()
+  quote! { #el.to_html() }.into()
 }
