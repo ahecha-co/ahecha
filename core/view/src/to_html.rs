@@ -27,6 +27,13 @@ impl ToHtml for &str {
   }
 }
 
+/// Renders string
+impl ToHtml for String {
+  fn html_into<W: Write>(self, writer: &mut W) -> Result {
+    write!(writer, "{}", self)
+  }
+}
+
 /// Renders `A`, then `B`
 impl<A: ToHtml, B: ToHtml> ToHtml for (A, B) {
   fn html_into<W: Write>(self, writer: &mut W) -> Result {
