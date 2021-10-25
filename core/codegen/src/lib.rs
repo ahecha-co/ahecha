@@ -208,5 +208,5 @@ pub fn page(_metadata: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn html(input: TokenStream) -> TokenStream {
   let el = parse_macro_input!(input as View);
-  quote! { #el.to_html() }.into()
+  quote! { #el.into() }.into()
 }

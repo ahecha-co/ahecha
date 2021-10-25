@@ -6,20 +6,18 @@ use std::{
   fmt::{Result, Write},
 };
 
+pub use component::Component;
 pub use html_tag::HtmlTag;
 pub use to_html::ToHtml;
 
 pub use crate::html_escaping::escape_html;
 
+mod component;
 mod html_escaping;
 mod html_tag;
 mod to_html;
 
 pub type Html = String;
-
-pub trait Component {
-  fn render(&self) -> Html;
-}
 
 pub type Attributes<'a> = Option<HashMap<&'a str, Cow<'a, str>>>;
 

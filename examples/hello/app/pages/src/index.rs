@@ -3,6 +3,7 @@ use etagere::{view::*, *};
 use components::ExampleTag;
 
 #[page]
+#[derive(Default)]
 pub struct IndexPage {
   // #[param] will be set from the url path, example /index/<param> == index/value
 // example_param: &'static str,

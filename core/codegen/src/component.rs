@@ -1,7 +1,7 @@
 use convert_case::{Case, Casing};
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::quote;
-use syn::{Field, ItemStruct, Type};
+use syn::{token, Field, ItemStruct, Type, VisPublic};
 
 // use convert_case::{Case, Casing};
 // use syn::ItemStruct;
@@ -97,6 +97,8 @@ use syn::{Field, ItemStruct, Type};
 //   // }
 // }
 
+const INTERNAL_FIELDS: [&'static str; 4] = ["children", "tag_name", "context", "state"];
+
 pub(crate) struct ComponentBuilder {
   ident: Ident,
   tag_name: String,
@@ -122,7 +124,10 @@ impl ComponentBuilder {
     {
       fields.push(Field {
         attrs: vec![],
-        vis: syn::Visibility::Inherited,
+        vis: syn::Visibility::Public(VisPublic {
+          pub_token: token::Pub(Span::call_site()),
+        }),
+        // vis: syn::Visibility::Inherited,
         ident: Some(Ident::new("children", Span::call_site())),
         colon_token: None,
         ty: Type::Verbatim(quote!(Option<C>).into()),
@@ -137,7 +142,10 @@ impl ComponentBuilder {
     {
       fields.push(Field {
         attrs: vec![],
-        vis: syn::Visibility::Inherited,
+        vis: syn::Visibility::Public(VisPublic {
+          pub_token: token::Pub(Span::call_site()),
+        }),
+        // vis: syn::Visibility::Inherited,
         ident: Some(Ident::new("tag_name", Span::call_site())),
         colon_token: None,
         ty: Type::Verbatim(quote!(&'static str).into()),
@@ -170,7 +178,11 @@ impl ComponentBuilder {
   }
 
   pub fn implementations(&self) -> TokenStream {
-    let out = vec![self.impl_component(), self.impl_default()];
+    let out = vec![
+      self.impl_component(),
+      self.impl_default(),
+      self.impl_into_string(),
+    ];
 
     quote! { #(#out)* }.into()
   }
@@ -181,7 +193,9 @@ impl ComponentBuilder {
       .fields
       .iter()
       .filter(|f| match f.vis {
-        syn::Visibility::Public(_) => f.ident.clone().unwrap().to_string() != "children",
+        syn::Visibility::Public(_) => !INTERNAL_FIELDS
+          .concat()
+          .contains(&f.ident.clone().unwrap().to_string()),
         _ => false,
       })
       .map(|f| {
@@ -252,6 +266,20 @@ impl ComponentBuilder {
         }
       }
 
+    }
+    .into()
+  }
+
+  fn impl_into_string(&self) -> TokenStream {
+    let ident = &self.ident;
+
+    quote! {
+      impl<C: etagere::view::ToHtml> From<#ident<C>> for String {
+        fn from(item: #ident<C>) -> Self {
+          use etagere::view::ToHtml;
+          item.to_html()
+        }
+      }
     }
     .into()
   }

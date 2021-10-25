@@ -26,3 +26,9 @@ impl<T: ToHtml> ToHtml for HtmlTag<'_, T> {
     }
   }
 }
+
+impl<T: ToHtml> From<HtmlTag<'_, T>> for String {
+  fn from(item: HtmlTag<T>) -> Self {
+    item.to_html()
+  }
+}
