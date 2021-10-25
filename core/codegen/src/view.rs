@@ -1,3 +1,4 @@
+use convert_case::{Case, Casing};
 use quote::{quote, ToTokens};
 use syn::{
   parse::{Parse, ParseStream},
@@ -61,18 +62,33 @@ impl ToTokens for View {
     let name = &self.name;
 
     let declaration = if self.is_custom_element() {
-      let attrs = self.attributes.for_custom_element(&self.children);
-      quote!( #name #attrs )
+      let name_str = &self
+        .name
+        .segments
+        .first()
+        .unwrap()
+        .ident
+        .to_string()
+        .to_case(Case::Kebab);
+      let attrs = self.attributes.for_custom_element();
+      let children = self.children.as_tokens();
+      quote! {
+        etagere::view::html::Node::CustomElement(
+          etagere::view::html::CustomElement::new::<#name>(#name_str, #attrs, #children)
+        )
+      }
     } else {
       let attrs = self.attributes.for_simple_element();
-      let children_tuple = self.children.as_tokens();
+      let children = self.children.as_tokens();
 
       quote! {
-        etagere::view::HtmlTag {
-          tag_name: stringify!(#name),
-          attributes: #attrs,
-          children: #children_tuple,
-        }
+        etagere::view::html::Node::Tag(
+          etagere::view::html::Tag {
+            name: stringify!(#name),
+            attributes: #attrs,
+            children: #children,
+          }
+        )
       }
     };
 

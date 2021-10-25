@@ -16,9 +16,9 @@ impl Children {
     Children { nodes }
   }
 
-  pub fn len(&self) -> usize {
-    self.nodes.len()
-  }
+  // pub fn len(&self) -> usize {
+  //   self.nodes.len()
+  // }
 
   // pub fn as_option_of_tuples_tokens(&self) -> proc_macro2::TokenStream {
   //   let children_quotes: Vec<_> = self.nodes.iter().map(|child| quote! { #child }).collect();
@@ -43,16 +43,14 @@ impl Children {
   // }
 
   pub fn as_tokens(&self) -> proc_macro2::TokenStream {
-    let children_quotes: Vec<_> = self.nodes.iter().map(|child| quote! { #child }).collect();
+    let children: Vec<_> = self.nodes.iter().map(|child| quote! { #child }).collect();
 
-    if children_quotes.len() > 0 {
-      quote! {
-        vec![#(#children_quotes),*]
-      }
-      .into()
-    } else {
-      quote! {vec![()]}.into()
+    match children.len() {
+      0 => quote! { Option::None },
+      1 => quote! { Some(Box::new(#(#children),*)) },
+      _ => quote! { Some(etagere::view::html::Node::List(#(#children),*)) },
     }
+    .into()
   }
 }
 

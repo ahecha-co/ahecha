@@ -9,7 +9,7 @@ use syn::{
   Result,
 };
 
-use super::{attribute::ViewAttribute, children::Children};
+use super::attribute::ViewAttribute;
 
 pub type Attributes = HashSet<ViewAttribute>;
 
@@ -23,10 +23,9 @@ impl ViewAttributes {
     Self { attributes }
   }
 
-  pub fn for_custom_element<'c>(&self, children: &'c Children) -> CustomElementAttributes<'_, 'c> {
+  pub fn for_custom_element<'c>(&self) -> CustomElementAttributes<'_> {
     CustomElementAttributes {
       attributes: &self.attributes,
-      children,
     }
   }
 
@@ -76,14 +75,13 @@ impl Parse for ViewAttributes {
   }
 }
 
-pub struct CustomElementAttributes<'a, 'c> {
+pub struct CustomElementAttributes<'a> {
   attributes: &'a Attributes,
-  children: &'c Children,
 }
 
-impl<'a, 'c> ToTokens for CustomElementAttributes<'a, 'c> {
+impl<'a> ToTokens for CustomElementAttributes<'a> {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-    let mut attrs: Vec<_> = self
+    let attrs: Vec<_> = self
       .attributes
       .iter()
       .map(|attribute| {
@@ -96,20 +94,14 @@ impl<'a, 'c> ToTokens for CustomElementAttributes<'a, 'c> {
       })
       .collect();
 
-    if self.children.len() > 0 {
-      let children_tuple = self.children.as_tokens();
-      attrs.push(quote! {
-        children: #children_tuple
-      });
-    }
-
     let quoted = if attrs.len() == 0 {
-      quote!()
+      quote!(None)
     } else {
-      quote!({
-        #(#attrs),*
-        ,..Default::default()
-      })
+      quote!(
+        Some(
+          #(#attrs),*
+        )
+      )
     };
 
     quoted.to_tokens(tokens);

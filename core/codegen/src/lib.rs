@@ -72,7 +72,7 @@ pub fn component(_metadata: TokenStream, input: TokenStream) -> TokenStream {
   let implementations = component_builder.implementations();
 
   quote! {
-    pub struct #ident<C: etagere::view::ToHtml> {
+    pub struct #ident {
       #fields
     }
 
@@ -176,10 +176,10 @@ pub fn page(_metadata: TokenStream, input: TokenStream) -> TokenStream {
       #[cfg(feature = "backend", feature="rocket")]
       #[rocket::get(#path)]
       pub fn #ident_route() -> Option<#ident> {
-        #ident::<etagere::view::HtmlTag>{}
+        #ident{}
       }
 
-      pub struct #ident<C: etagere::view::ToHtml> {
+      pub struct #ident {
         #fields
       }
 

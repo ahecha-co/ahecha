@@ -97,18 +97,18 @@ use syn::{token, Field, ItemStruct, Type, VisPublic};
 //   // }
 // }
 
-const INTERNAL_FIELDS: [&'static str; 4] = ["children", "tag_name", "context", "state"];
+const INTERNAL_FIELDS: [&'static str; 4] = ["children", "name", "context", "state"];
 
 pub(crate) struct ComponentBuilder {
   ident: Ident,
-  tag_name: String,
+  name: String,
   fields: Vec<Field>,
 }
 
 impl ComponentBuilder {
   pub(crate) fn new(item_struct: &ItemStruct) -> Self {
     let ident = item_struct.ident.clone();
-    let tag_name = ident.to_string().to_case(Case::Kebab);
+    let name = ident.to_string().to_case(Case::Kebab);
     let mut fields = item_struct
       .fields
       .iter()
@@ -130,14 +130,14 @@ impl ComponentBuilder {
         // vis: syn::Visibility::Inherited,
         ident: Some(Ident::new("children", Span::call_site())),
         colon_token: None,
-        ty: Type::Verbatim(quote!(Vec<C>).into()),
+        ty: Type::Verbatim(quote!(Option<etagere::view::html::Node<'static>>).into()),
       });
     }
 
     if fields
       .iter()
       .filter_map(|field| field.ident.clone())
-      .find(|ident| ident.to_string() == "tag_name")
+      .find(|ident| ident.to_string() == "name")
       .is_none()
     {
       fields.push(Field {
@@ -146,7 +146,7 @@ impl ComponentBuilder {
           pub_token: token::Pub(Span::call_site()),
         }),
         // vis: syn::Visibility::Inherited,
-        ident: Some(Ident::new("tag_name", Span::call_site())),
+        ident: Some(Ident::new("name", Span::call_site())),
         colon_token: None,
         ty: Type::Verbatim(quote!(&'static str).into()),
       });
@@ -154,7 +154,7 @@ impl ComponentBuilder {
 
     Self {
       ident,
-      tag_name,
+      name,
       fields,
     }
   }
@@ -178,7 +178,7 @@ impl ComponentBuilder {
   }
 
   pub fn implementations(&self) -> TokenStream {
-    let out = vec![
+    let out: Vec<TokenStream> = vec![
       self.impl_component(),
       self.impl_default(),
       self.impl_into_string(),
@@ -212,21 +212,21 @@ impl ComponentBuilder {
       .collect();
 
     quote! {
-      impl<C: etagere::view::ToHtml> etagere::view::ToHtml for #ident<C> {
-        fn html_into<W: std::fmt::Write>(&self, writer: &mut W) -> std::fmt::Result {
-          if self.children.is_empty() {
-            write!(writer, "<{}", self.tag_name)?;
-            #(#out)*
-            write!(writer, "/>")
-          } else {
-            write!(writer, "<{}", self.tag_name)?;
+      impl etagere::view::Renderable for #ident {
+        fn writer<W: std::fmt::Write>(&self, writer: &mut W) -> std::fmt::Result {
+          if let Some(children) = &self.children {
+            write!(writer, "<{}", self.name)?;
             #(#out)*
             write!(writer, ">")?;
             self
               .children
               .iter()
-              .try_for_each(|c| c.html_into(writer))?;
-            write!(writer, "</{}>", self.tag_name)
+              .try_for_each(|c| c.writer(writer))?;
+            write!(writer, "</{}>", self.name)
+          } else {
+            write!(writer, "<{}", self.name)?;
+            #(#out)*
+            write!(writer, "/>")
           }
         }
       }
@@ -242,11 +242,11 @@ impl ComponentBuilder {
       .map(|f| {
         let field_ident = f.ident.clone().unwrap();
         let field_str = field_ident.to_string();
-        let tag_name = &self.tag_name;
+        let name = &self.name;
 
-        if field_str == "tag_name" {
+        if field_str == "name" {
           quote! {
-            #field_ident: #tag_name
+            #field_ident: #name
           }
         } else {
           quote! {
@@ -258,7 +258,7 @@ impl ComponentBuilder {
       .collect();
 
     quote! {
-      impl<C: etagere::view::ToHtml> Default for #ident<C> {
+      impl Default for #ident {
         fn default() -> Self {
           Self {
             #(#defaults),*
@@ -274,10 +274,10 @@ impl ComponentBuilder {
     let ident = &self.ident;
 
     quote! {
-      impl<C: etagere::view::ToHtml> From<#ident<C>> for String {
-        fn from(item: #ident<C>) -> Self {
-          use etagere::view::ToHtml;
-          item.to_html()
+      impl From<#ident> for String {
+        fn from(item: #ident) -> Self {
+          use etagere::view::Renderable;
+          item.to_string()
         }
       }
     }

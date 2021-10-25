@@ -1,4 +1,4 @@
 use etagere::*;
 
 #[component]
-pub struct ExampleTag {}
+pub struct ExampleTag;

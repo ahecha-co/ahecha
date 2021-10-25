@@ -22,7 +22,9 @@ impl ToTokens for Child {
         quote!(block)
       }
       .to_tokens(tokens),
-      Self::Text(str) => str.to_tokens(tokens),
+      Self::Text(str) => {
+        quote! { etagere::view::html::Node::Text(#str.to_string()) }.to_tokens(tokens)
+      }
       Self::View(view) => view.to_tokens(tokens),
     }
   }

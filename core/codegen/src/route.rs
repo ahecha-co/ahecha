@@ -3,7 +3,7 @@ use regex::Regex;
 #[derive(Debug)]
 pub(crate) struct PathRoute {
   pub path: String,
-  pub path_params: Vec<String>,
+  // pub path_params: Vec<String>,
 }
 
 pub(crate) fn path_route_builder(file_path: &str) -> Option<PathRoute> {
@@ -52,7 +52,10 @@ pub(crate) fn path_route_builder(file_path: &str) -> Option<PathRoute> {
       path = path[0..path.len() - 5].to_string();
     }
 
-    return Some(PathRoute { path, path_params });
+    return Some(PathRoute {
+      path,
+      // path_params,
+    });
   } else {
     None
   }
@@ -72,13 +75,13 @@ mod test {
   fn path_route_with_params_test() {
     let route = path_route_builder("src/api/query/__id__.rs").unwrap();
     assert_eq!("/api/query/{}", route.path);
-    assert_eq!(vec!["id"], route.path_params);
+    // assert_eq!(vec!["id"], route.path_params);
   }
 
   #[test]
   fn path_route_with_multiple_params_test() {
     let route = path_route_builder("src/api/posts/__post_id__/comments/__comment_id__.rs").unwrap();
     assert_eq!("/api/posts/{}/comments/{}", route.path);
-    assert_eq!(vec!["post_id", "comment_id"], route.path_params);
+    // assert_eq!(vec!["post_id", "comment_id"], route.path_params);
   }
 }

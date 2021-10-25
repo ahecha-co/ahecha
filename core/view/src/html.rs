@@ -1,2 +1,7 @@
-// This will define the html macro that will accept only valid html5 tags and registered custom
-// elements.
+mod custom_element;
+mod node;
+mod tag;
+
+pub use custom_element::CustomElement;
+pub use node::Node;
+pub use tag::Tag;
