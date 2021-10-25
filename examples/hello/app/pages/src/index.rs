@@ -15,7 +15,7 @@ pub struct IndexPage {
 // count: usize,
 }
 
-impl Component for IndexPage {
+impl<C: ToHtml> Component for IndexPage<C> {
   // pub fn get_server_side_props(context: Context) -> [User] {
   //   // User.first
   // }

@@ -130,7 +130,7 @@ impl ComponentBuilder {
         // vis: syn::Visibility::Inherited,
         ident: Some(Ident::new("children", Span::call_site())),
         colon_token: None,
-        ty: Type::Verbatim(quote!(Option<C>).into()),
+        ty: Type::Verbatim(quote!(Vec<C>).into()),
       });
     }
 
@@ -213,20 +213,20 @@ impl ComponentBuilder {
 
     quote! {
       impl<C: etagere::view::ToHtml> etagere::view::ToHtml for #ident<C> {
-        fn html_into<W: std::fmt::Write>(self, writer: &mut W) -> std::fmt::Result {
-          match self.children {
-            None => {
-              write!(writer, "<{}", self.tag_name)?;
-              #(#out)*
-              write!(writer, "/>")
-            }
-            Some(renderable) => {
-              write!(writer, "<{}", self.tag_name)?;
-              #(#out)*
-              write!(writer, ">")?;
-              renderable.html_into(writer)?;
-              write!(writer, "</{}>", self.tag_name)
-            }
+        fn html_into<W: std::fmt::Write>(&self, writer: &mut W) -> std::fmt::Result {
+          if self.children.is_empty() {
+            write!(writer, "<{}", self.tag_name)?;
+            #(#out)*
+            write!(writer, "/>")
+          } else {
+            write!(writer, "<{}", self.tag_name)?;
+            #(#out)*
+            write!(writer, ">")?;
+            self
+              .children
+              .iter()
+              .try_for_each(|c| c.html_into(writer))?;
+            write!(writer, "</{}>", self.tag_name)
           }
         }
       }

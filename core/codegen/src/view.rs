@@ -17,7 +17,7 @@ mod children;
 mod tag;
 
 pub struct View {
-  name: syn::Path,
+  pub name: syn::Path,
   attributes: ViewAttributes,
   children: Children,
 }
@@ -65,7 +65,7 @@ impl ToTokens for View {
       quote!( #name #attrs )
     } else {
       let attrs = self.attributes.for_simple_element();
-      let children_tuple = self.children.as_option_of_tuples_tokens();
+      let children_tuple = self.children.as_tokens();
 
       quote! {
         etagere::view::HtmlTag {

@@ -97,7 +97,7 @@ impl<'a, 'c> ToTokens for CustomElementAttributes<'a, 'c> {
       .collect();
 
     if self.children.len() > 0 {
-      let children_tuple = self.children.as_option_of_tuples_tokens();
+      let children_tuple = self.children.as_tokens();
       attrs.push(quote! {
         children: #children_tuple
       });

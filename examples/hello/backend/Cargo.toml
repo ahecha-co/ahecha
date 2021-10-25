@@ -6,9 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-etagere = { path = "../../../core/lib", version="*" }
+etagere = { path = "../../../core/lib", version="*", features = ["backend", "rocket"] }
 rocket = "0.5.0-rc.1"
 
-api = { path = "../app/api", version="*" }
+api = { path = "../app/api", version="*", features = ["backend", "rocket"] }
 models = { path = "../app/models", version="*" }
-pages = { path = "../app/pages", version="*" }
+pages = { path = "../app/pages", version="*", features = ["backend", "rocket"] }

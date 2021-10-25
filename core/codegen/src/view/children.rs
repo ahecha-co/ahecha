@@ -20,25 +20,38 @@ impl Children {
     self.nodes.len()
   }
 
-  pub fn as_option_of_tuples_tokens(&self) -> proc_macro2::TokenStream {
+  // pub fn as_option_of_tuples_tokens(&self) -> proc_macro2::TokenStream {
+  //   let children_quotes: Vec<_> = self.nodes.iter().map(|child| quote! { #child }).collect();
+
+  //   match children_quotes.len() {
+  //     0 => quote! { Option::<()>::None },
+  //     1 => quote! { Some(#(#children_quotes),*) },
+  //     _ => {
+  //       let mut iter = children_quotes.iter();
+
+  //       let first = iter.next().unwrap();
+  //       let second = iter.next().unwrap();
+
+  //       let tuple_of_tuples = iter.fold(
+  //         quote!((#first, #second)),
+  //         |renderable, current| quote!((#renderable, #current)),
+  //       );
+
+  //       quote! { Some(#tuple_of_tuples) }
+  //     }
+  //   }
+  // }
+
+  pub fn as_tokens(&self) -> proc_macro2::TokenStream {
     let children_quotes: Vec<_> = self.nodes.iter().map(|child| quote! { #child }).collect();
 
-    match children_quotes.len() {
-      0 => quote! { Option::<()>::None },
-      1 => quote! { Some(#(#children_quotes),*) },
-      _ => {
-        let mut iter = children_quotes.iter();
-
-        let first = iter.next().unwrap();
-        let second = iter.next().unwrap();
-
-        let tuple_of_tuples = iter.fold(
-          quote!((#first, #second)),
-          |renderable, current| quote!((#renderable, #current)),
-        );
-
-        quote! { Some(#tuple_of_tuples) }
+    if children_quotes.len() > 0 {
+      quote! {
+        vec![#(#children_quotes),*]
       }
+      .into()
+    } else {
+      quote! {vec![()]}.into()
     }
   }
 }
@@ -58,6 +71,6 @@ impl Parse for Children {
 
 impl ToTokens for Children {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-    self.as_option_of_tuples_tokens().to_tokens(tokens);
+    self.as_tokens().to_tokens(tokens);
   }
 }

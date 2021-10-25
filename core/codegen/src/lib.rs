@@ -55,7 +55,7 @@ use core::panic;
 use convert_case::{Case, Casing};
 use proc_macro::{Span, TokenStream};
 use quote::{format_ident, quote};
-use syn::{parse_macro_input, FnArg, ItemFn, ItemStruct, Pat};
+use syn::{parse_macro_input, ItemFn, ItemStruct};
 
 use crate::{component::ComponentBuilder, route::path_route_builder, view::View};
 
@@ -85,7 +85,7 @@ pub fn component(_metadata: TokenStream, input: TokenStream) -> TokenStream {
 pub fn route(_metadata: TokenStream, input: TokenStream) -> TokenStream {
   let tokens = parse_macro_input!(input as ItemFn);
   let ident = tokens.sig.ident.to_string();
-  let ident_path = format_ident!("{}_path", ident);
+  // let ident_path = format_ident!("{}_path", ident);
   let mutation_methods = vec!["post", "put", "delete", "patch"];
   let mut methods: Vec<&str> = vec!["get", "head", "connect", "options", "trace"];
   methods.extend(&mutation_methods);
@@ -99,46 +99,48 @@ pub fn route(_metadata: TokenStream, input: TokenStream) -> TokenStream {
     let source = span.source_file();
     if let Some(route) = path_route_builder(source.path().to_str().unwrap()) {
       let path = &route.path;
-      let mut replace = vec![];
-      let fn_args = tokens
-        .sig
-        .inputs
-        .clone()
-        .into_iter()
-        .filter(|i| match i {
-          FnArg::Typed(pat_type) => match &*pat_type.pat {
-            Pat::Ident(pat_ident) => route
-              .path_params
-              .contains(&pat_ident.clone().ident.to_string()),
-            _ => false,
-          },
-          FnArg::Receiver(_) => false,
-        })
-        .map(|i| {
-          let pat_type = match i {
-            FnArg::Typed(typed) => Some(typed),
-            FnArg::Receiver(_) => None,
-          }
-          .unwrap();
-          let pat_ident = match *pat_type.pat {
-            Pat::Ident(pat_ident) => Some(pat_ident),
-            _ => None,
-          }
-          .unwrap();
-          let ty = *pat_type.ty;
-          replace.push(quote! { #pat_ident });
-          quote! { #pat_ident: #ty }
-        })
-        .collect::<Vec<_>>();
+      // let mut replace = vec![];
+      // let fn_args = tokens
+      //   .sig
+      //   .inputs
+      //   .clone()
+      //   .into_iter()
+      //   .filter(|i| match i {
+      //     FnArg::Typed(pat_type) => match &*pat_type.pat {
+      //       Pat::Ident(pat_ident) => route
+      //         .path_params
+      //         .contains(&pat_ident.clone().ident.to_string()),
+      //       _ => false,
+      //     },
+      //     FnArg::Receiver(_) => false,
+      //   })
+      //   .map(|i| {
+      //     let pat_type = match i {
+      //       FnArg::Typed(typed) => Some(typed),
+      //       FnArg::Receiver(_) => None,
+      //     }
+      //     .unwrap();
+      //     let pat_ident = match *pat_type.pat {
+      //       Pat::Ident(pat_ident) => Some(pat_ident),
+      //       _ => None,
+      //     }
+      //     .unwrap();
+      //     let ty = *pat_type.ty;
+      //     replace.push(quote! { #pat_ident });
+      //     quote! { #pat_ident: #ty }
+      //   })
+      //   .collect::<Vec<_>>();
 
       quote! {
+        #[cfg(feature = "rocket")]
         use rocket::#method;
+        #[cfg(feature = "rocket")]
         #[#method(#path)]
         #tokens
 
-        pub fn #ident_path(#(#fn_args),*) -> String {
-          format!(#path, #(#replace),*)
-        }
+        // pub fn #ident_path(#(#fn_args),*) -> String {
+        //   format!(#path, #(#replace),*)
+        // }
       }
       .into()
     } else {
@@ -159,33 +161,48 @@ pub fn route(_metadata: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn page(_metadata: TokenStream, input: TokenStream) -> TokenStream {
   let tokens = parse_macro_input!(input as ItemStruct);
-  let ident = tokens.clone().ident;
+  let ident = &tokens.ident;
+  let component_builder = ComponentBuilder::new(&tokens);
+  let fields = component_builder.get_fields_declaration();
+  let implementations = component_builder.implementations();
 
   let span = Span::call_site();
   let source = span.source_file();
   if let Some(route) = path_route_builder(source.path().to_str().unwrap()) {
     let path = &route.path;
-    let ident_path = format_ident!("{}_path", ident.to_string().to_case(Case::Snake));
+    // let ident_path = format_ident!("{}_path", ident.to_string().to_case(Case::Snake));
     let ident_route = format_ident!("{}_route", ident.to_string().to_case(Case::Snake));
     quote! {
-      #tokens
-
-      pub fn #ident_path() -> String {
-        format!(#path)
+      #[cfg(feature = "backend", feature="rocket")]
+      #[rocket::get(#path)]
+      pub fn #ident_route() -> Option<#ident> {
+        #ident::<etagere::view::HtmlTag>{}
       }
 
-      #[cfg(feature = "backend")]
-      use rocket::{http::ContentType, get};
-      #[cfg(feature = "backend")]
-      #[get(#path)]
-      pub fn #ident_route() -> (ContentType, String) {
-        let res = format!("{:?}", #ident{}.render());
-        (ContentType::HTML, res)
+      pub struct #ident<C: etagere::view::ToHtml> {
+        #fields
+      }
+
+      #implementations
+
+      // pub fn #ident_path() -> String {
+      //   format!(#path)
+      // }
+
+      #[cfg(feature = "rocket")]
+      impl<'r> rocket::response::Responder<'r, 'static> for #ident {
+        fn respond_to(self, _: &'r rocket::request::Request<'_>) -> rocket::response::Result<'static> {
+          let body = self.to_html();
+          rocket::response::Response::build()
+            .sized_body(body.len(), std::io::Cursor::new(body))
+            .header(rocket::http::ContentType::new("text", "html"))
+            .ok()
+        }
       }
     }
     .into()
   } else {
-    panic!("Couldn't generate route for {}", ident)
+    panic!("Couldn't generate route for {:?}", ident)
   }
 }
 
@@ -207,6 +224,6 @@ pub fn page(_metadata: TokenStream, input: TokenStream) -> TokenStream {
 
 #[proc_macro]
 pub fn html(input: TokenStream) -> TokenStream {
-  let el = parse_macro_input!(input as View);
-  quote! { #el.into() }.into()
+  let view = parse_macro_input!(input as View);
+  quote! { #view.into() }.into()
 }

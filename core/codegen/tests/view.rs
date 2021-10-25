@@ -1,16 +1,25 @@
 use etagere_codegen::*;
+use etagere_view::{Component, Html, ToHtml};
 
 mod etagere {
   pub use etagere_view as view;
 }
 
 #[component]
-struct MyCustomElement {}
+struct MyCustomElement;
+
+impl<C: ToHtml> Component for MyCustomElement<C> {
+  fn render(&self) -> Html {
+    html! {
+      <strong>{&self.children}</strong>
+    }
+  }
+}
 
 #[test]
 fn html_tag_test() {
   let res: String = html! { <div></div> };
-  assert_eq!(res, "<div/>");
+  assert_eq!(res, "<div></div>");
 }
 
 #[test]

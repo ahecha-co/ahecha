@@ -8,6 +8,8 @@ edition = "2021"
 backend = ["etagere_codegen/backend"]
 frontend = ["etagere_codegen/frontend"]
 
+rocket = ["etagere_codegen/rocket"]
+
 [dependencies]
 etagere_codegen={ path="../codegen", version="*" }
 etagere_view={ path="../view", version="*" }

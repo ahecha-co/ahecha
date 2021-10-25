@@ -3,8 +3,10 @@
 
 pub mod query;
 
+#[cfg(feature = "rocket")]
 use rocket::{routes, Route};
 
+#[cfg(feature = "rocket")]
 pub fn routes() -> Vec<Route> {
   routes![query::get]
 }

@@ -8,6 +8,10 @@ edition = "2021"
 backend = []
 frontend = []
 
+# Supported web frameworks
+rocket = []
+# actix-web = []
+
 [lib]
 proc-macro=true
 
