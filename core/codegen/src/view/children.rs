@@ -22,7 +22,7 @@ impl Children {
     match children.len() {
       0 => quote! { etagere::view::Node::None },
       1 => quote! { #(#children),* },
-      _ => quote! { etagere::view::Node::List(#(#children),*) },
+      _ => quote! { etagere::view::Node::List(vec![#(#children),*]) },
     }
     .into()
   }
