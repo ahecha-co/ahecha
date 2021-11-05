@@ -174,13 +174,16 @@ pub fn page(_metadata: TokenStream, input: TokenStream) -> TokenStream {
     // let ident_path = format_ident!("{}_path", ident.to_string().to_case(Case::Snake));
     let ident_route = format_ident!("{}_route", ident.to_string().to_case(Case::Snake));
     quote! {
-      #[cfg(feature = "backend", feature="rocket")]
+      use etagere::view::{CustomElement, Renderable};
+
+      // #[cfg(feature = "backend", feature="rocket")]
+      #[cfg(feature="rocket")]
       #[rocket::get(#path)]
-      pub fn #ident_route() -> Option<#ident> {
-        #ident{}
+      pub fn #ident_route<'a>() -> #ident<'a> {
+        #ident ::default()
       }
 
-      pub struct #ident {
+      pub struct #ident<'a> {
         #fields
       }
 
@@ -191,9 +194,9 @@ pub fn page(_metadata: TokenStream, input: TokenStream) -> TokenStream {
       // }
 
       #[cfg(feature = "rocket")]
-      impl<'r> rocket::response::Responder<'r, 'static> for #ident {
-        fn respond_to(self, _: &'r rocket::request::Request<'_>) -> rocket::response::Result<'static> {
-          let body = self.to_html();
+      impl<'a> rocket::response::Responder<'a, 'static> for #ident<'a> {
+        fn respond_to(self, _: &'a rocket::request::Request<'_>) -> rocket::response::Result<'static> {
+          let body = self.render().to_string();
           rocket::response::Response::build()
             .sized_body(body.len(), std::io::Cursor::new(body))
             .header(rocket::http::ContentType::new("text", "html"))

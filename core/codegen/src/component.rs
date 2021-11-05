@@ -97,8 +97,6 @@ use syn::{token, Field, ItemStruct, Type, VisPublic};
 //   // }
 // }
 
-const INTERNAL_FIELDS: [&'static str; 4] = ["children", "name", "context", "state"];
-
 pub(crate) struct ComponentBuilder {
   ident: Ident,
   name: String,
@@ -130,7 +128,7 @@ impl ComponentBuilder {
         // vis: syn::Visibility::Inherited,
         ident: Some(Ident::new("children", Span::call_site())),
         colon_token: None,
-        ty: Type::Verbatim(quote!(Option<etagere::view::html::Node<'static>>).into()),
+        ty: Type::Verbatim(quote!(Option<etagere::view::Node<'a>>).into()),
       });
     }
 
@@ -148,7 +146,7 @@ impl ComponentBuilder {
         // vis: syn::Visibility::Inherited,
         ident: Some(Ident::new("name", Span::call_site())),
         colon_token: None,
-        ty: Type::Verbatim(quote!(&'static str).into()),
+        ty: Type::Verbatim(quote!(&'a str).into()),
       });
     }
 
@@ -178,60 +176,9 @@ impl ComponentBuilder {
   }
 
   pub fn implementations(&self) -> TokenStream {
-    let out: Vec<TokenStream> = vec![
-      self.impl_component(),
-      self.impl_default(),
-      self.impl_into_string(),
-    ];
+    let out: Vec<TokenStream> = vec![self.impl_default(), self.impl_into_string()];
 
     quote! { #(#out)* }.into()
-  }
-
-  fn impl_component(&self) -> TokenStream {
-    let ident = &self.ident;
-    let out: Vec<TokenStream> = self
-      .fields
-      .iter()
-      .filter(|f| match f.vis {
-        syn::Visibility::Public(_) => !INTERNAL_FIELDS
-          .concat()
-          .contains(&f.ident.clone().unwrap().to_string()),
-        _ => false,
-      })
-      .map(|f| {
-        let field_ident = f.ident.clone().unwrap();
-        let field_str = field_ident.to_string();
-
-        quote! {
-          write!(writer, " {}=\"", #field_str)?;
-          etagere::view::escape_html(&self.#field_ident, writer)?;
-          write!(writer, "\"")?;
-        }
-        .into()
-      })
-      .collect();
-
-    quote! {
-      impl etagere::view::Renderable for #ident {
-        fn writer<W: std::fmt::Write>(&self, writer: &mut W) -> std::fmt::Result {
-          if let Some(children) = &self.children {
-            write!(writer, "<{}", self.name)?;
-            #(#out)*
-            write!(writer, ">")?;
-            self
-              .children
-              .iter()
-              .try_for_each(|c| c.writer(writer))?;
-            write!(writer, "</{}>", self.name)
-          } else {
-            write!(writer, "<{}", self.name)?;
-            #(#out)*
-            write!(writer, "/>")
-          }
-        }
-      }
-    }
-    .into()
   }
 
   fn impl_default(&self) -> TokenStream {
@@ -258,7 +205,7 @@ impl ComponentBuilder {
       .collect();
 
     quote! {
-      impl Default for #ident {
+      impl<'a> Default for #ident<'a> {
         fn default() -> Self {
           Self {
             #(#defaults),*
@@ -274,10 +221,9 @@ impl ComponentBuilder {
     let ident = &self.ident;
 
     quote! {
-      impl From<#ident> for String {
-        fn from(item: #ident) -> Self {
-          use etagere::view::Renderable;
-          item.to_string()
+      impl<'a> From<#ident<'a>> for String {
+        fn from(item: #ident<'a>) -> Self {
+          item.render().to_string()
         }
       }
     }

@@ -33,9 +33,11 @@ pub trait Renderable {
 
 pub trait CustomElement<'a> {
   /// Set the initial values of the custom element, this is called when creating the element
-  fn create(&mut self, attributes: Vec<(&'a str, &'a str)>, children: Node<'a>);
+  fn create(&mut self, _attributes: Vec<(&'a str, &'a str)>, _children: Node<'a>) {}
   /// The attributes of the custom element
-  fn attributes(&self) -> Vec<(&'a str, &'a str)>;
+  fn attributes(&self) -> Vec<(&'a str, &'a str)> {
+    vec![]
+  }
   /// The view of the view of the custom
   fn render(&self) -> Node<'a>;
 }
