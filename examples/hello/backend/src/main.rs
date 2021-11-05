@@ -15,7 +15,7 @@ use pages;
 // i18n_init!(['en']);
 
 #[launch]
-fn rocket() -> rocket::Rocket<rocket::Build> {
+fn rocket() -> _ {
   rocket::build()
     .mount("/", pages::routes())
     .mount("/api", api::routes())

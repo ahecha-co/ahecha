@@ -1,4 +1,4 @@
-use etagere::{view::*, *};
+use etagere::*;
 
 use components::ExampleTag;
 
@@ -15,16 +15,8 @@ pub struct IndexPage {
 // count: usize,
 }
 
-impl<C: ToHtml> Component for IndexPage<C> {
-  // pub fn get_server_side_props(context: Context) -> [User] {
-  //   // User.first
-  // }
-
-  // type Document = MainDocument;
-  // type Layout = DefaultLayout;
-
-  // Layout
-  fn render(&self) -> Html {
+impl<'a> view::CustomElement<'a> for IndexPage<'a> {
+  fn render(&self) -> view::Html<'a> {
     html! {
       <html lang="en">
         <body>
