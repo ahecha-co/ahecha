@@ -16,7 +16,7 @@ but still isn't enough, so my goal is to try to port a similar experience into R
 - Fun to work with
 - Flexible
 - Eliminate the need to maintain routes
-- Brainless ORM/migration system
+- ~~Brainless ORM/migration system~~
 
 ### Build component based webs
 
@@ -68,10 +68,13 @@ is late, also helps with the url parameters and potentially with the types too (
 
 ### Brainless ORM/migration system
 
-Prisma.io was a quite interesting project, I like that you have only one source of truth and are
-your models, you write everything there so you don't need to write your migration then your model
-and try to match the types, I'm not aware of any crate that has this level of UX, the closes one I'm
-aware of is [diesel](https://diesel.rs).
+There a few crates that are insteresting, [diesel](https://diesel.rs) is a full featured ORM, but the
+ergnomics are not there for my taste. If you come from Ruby, NodeJS, etc you are used to good
+ergonomics, maybe it can't be accomplish with Rust yet.
+
+But [sqlx](https://crates.io/crates/sqlx) is an amazing crate, forget about all the complexity and
+abstractions that an ORM bring to the table and write plain old sql, you can opt in for runtime or
+compile time sql checking (for me the later is the best feature).
 
 ## What's the plan to achive this?
 
@@ -80,13 +83,12 @@ with the ergonomics I wanted build a community to help and share ideas/experienc
 
 There are few important parts in the app:
 
-- Server: this is mostly solved problem by [rocket](https://rocket.rs).
+- Server: [rocket](https://rocket.rs) and [actix-web](http://actix.rs).
 - Client: here we need a lot of experimentation and research, need to check WASM/WASI capabilities
 to build a thin layer over web components if possible and let the doors open to others to build
 something more powerful over this foundation.
 - Routing: using macros maybe? is an open question.
-- ORM: this is a hard one, but it is not required to be build at first so we can do it later and
-also it will be not tied to a the crate so we might find a crate to use here.
+- ORM: [sqlx](https://crates.io/crates/sqlx)
 
 [1] Learning, experimentation and research.
 
@@ -111,12 +113,6 @@ their respective params
 We will have special functions that will receive the  ApiRoutes that will help you to call those
 functions in a seamless way (like react mutators / queries), the helpers will have all the
 information to make the corresponding call (GET, POST, PUT, PATCH, DELETE)
-
-### Models
-
-> This is a huge topic on his own, it might be out of scope, but something like
-> [prisma](https://swc.rs) will be ideal, also didn't checked [diesel](https://diesel.r) in a while
-> nor other db/orm crates
 
 ### Tooling
 
