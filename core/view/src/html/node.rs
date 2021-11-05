@@ -2,8 +2,10 @@ use crate::renderable::Renderable;
 
 use super::{custom_element::CustomElement, tag::Tag};
 
+#[derive(Clone)]
 pub enum Node<'a> {
   CustomElement(CustomElement<'a>),
+  Empty,
   List(Vec<Node<'a>>),
   Tag(Tag<'a>),
   Text(String),
@@ -15,6 +17,7 @@ impl Renderable for Node<'static> {
 
     match self {
       CustomElement(el) => el.writer(writer),
+      Empty => Ok(()),
       List(list) => list.writer(writer),
       Tag(tag) => tag.writer(writer),
       Text(text) => write!(writer, "{}", text),

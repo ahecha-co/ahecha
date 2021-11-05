@@ -4,6 +4,7 @@ use std::fmt::{Result, Write};
 
 use super::node::Node;
 
+#[derive(Clone)]
 pub struct Tag<'a> {
   pub name: &'a str,
   pub attributes: Attributes<'a>,

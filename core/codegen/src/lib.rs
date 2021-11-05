@@ -72,6 +72,7 @@ pub fn component(_metadata: TokenStream, input: TokenStream) -> TokenStream {
   let implementations = component_builder.implementations();
 
   quote! {
+    #[derive(Clone)]
     pub struct #ident {
       #fields
     }
