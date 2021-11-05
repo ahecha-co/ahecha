@@ -6,20 +6,13 @@ use std::{
   fmt::{Result, Write},
 };
 
-pub use component::Component;
-use html::Node;
-pub use html_tag::HtmlTag;
-pub use renderable::Renderable;
-pub use to_html::ToHtml;
-
 pub use crate::html_escaping::escape_html;
 
-mod component;
-pub mod html;
+pub use view::*;
+
 mod html_escaping;
-mod html_tag;
-mod renderable;
-mod to_html;
+
+mod view;
 
 pub type Html<'a> = Node<'a>;
 

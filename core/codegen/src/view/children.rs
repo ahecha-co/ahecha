@@ -16,39 +16,13 @@ impl Children {
     Children { nodes }
   }
 
-  // pub fn len(&self) -> usize {
-  //   self.nodes.len()
-  // }
-
-  // pub fn as_option_of_tuples_tokens(&self) -> proc_macro2::TokenStream {
-  //   let children_quotes: Vec<_> = self.nodes.iter().map(|child| quote! { #child }).collect();
-
-  //   match children_quotes.len() {
-  //     0 => quote! { Option::<()>::None },
-  //     1 => quote! { Some(#(#children_quotes),*) },
-  //     _ => {
-  //       let mut iter = children_quotes.iter();
-
-  //       let first = iter.next().unwrap();
-  //       let second = iter.next().unwrap();
-
-  //       let tuple_of_tuples = iter.fold(
-  //         quote!((#first, #second)),
-  //         |renderable, current| quote!((#renderable, #current)),
-  //       );
-
-  //       quote! { Some(#tuple_of_tuples) }
-  //     }
-  //   }
-  // }
-
   pub fn as_tokens(&self) -> proc_macro2::TokenStream {
     let children: Vec<_> = self.nodes.iter().map(|child| quote! { #child }).collect();
 
     match children.len() {
-      0 => quote! { Option::None },
-      1 => quote! { Some(Box::new(#(#children),*)) },
-      _ => quote! { Some(etagere::view::html::Node::List(#(#children),*)) },
+      0 => quote! { etagere::view::Node::None },
+      1 => quote! { #(#children),* },
+      _ => quote! { etagere::view::Node::List(#(#children),*) },
     }
     .into()
   }

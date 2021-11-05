@@ -32,39 +32,49 @@ pub trait Renderable {
 }
 
 pub trait CustomElement<'a> {
-  /// Creates a custom element
-  // fn create_custom_element(name: &'a str, attributes: Vec<(&'a str, &'a str)>) -> Self;
-  /// The name of the custom element
-  fn name(&self) -> &'a str;
+  /// Set the initial values of the custom element, this is called when creating the element
+  fn create(&mut self, attributes: Vec<(&'a str, &'a str)>, children: Node<'a>);
   /// The attributes of the custom element
   fn attributes(&self) -> Vec<(&'a str, &'a str)>;
   /// The view of the view of the custom
   fn render(&self) -> Node<'a>;
 }
 
-impl<'a> Renderable for dyn CustomElement<'a> {
-  fn writer<W: Write>(&self, writer: &mut W) -> Result {
-    write!(writer, "<{}", self.name())?;
-    self.write_attributes(&self.attributes(), writer)?;
-    write!(writer, ">")?;
-    self.render().writer(writer)?;
-    write!(writer, "</{}>", self.name())
-  }
-}
-
 pub enum Node<'a> {
-  CustomElement(Box<dyn CustomElement<'a>>),
-  Empty,
+  CustomElement(Box<CustomElementWrapper<'a>>),
+  None,
   HtmlElement(Box<HtmlElement<'a>>),
   List(Vec<Node<'a>>),
   Text(&'a str),
+}
+
+impl<'a> Default for Node<'a> {
+  fn default() -> Self {
+    Node::None
+  }
+}
+
+impl<'a> Into<String> for Node<'a> {
+  fn into(self) -> String {
+    match self {
+      Node::CustomElement(custom) => custom.to_string(),
+      Node::None => "".to_string(),
+      Node::HtmlElement(element) => element.to_string(),
+      Node::List(list) => list
+        .into_iter()
+        .map(|node| node.to_string())
+        .collect::<Vec<String>>()
+        .join(""),
+      Node::Text(text) => text.to_string(),
+    }
+  }
 }
 
 impl<'a> Renderable for Node<'a> {
   fn writer<W: Write>(&self, writer: &mut W) -> Result {
     match self {
       Node::CustomElement(custom_element) => custom_element.writer(writer),
-      Node::Empty => Ok(()),
+      Node::None => Ok(()),
       Node::HtmlElement(element) => element.writer(writer),
       Node::List(list) => list.writer(writer),
       Node::Text(text) => writer.write_str(text),
@@ -78,6 +88,21 @@ impl<'a> Renderable for Vec<Node<'a>> {
   }
 }
 
+pub struct CustomElementWrapper<'a> {
+  pub name: &'a str,
+  pub custom_element: Box<dyn CustomElement<'a>>,
+}
+
+impl<'a> Renderable for CustomElementWrapper<'a> {
+  fn writer<W: Write>(&self, writer: &mut W) -> Result {
+    write!(writer, "<{}", self.name)?;
+    self.write_attributes(&self.custom_element.attributes(), writer)?;
+    write!(writer, ">")?;
+    self.custom_element.render().writer(writer)?;
+    write!(writer, "</{}>", self.name)
+  }
+}
+
 pub struct HtmlElement<'a> {
   pub name: &'a str,
   pub attributes: Vec<(&'a str, &'a str)>,
@@ -87,7 +112,7 @@ pub struct HtmlElement<'a> {
 impl<'a> Renderable for HtmlElement<'a> {
   fn writer<W: Write>(&self, writer: &mut W) -> Result {
     match &self.children {
-      Node::Empty => {
+      Node::None => {
         write!(writer, "<{}", self.name)?;
         self.write_attributes(&self.attributes, writer)?;
         write!(writer, "/>")
@@ -112,7 +137,7 @@ mod test {
     let element = HtmlElement {
       name: "div",
       attributes: vec![],
-      children: Node::Empty,
+      children: Node::None,
     };
 
     assert_eq!(element.to_string(), "<div/>");
@@ -123,7 +148,7 @@ mod test {
     let element = HtmlElement {
       name: "div",
       attributes: vec![("class", "test"), ("id", "test"), ("style", "color: red;")],
-      children: Node::Empty,
+      children: Node::None,
     };
 
     assert_eq!(
@@ -153,7 +178,7 @@ mod test {
 
   #[test]
   fn node_empty_test() {
-    let element = Node::Empty;
+    let element = Node::None;
 
     assert_eq!(element.to_string(), "");
   }
@@ -182,11 +207,16 @@ mod test {
 
   #[test]
   fn simple_custom_eleemnt_test() {
-    struct MyCustomElement {}
+    #[derive(Default)]
+    struct MyCustomElement<'a> {
+      attributes: Vec<(&'a str, &'a str)>,
+      children: Node<'a>,
+    }
 
-    impl<'a> CustomElement<'a> for MyCustomElement {
-      fn name(&self) -> &'a str {
-        "my-custom-element"
+    impl<'a> CustomElement<'a> for MyCustomElement<'a> {
+      fn create(&mut self, attributes: Vec<(&'a str, &'a str)>, children: Node<'a>) {
+        self.attributes = attributes;
+        self.children = children;
       }
 
       fn attributes(&self) -> Vec<(&'a str, &'a str)> {
@@ -202,7 +232,14 @@ mod test {
       }
     }
 
-    let element = Node::CustomElement(Box::new(MyCustomElement {}));
+    let element = Node::CustomElement(Box::new(CustomElementWrapper {
+      name: "my-custom-element",
+      custom_element: Box::new({
+        let mut element = MyCustomElement::default();
+        element.create(vec![("class", "test")], Node::Text("Hello World"));
+        element
+      }),
+    }));
 
     assert_eq!(
       element.to_string(),

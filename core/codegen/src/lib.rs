@@ -57,7 +57,7 @@ use proc_macro::{Span, TokenStream};
 use quote::{format_ident, quote};
 use syn::{parse_macro_input, ItemFn, ItemStruct};
 
-use crate::{component::ComponentBuilder, route::path_route_builder, view::View};
+use crate::{component::ComponentBuilder, route::path_route_builder, view::HtmlSourceNode};
 
 mod component;
 mod route;
@@ -225,6 +225,6 @@ pub fn page(_metadata: TokenStream, input: TokenStream) -> TokenStream {
 
 #[proc_macro]
 pub fn html(input: TokenStream) -> TokenStream {
-  let view = parse_macro_input!(input as View);
-  quote! { #view.into() }.into()
+  let view = parse_macro_input!(input as HtmlSourceNode);
+  quote! { #view }.into()
 }

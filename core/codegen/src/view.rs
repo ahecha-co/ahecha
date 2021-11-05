@@ -17,13 +17,13 @@ mod child;
 mod children;
 mod tag;
 
-pub struct View {
+pub struct HtmlSourceNode {
   pub name: syn::Path,
   attributes: ViewAttributes,
   children: Children,
 }
 
-impl Parse for View {
+impl Parse for HtmlSourceNode {
   fn parse(input: ParseStream) -> Result<Self> {
     let open_tag = input.parse::<OpenTag>()?;
 
@@ -36,7 +36,7 @@ impl Parse for View {
       children
     };
 
-    Ok(View {
+    Ok(HtmlSourceNode {
       name: open_tag.name,
       attributes: open_tag.attributes,
       children,
@@ -44,7 +44,7 @@ impl Parse for View {
   }
 }
 
-impl View {
+impl HtmlSourceNode {
   pub fn is_custom_element(&self) -> bool {
     match self.name.get_ident() {
       None => true,
@@ -57,7 +57,7 @@ impl View {
   }
 }
 
-impl ToTokens for View {
+impl ToTokens for HtmlSourceNode {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
     let name = &self.name;
 
@@ -73,8 +73,17 @@ impl ToTokens for View {
       let attrs = self.attributes.for_custom_element();
       let children = self.children.as_tokens();
       quote! {
-        etagere::view::html::Node::CustomElement(
-          etagere::view::html::CustomElement::new::<#name>(#name_str, #attrs, #children)
+        etagere::view::Node::CustomElement(
+          Box::new(
+            etagere::view::CustomElementWrapper {
+              name: #name_str,
+              custom_element: Box::new({
+                let mut element = #name ::default();
+                element.create(#attrs, #children);
+                element
+              }),
+            }
+          )
         )
       }
     } else {
@@ -82,12 +91,14 @@ impl ToTokens for View {
       let children = self.children.as_tokens();
 
       quote! {
-        etagere::view::html::Node::Tag(
-          etagere::view::html::Tag {
-            name: stringify!(#name),
-            attributes: #attrs,
-            children: #children,
-          }
+        etagere::view::Node::HtmlElement(
+          Box::new(
+            etagere::view::HtmlElement {
+              name: stringify!(#name),
+              attributes: #attrs,
+              children: #children,
+            }
+          )
         )
       }
     };

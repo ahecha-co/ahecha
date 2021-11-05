@@ -95,13 +95,9 @@ impl<'a> ToTokens for CustomElementAttributes<'a> {
       .collect();
 
     let quoted = if attrs.len() == 0 {
-      quote!(None)
+      quote!(vec![])
     } else {
-      quote!(
-        Some(
-          #(#attrs),*
-        )
-      )
+      quote!(vec![#(#attrs),*])
     };
 
     quoted.to_tokens(tokens);
@@ -115,7 +111,7 @@ pub struct HtmlTagAttributes<'a> {
 impl<'a> ToTokens for HtmlTagAttributes<'a> {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
     if self.attributes.is_empty() {
-      quote!(None).to_tokens(tokens);
+      quote!(vec![]).to_tokens(tokens);
     } else {
       let attrs: Vec<_> = self
         .attributes
@@ -130,16 +126,14 @@ impl<'a> ToTokens for HtmlTagAttributes<'a> {
           let value = attribute.value_tokens();
 
           quote! {
-            hash.insert(#ident, ::std::borrow::Cow::from(#value));
+            (#ident, #value)
           }
         })
         .collect();
 
-      let hashmap_declaration = quote! {{
-        let mut hash = std::collections::HashMap::<&str, ::std::borrow::Cow<'_, str>>::new();
-        #(#attrs)*
-        Some(hash)
-      }};
+      let hashmap_declaration = quote! {
+        vec![ #(#attrs),*]
+      };
 
       hashmap_declaration.to_tokens(tokens);
     }
