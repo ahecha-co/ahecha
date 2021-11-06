@@ -10,4 +10,7 @@ backend = ["etagere/backend"]
 frontend = ["etagere/frontend"]
 
 [dependencies]
+serde = { version = "1.0.130", features = ["derive"] }
+serde_json = "1.0.69"
+
 etagere = { path = "../../../../core/lib", version = "*" }
