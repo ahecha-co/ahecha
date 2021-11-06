@@ -3,7 +3,8 @@ use regex::Regex;
 #[derive(Debug)]
 pub(crate) struct PathRoute {
   pub path: String,
-  // pub path_params: Vec<String>,
+  pub path_with_params: String,
+  pub path_params: Vec<String>,
 }
 
 pub(crate) fn path_route_builder(file_path: &str) -> Option<PathRoute> {
@@ -47,6 +48,7 @@ pub(crate) fn path_route_builder(file_path: &str) -> Option<PathRoute> {
 
     let re_path = Regex::new(r"<[^<>]*>").unwrap();
     let mut path = format!("/{}", re_path.replace_all(&parts.join("/"), "{}"));
+    let path_with_params = format!("/{}", &parts.join("/"));
 
     if path.ends_with("index") {
       path = path[0..path.len() - 5].to_string();
@@ -54,7 +56,8 @@ pub(crate) fn path_route_builder(file_path: &str) -> Option<PathRoute> {
 
     return Some(PathRoute {
       path,
-      // path_params,
+      path_with_params,
+      path_params,
     });
   } else {
     None
@@ -82,6 +85,10 @@ mod test {
   fn path_route_with_multiple_params_test() {
     let route = path_route_builder("src/api/posts/__post_id__/comments/__comment_id__.rs").unwrap();
     assert_eq!("/api/posts/{}/comments/{}", route.path);
-    // assert_eq!(vec!["post_id", "comment_id"], route.path_params);
+    assert_eq!(
+      "/api/posts/<post_id>/comments/<comment_id>",
+      route.path_with_params
+    );
+    assert_eq!(vec!["post_id", "comment_id"], route.path_params);
   }
 }
