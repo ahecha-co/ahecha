@@ -1,6 +1,6 @@
 use etagere::*;
 
-use components::ExampleTag;
+use components::PostComponent;
 
 #[page]
 #[derive(Default)]
@@ -20,10 +20,8 @@ impl<'a> view::CustomElement<'a> for IndexPage<'a> {
     html! {
       <html lang="en">
         <body>
-          <div>"Hello world"</div>
-          // It might be possible to extract the metadata information from the component from within the macro?
-          // This will be the ideal syntax
-          <ExampleTag>"This is an example tag"</ExampleTag>
+          <h1>"Etagere blog example"</h1>
+          <PostComponent title="Hello, world!" body="This is the first post." image="https://cataas.com/cat" />
         </body>
       </html>
     }

@@ -1,11 +1,14 @@
-use std::fmt::{Result, Write};
+use std::{
+  borrow::Cow,
+  fmt::{Result, Write},
+};
 
 use crate::escape_html;
 
 pub trait Renderable {
   fn write_attributes<'a, W: Write>(
     &self,
-    attributes: &Vec<(&'a str, &'a str)>,
+    attributes: &Vec<(&'a str, Cow<'a, str>)>,
     writer: &mut W,
   ) -> Result {
     if !attributes.is_empty() {
@@ -33,9 +36,9 @@ pub trait Renderable {
 
 pub trait CustomElement<'a> {
   /// Set the initial values of the custom element, this is called when creating the element
-  fn create(&mut self, _attributes: Vec<(&'a str, &'a str)>, _children: Node<'a>) {}
+  fn create(&mut self, _attributes: Vec<(&'a str, Cow<'a, str>)>, _children: Node<'a>) {}
   /// The attributes of the custom element
-  fn attributes(&self) -> Vec<(&'a str, &'a str)> {
+  fn attributes(&self) -> Vec<(&'a str, Cow<'a, str>)> {
     vec![]
   }
   /// The view of the view of the custom
@@ -47,7 +50,7 @@ pub enum Node<'a> {
   None,
   HtmlElement(Box<HtmlElement<'a>>),
   List(Vec<Node<'a>>),
-  Text(&'a str),
+  Text(String),
 }
 
 impl<'a> Default for Node<'a> {
@@ -69,6 +72,24 @@ impl<'a> Into<String> for Node<'a> {
         .join(""),
       Node::Text(text) => text.to_string(),
     }
+  }
+}
+
+impl<'a> From<String> for Node<'a> {
+  fn from(string: String) -> Self {
+    Node::Text(string)
+  }
+}
+
+impl<'a> From<&str> for Node<'a> {
+  fn from(string: &str) -> Self {
+    Node::Text(string.into())
+  }
+}
+
+impl<'a> From<Cow<'_, str>> for Node<'a> {
+  fn from(string: Cow<'_, str>) -> Self {
+    Node::Text(string.into())
   }
 }
 
@@ -107,7 +128,7 @@ impl<'a> Renderable for CustomElementWrapper<'a> {
 
 pub struct HtmlElement<'a> {
   pub name: &'a str,
-  pub attributes: Vec<(&'a str, &'a str)>,
+  pub attributes: Vec<(&'a str, Cow<'a, str>)>,
   pub children: Node<'a>,
 }
 
@@ -149,7 +170,11 @@ mod test {
   fn simple_html_element_with_attributes_test() {
     let element = HtmlElement {
       name: "div",
-      attributes: vec![("class", "test"), ("id", "test"), ("style", "color: red;")],
+      attributes: vec![
+        ("class", "test".into()),
+        ("id", "test".into()),
+        ("style", "color: red;".into()),
+      ],
       children: Node::None,
     };
 
@@ -163,11 +188,11 @@ mod test {
   fn simple_html_element_with_children_test() {
     let element = HtmlElement {
       name: "div",
-      attributes: vec![("class", "test")],
+      attributes: vec![("class", "test".into())],
       children: Node::HtmlElement(Box::new(HtmlElement {
         name: "h1",
         attributes: vec![],
-        children: Node::Text("Hello World").into(),
+        children: Node::Text("Hello World".into()).into(),
       }))
       .into(),
     };
@@ -188,11 +213,11 @@ mod test {
   #[test]
   fn node_list_test() {
     let element = Node::List(vec![
-      Node::Text("Hello ").into(),
+      Node::Text("Hello ".into()).into(),
       Node::HtmlElement(Box::new(HtmlElement {
         name: "span",
         attributes: vec![],
-        children: Node::Text("World").into(),
+        children: Node::Text("World".into()).into(),
       }))
       .into(),
     ]);
@@ -202,7 +227,7 @@ mod test {
 
   #[test]
   fn node_text_test() {
-    let element = Node::Text("Hello World");
+    let element = Node::Text("Hello World".into());
 
     assert_eq!(element.to_string(), "Hello World");
   }
@@ -211,25 +236,25 @@ mod test {
   fn simple_custom_eleemnt_test() {
     #[derive(Default)]
     struct MyCustomElement<'a> {
-      attributes: Vec<(&'a str, &'a str)>,
+      attributes: Vec<(&'a str, Cow<'a, str>)>,
       children: Node<'a>,
     }
 
     impl<'a> CustomElement<'a> for MyCustomElement<'a> {
-      fn create(&mut self, attributes: Vec<(&'a str, &'a str)>, children: Node<'a>) {
+      fn create(&mut self, attributes: Vec<(&'a str, Cow<'a, str>)>, children: Node<'a>) {
         self.attributes = attributes;
         self.children = children;
       }
 
-      fn attributes(&self) -> Vec<(&'a str, &'a str)> {
-        vec![("class", "test")]
+      fn attributes(&self) -> Vec<(&'a str, Cow<'a, str>)> {
+        vec![("class", "test".into())]
       }
 
       fn render(&self) -> Node<'a> {
         Node::HtmlElement(Box::new(HtmlElement {
           name: "h1",
           attributes: vec![],
-          children: Node::Text("Hello World"),
+          children: Node::Text("Hello World".into()),
         }))
       }
     }
@@ -238,7 +263,10 @@ mod test {
       name: "my-custom-element",
       custom_element: Box::new({
         let mut element = MyCustomElement::default();
-        element.create(vec![("class", "test")], Node::Text("Hello World"));
+        element.create(
+          vec![("class", "test".into())],
+          Node::Text("Hello World".into()),
+        );
         element
       }),
     }));

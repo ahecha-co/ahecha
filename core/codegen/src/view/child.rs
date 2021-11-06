@@ -17,12 +17,12 @@ impl ToTokens for Child {
     match self {
       Self::RawBlock(block) => if block.stmts.len() == 1 {
         let first = &block.stmts[0];
-        quote!(#first)
+        quote!(#first .into())
       } else {
-        quote!(block)
+        quote!(#block .into())
       }
       .to_tokens(tokens),
-      Self::Text(str) => quote! { etagere::view::Node::Text(#str) }.to_tokens(tokens),
+      Self::Text(str) => quote! { etagere::view::Node::Text(#str .into()) }.to_tokens(tokens),
       Self::View(view) => view.to_tokens(tokens),
     }
   }

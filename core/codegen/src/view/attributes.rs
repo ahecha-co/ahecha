@@ -126,7 +126,7 @@ impl<'a> ToTokens for HtmlTagAttributes<'a> {
           let value = attribute.value_tokens();
 
           quote! {
-            (#ident, #value)
+            (#ident,  std::borrow::Cow::from(#value))
           }
         })
         .collect();
