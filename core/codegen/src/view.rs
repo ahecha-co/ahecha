@@ -79,7 +79,7 @@ impl ToTokens for HtmlSourceNode {
               name: #name_str,
               custom_element: Box::new({
                 let mut element = #name ::default();
-                element.create(#attrs, #children);
+                element.create(#name #attrs, #children);
                 element
               }),
             }

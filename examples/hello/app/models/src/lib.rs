@@ -7,3 +7,14 @@ pub struct Post<'a> {
   pub body: &'a str,
   pub image: &'a str,
 }
+
+impl<'a> Default for Post<'a> {
+  fn default() -> Self {
+    Post {
+      id: 0,
+      title: "",
+      body: "",
+      image: "",
+    }
+  }
+}

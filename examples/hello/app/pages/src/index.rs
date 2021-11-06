@@ -16,6 +16,8 @@ pub struct IndexPage {
 }
 
 impl<'a> view::CustomElement<'a> for IndexPage<'a> {
+  type Attributes = ();
+
   fn render(&self) -> view::Html<'a> {
     html! {
       <html lang="en">

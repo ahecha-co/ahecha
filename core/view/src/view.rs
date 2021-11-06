@@ -34,13 +34,28 @@ pub trait Renderable {
   }
 }
 
-pub trait CustomElement<'a> {
-  /// Set the initial values of the custom element, this is called when creating the element
-  fn create(&mut self, _attributes: Vec<(&'a str, Cow<'a, str>)>, _children: Node<'a>) {}
-  /// The attributes of the custom element
-  fn attributes(&self) -> Vec<(&'a str, Cow<'a, str>)> {
-    vec![]
+pub trait Attributes: Default + Clone {
+  type Builder;
+  fn builder() -> Self::Builder;
+}
+
+impl Attributes for () {
+  type Builder = ();
+  fn builder() -> Self::Builder {
+    ()
   }
+}
+
+pub trait CustomElement<'a> {
+  type Attributes: Default + Clone;
+  /// Set the initial values of the custom element, this is called when creating the element
+  fn create(&mut self, _attributes: Self::Attributes, _children: Node<'a>) {}
+
+  /// The attributes of the custom element
+  fn attributes(&self) -> Self::Attributes {
+    Self::Attributes::default()
+  }
+
   /// The view of the view of the custom
   fn render(&self) -> Node<'a>;
 }
@@ -113,13 +128,14 @@ impl<'a> Renderable for Vec<Node<'a>> {
 
 pub struct CustomElementWrapper<'a> {
   pub name: &'a str,
-  pub custom_element: Box<dyn CustomElement<'a>>,
+  pub custom_element: Box<dyn CustomElement<'a, Attributes = ()>>,
 }
 
 impl<'a> Renderable for CustomElementWrapper<'a> {
   fn writer<W: Write>(&self, writer: &mut W) -> Result {
     write!(writer, "<{}", self.name)?;
-    self.write_attributes(&self.custom_element.attributes(), writer)?;
+    // TODO: attributes writer
+    // self.write_attributes(&self.custom_element.attributes().to_vec(), writer)?;
     write!(writer, ">")?;
     self.custom_element.render().writer(writer)?;
     write!(writer, "</{}>", self.name)
@@ -233,21 +249,28 @@ mod test {
   }
 
   #[test]
-  fn simple_custom_eleemnt_test() {
+  fn simple_custom_element_test() {
+    #[derive(Default, Clone)]
+    struct Props {
+      class: String,
+    }
+
     #[derive(Default)]
     struct MyCustomElement<'a> {
-      attributes: Vec<(&'a str, Cow<'a, str>)>,
+      attributes: Props,
       children: Node<'a>,
     }
 
     impl<'a> CustomElement<'a> for MyCustomElement<'a> {
-      fn create(&mut self, attributes: Vec<(&'a str, Cow<'a, str>)>, children: Node<'a>) {
+      type Attributes = Props;
+
+      fn create(&mut self, attributes: Self::Attributes, children: Node<'a>) {
         self.attributes = attributes;
         self.children = children;
       }
 
-      fn attributes(&self) -> Vec<(&'a str, Cow<'a, str>)> {
-        vec![("class", "test".into())]
+      fn attributes(&self) -> Self::Attributes {
+        self.attributes.clone()
       }
 
       fn render(&self) -> Node<'a> {
@@ -264,7 +287,9 @@ mod test {
       custom_element: Box::new({
         let mut element = MyCustomElement::default();
         element.create(
-          vec![("class", "test".into())],
+          Props {
+            class: "test".to_string(),
+          },
           Node::Text("Hello World".into()),
         );
         element

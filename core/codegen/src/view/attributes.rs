@@ -85,22 +85,16 @@ impl<'a> ToTokens for CustomElementAttributes<'a> {
       .attributes
       .iter()
       .map(|attribute| {
-        let ident = attribute.ident();
+        let ident = format!("{:?}", attribute.ident());
         let value = attribute.value_tokens();
 
         quote! {
-          #ident: #value,
+          .set_ #ident(#value),
         }
       })
       .collect();
 
-    let quoted = if attrs.len() == 0 {
-      quote!(vec![])
-    } else {
-      quote!(vec![#(#attrs),*])
-    };
-
-    quoted.to_tokens(tokens);
+    quote!(::Attributes::builder() #(#attrs),* .create()).to_tokens(tokens);
   }
 }
 

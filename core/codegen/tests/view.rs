@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use etagere_codegen::*;
-use etagere_view::{CustomElement, Html};
+use etagere_view::{Attributes, CustomElement, Html};
 
 mod etagere {
   pub use etagere_view as view;
@@ -25,31 +25,27 @@ fn html_tag_with_attributes_test() {
   assert_eq!(res, "<div class=\"some_class\">Text</div>");
 }
 
-#[derive(Default)]
-struct MyCustomElement<'a> {
-  attributes: Vec<(&'a str, Cow<'a, str>)>,
-  children: Html<'a>,
-}
-
-impl<'a> CustomElement<'a> for MyCustomElement<'a> {
-  fn create(&mut self, attributes: Vec<(&'a str, Cow<'a, str>)>, children: Html<'a>) {
-    self.attributes = attributes;
-    self.children = children;
-  }
-
-  fn attributes(&self) -> Vec<(&'a str, Cow<'a, str>)> {
-    self.attributes.clone()
-  }
-
-  fn render(&self) -> Html<'a> {
-    html! {
-      <strong>"Custom Element"</strong>
-    }
-  }
-}
-
 #[test]
 fn custom_element_test() {
+  #[derive(Default)]
+  struct MyCustomElement<'a> {
+    children: Html<'a>,
+  }
+
+  impl<'a> CustomElement<'a> for MyCustomElement<'a> {
+    type Attributes = ();
+
+    fn create(&mut self, _attributes: Self::Attributes, children: Html<'a>) {
+      self.children = children;
+    }
+
+    fn render(&self) -> Html<'a> {
+      html! {
+        <strong>"Custom Element"</strong>
+      }
+    }
+  }
+
   let res: String = html! { <MyCustomElement>"Text"</MyCustomElement> }.into();
   assert_eq!(
     res,
@@ -57,48 +53,41 @@ fn custom_element_test() {
   );
 }
 
-#[derive(Default)]
-struct PostElement<'a> {
-  attributes: Vec<(&'a str, Cow<'a, str>)>,
-  children: Html<'a>,
-}
-
-impl<'a> CustomElement<'a> for PostElement<'a> {
-  fn create(&mut self, attributes: Vec<(&'a str, Cow<'a, str>)>, children: Html<'a>) {
-    self.attributes = attributes;
-    self.children = children;
-  }
-
-  fn attributes(&self) -> Vec<(&'a str, Cow<'a, str>)> {
-    self.attributes.clone()
-  }
-
-  fn render(&self) -> Html<'a> {
-    let title = self
-      .attributes()
-      .iter()
-      .find(|(key, _)| *key == "title")
-      .unwrap()
-      .1
-      .clone();
-    let body = self
-      .attributes()
-      .iter()
-      .find(|(key, _)| *key == "body")
-      .unwrap()
-      .1
-      .clone();
-    html! {
-      <div>
-        <h1>{ title }</h1>
-        <p>{ body }</p>
-      </div>
-    }
-  }
-}
-
 #[test]
 fn custom_element_with_props_test() {
+  #[derive(Default, Clone)]
+  struct Post {
+    title: String,
+    body: String,
+  }
+  #[derive(Default)]
+  struct PostElement<'a> {
+    attributes: Post,
+    children: Html<'a>,
+  }
+
+  impl<'a> CustomElement<'a> for PostElement<'a> {
+    type Attributes = Post;
+
+    fn create(&mut self, attributes: Self::Attributes, children: Html<'a>) {
+      self.attributes = attributes;
+      self.children = children;
+    }
+
+    fn attributes(&self) -> Self::Attributes {
+      self.attributes.clone()
+    }
+
+    fn render(&self) -> Html<'a> {
+      html! {
+        <div>
+          <h1>{ self.attributes.title }</h1>
+          <p>{ self.attributes.body }</p>
+        </div>
+      }
+    }
+  }
+
   let res: String = html! { <PostElement title="Hello" body="World">"Text"</PostElement> }.into();
   assert_eq!(
     res,
