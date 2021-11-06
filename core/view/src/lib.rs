@@ -6,15 +6,10 @@ use std::{
   fmt::{Result, Write},
 };
 
-pub use crate::html_escaping::escape_html;
+pub use html_escaping::escape_html;
 
-pub use view::*;
-
+mod backend;
 mod html_escaping;
-
-mod view;
-
-pub type Html<'a> = Node<'a>;
 
 pub type Attributes<'a> = Option<HashMap<&'a str, Cow<'a, str>>>;
 
