@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use proc_macro_error::emit_error;
 use quote::{quote, ToTokens};
 use syn::{
@@ -11,7 +9,7 @@ use syn::{
 
 use super::attribute::ViewAttribute;
 
-pub type Attributes = HashSet<ViewAttribute>;
+pub type Attributes = Vec<ViewAttribute>;
 
 #[derive(Default)]
 pub struct ViewAttributes {
@@ -36,18 +34,20 @@ impl ViewAttributes {
   }
 
   pub fn parse(input: ParseStream, is_custom_element: bool) -> Result<Self> {
-    let mut parsed_self = input.parse::<Self>()?;
+    let parsed_self = input.parse::<Self>()?;
 
     let new_attributes: Attributes = parsed_self
       .attributes
-      .drain()
-      .filter_map(|attribute| match attribute.validate(is_custom_element) {
-        Ok(x) => Some(x),
-        Err(err) => {
-          emit_error!(err.span(), "Invalid attribute: {}", err);
-          None
-        }
-      })
+      .iter()
+      .filter_map(
+        |attribute| match attribute.clone().validate(is_custom_element) {
+          Ok(x) => Some(x),
+          Err(err) => {
+            emit_error!(err.span(), "Invalid attribute: {}", err);
+            None
+          }
+        },
+      )
       .collect();
 
     Ok(ViewAttributes::new(new_attributes))
@@ -56,7 +56,7 @@ impl ViewAttributes {
 
 impl Parse for ViewAttributes {
   fn parse(input: ParseStream) -> Result<Self> {
-    let mut attributes: HashSet<ViewAttribute> = HashSet::new();
+    let mut attributes: Vec<ViewAttribute> = vec![];
     while input.peek(syn::Ident::peek_any) {
       let attribute = input.parse::<ViewAttribute>()?;
       let ident = attribute.ident();
@@ -68,7 +68,7 @@ impl Parse for ViewAttributes {
         );
       }
 
-      attributes.insert(attribute);
+      attributes.push(attribute);
     }
 
     Ok(ViewAttributes::new(attributes))
@@ -85,16 +85,16 @@ impl<'a> ToTokens for CustomElementAttributes<'a> {
       .attributes
       .iter()
       .map(|attribute| {
-        let ident = format!("{:?}", attribute.ident());
+        let ident = attribute.ident();
         let value = attribute.value_tokens();
 
         quote! {
-          .set_ #ident(#value),
+          #ident : #value
         }
       })
       .collect();
 
-    quote!(::Attributes::builder() #(#attrs),* .create()).to_tokens(tokens);
+    quote!( { #(#attrs),* } ).to_tokens(tokens);
   }
 }
 
@@ -105,7 +105,7 @@ pub struct HtmlTagAttributes<'a> {
 impl<'a> ToTokens for HtmlTagAttributes<'a> {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
     if self.attributes.is_empty() {
-      quote!(vec![]).to_tokens(tokens);
+      quote!(()).to_tokens(tokens);
     } else {
       let attrs: Vec<_> = self
         .attributes
@@ -118,15 +118,14 @@ impl<'a> ToTokens for HtmlTagAttributes<'a> {
           });
 
           let value = attribute.value_tokens();
-
           quote! {
-            (#ident,  std::borrow::Cow::from(#value))
+            (#ident,  #value)
           }
         })
         .collect();
 
       let hashmap_declaration = quote! {
-        vec![ #(#attrs),*]
+        [ #(#attrs),*]
       };
 
       hashmap_declaration.to_tokens(tokens);

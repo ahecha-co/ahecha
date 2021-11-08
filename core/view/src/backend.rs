@@ -1,3 +1,3 @@
 mod attributes;
-mod elements;
+pub mod elements;
 pub mod render;

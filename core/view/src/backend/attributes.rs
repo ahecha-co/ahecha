@@ -1,6 +1,7 @@
 use std::fmt::{Result, Write};
 
 mod arrays;
+mod numbers;
 mod tuples;
 mod vectors;
 
