@@ -11,6 +11,8 @@ pub use html_escaping::escape_html;
 mod backend;
 mod html_escaping;
 
+pub use backend::{body::BodyElement as Node, render::Render};
+
 pub type Attributes<'a> = Option<HashMap<&'a str, Cow<'a, str>>>;
 
 pub fn write_attributes<'a, W: Write>(maybe_attributes: Attributes<'a>, writer: &mut W) -> Result {

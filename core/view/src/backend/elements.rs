@@ -19,7 +19,7 @@ pub trait HtmlElement<T>: Default {
 
 #[cfg(test)]
 mod tests {
-  use super::tag::TagElement;
+  use super::{tag::TagElement, *};
   use crate::backend::render::Render;
 
   #[test]

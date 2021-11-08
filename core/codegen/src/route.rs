@@ -69,20 +69,20 @@ mod test {
   use crate::route::path_route_builder;
 
   #[test]
-  fn simple_path_route_test() {
+  fn test_simple_path_route() {
     let route = path_route_builder("src/api/query.rs").unwrap();
     assert_eq!("/api/query", route.path);
   }
 
   #[test]
-  fn path_route_with_params_test() {
+  fn test_path_route_with_params() {
     let route = path_route_builder("src/api/query/__id__.rs").unwrap();
     assert_eq!("/api/query/{}", route.path);
     // assert_eq!(vec!["id"], route.path_params);
   }
 
   #[test]
-  fn path_route_with_multiple_params_test() {
+  fn test_path_route_with_multiple_params() {
     let route = path_route_builder("src/api/posts/__post_id__/comments/__comment_id__.rs").unwrap();
     assert_eq!("/api/posts/{}/comments/{}", route.path);
     assert_eq!(

@@ -1,6 +1,6 @@
 mod attributes;
-mod body;
+pub mod body;
 // mod document;
 mod elements;
 // mod head;
-mod render;
+pub mod render;
