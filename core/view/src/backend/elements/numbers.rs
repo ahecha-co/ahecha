@@ -15,26 +15,22 @@ impl_renderable!(u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize,
 
 #[cfg(test)]
 mod test {
-  use crate::backend::{elements::tag::TagElement, render::Render};
+  use crate::backend::elements::{tag::TagElement, HtmlElement, Render};
 
   #[test]
   fn test_render_into() {
-    let element = TagElement {
-      name: "div".into(),
-      attributes: Default::default(),
-      children: (
-        TagElement {
-          name: "span".into(),
-          attributes: Default::default(),
-          children: ("Hello", " ", 1).into(),
-        },
+    let element = TagElement::new(
+      "div",
+      (),
+      (
+        TagElement::new("span", (), ("Hello", " ", 1u8).into()),
         ", ",
         "World",
         " ",
-        2,
+        2u8,
       )
         .into(),
-    };
+    );
 
     assert_eq!(
       element.to_string(),

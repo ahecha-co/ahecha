@@ -1,53 +1,51 @@
-use std::{
-  collections::HashMap,
-  fmt::{Result, Write},
-};
+use std::fmt::{Result, Write};
 
-use crate::backend::render::Render;
+use crate::backend::{attributes::RenderAttributes, render::Render};
 
 use super::HtmlElement;
 
-#[derive(Default)]
-pub struct TagElement<T>
+pub struct TagElement<A, C>
 where
-  T: Render + Default,
+  A: RenderAttributes,
+  C: Render,
 {
   pub name: String,
-  pub attributes: std::collections::HashMap<String, String>,
-  pub children: Option<T>,
+  pub attributes: A,
+  pub children: Option<C>,
 }
 
-impl<T> HtmlElement<T> for TagElement<T>
+impl<A, C> HtmlElement<A, C> for TagElement<A, C>
 where
-  T: Render + Default,
+  A: RenderAttributes,
+  C: Render,
 {
-  type Attributes = HashMap<String, String>;
-
-  fn create(&mut self, name: String, attributes: Self::Attributes, children: Option<T>) {
-    self.name = name;
-    self.attributes = attributes;
-    self.children = children;
+  fn new(name: &str, attributes: A, children: Option<C>) -> Self {
+    Self {
+      name: name.into(),
+      attributes,
+      children,
+    }
   }
 
-  fn attributes(&self) -> Self::Attributes {
-    self.attributes.clone()
+  fn attributes(&self) -> &A {
+    &self.attributes
   }
 }
 
-impl<T> Render for TagElement<T>
+impl<A, C> Render for TagElement<A, C>
 where
-  T: Render + Default,
+  A: RenderAttributes,
+  C: Render,
 {
   fn render_into<W: Write>(self, writer: &mut W) -> Result {
+    write!(writer, "<{}", self.name)?;
+    self.attributes.render_attributes_into(writer)?;
+
     match self.children {
       None => {
-        write!(writer, "<{}", self.name)?;
-        self.attributes.render_into(writer)?;
         write!(writer, "/>")
       }
       Some(children) => {
-        write!(writer, "<{}", self.name)?;
-        self.attributes.render_into(writer)?;
         write!(writer, ">")?;
         children.render_into(writer)?;
         write!(writer, "</{}>", self.name)
@@ -62,45 +60,32 @@ mod test {
 
   #[test]
   fn test_tag_element() {
-    let element = TagElement::<String> {
-      name: "div".into(),
-      ..Default::default()
-    };
+    let element = TagElement::new("div", (), ().into());
 
-    assert_eq!(element.to_string(), "<div/>");
+    assert_eq!(element.to_string(), "<div></div>");
   }
 
   #[test]
   fn test_tag_element_with_attributes() {
-    let element = TagElement::<String> {
-      name: "div".into(),
-      attributes: [
-        ("class".into(), "test".into()),
-        ("id".into(), "test".into()),
-        ("style".into(), "color: red;".into()),
-      ]
-      .into(),
-      ..Default::default()
-    };
+    let element = TagElement::new(
+      "div",
+      vec![("class", "test"), ("id", "test"), ("style", "color: red;")],
+      ().into(),
+    );
 
     assert_eq!(
       element.to_string(),
-      "<div class=\"test\" id=\"test\" style=\"color: red;\"/>"
+      "<div class=\"test\" id=\"test\" style=\"color: red;\"></div>"
     );
   }
 
   #[test]
   fn test_tag_element_with_one_child() {
-    let element = TagElement {
-      name: "div".into(),
-      attributes: [("class".into(), "test".into())].into(),
-      children: TagElement {
-        name: "h1".into(),
-        attributes: Default::default(),
-        children: "Hello World".into(),
-      }
-      .into(),
-    };
+    let element = TagElement::new(
+      "div",
+      ("class", "test"),
+      TagElement::new("h1", (), "Hello World".into()).into(),
+    );
 
     assert_eq!(
       element.to_string(),
@@ -110,112 +95,46 @@ mod test {
 
   #[test]
   fn test_ag_element_with_children() {
-    let element = TagElement {
-      name: "div".into(),
-      attributes: [("class".into(), "test".into())].into(),
-      children: (
-        TagElement {
-          name: "h1".into(),
-          attributes: Default::default(),
-          children: (
-            "Hello ",
-            TagElement {
-              name: "span".into(),
-              attributes: Default::default(),
-              children: "World".into(),
-            },
-          )
-            .into(),
-        },
-        TagElement {
-          name: "p".into(),
-          attributes: Default::default(),
-          children: "Loren ipsum".into(),
-        },
+    let element = TagElement::new(
+      "div",
+      ("class", "test"),
+      (
+        TagElement::new(
+          "h1",
+          (),
+          ("Hello ", TagElement::new("span", (), "World".into())).into(),
+        ),
+        TagElement::new("p", (), "This is a paragraph".into()),
       )
         .into(),
-    };
+    );
 
     assert_eq!(
       element.to_string(),
-      "<div class=\"test\"><h1>Hello <span>World</span></h1><p>Loren ipsum</p></div>"
+      "<div class=\"test\"><h1>Hello <span>World</span></h1><p>This is a paragraph</p></div>"
     );
   }
 
   #[test]
   fn test_tag_element_with_children_list() {
-    let element = TagElement {
-      name: "div".into(),
-      attributes: [("class".into(), "test".into())].into(),
-      children: TagElement {
-        name: "ul".into(),
-        attributes: Default::default(),
-        children: vec![
-          TagElement {
-            name: "li".into(),
-            attributes: Default::default(),
-            children: "Hello".into(),
-          },
-          TagElement {
-            name: "li".into(),
-            attributes: Default::default(),
-            children: "World".into(),
-          },
+    let element = TagElement::new(
+      "div",
+      ("class", "test"),
+      TagElement::new(
+        "ul",
+        (),
+        vec![
+          TagElement::new("li", (), "Hello".into()),
+          TagElement::new("li", (), "World".into()),
         ]
         .into(),
-      }
+      )
       .into(),
-    };
+    );
 
     assert_eq!(
       element.to_string(),
       "<div class=\"test\"><ul><li>Hello</li><li>World</li></ul></div>"
-    );
-  }
-
-  #[test]
-  fn test_tag_element_with_children_tuple() {
-    let element = TagElement {
-      name: "div".into(),
-      attributes: [("class".into(), "test".into())].into(),
-      children: TagElement {
-        name: "ul".into(),
-        attributes: Default::default(),
-        children: (
-          TagElement {
-            name: "li".into(),
-            attributes: Default::default(),
-            children: "1".into(),
-          },
-          TagElement {
-            name: "li".into(),
-            attributes: Default::default(),
-            children: "2".into(),
-          },
-          TagElement {
-            name: "li".into(),
-            attributes: Default::default(),
-            children: "3".into(),
-          },
-          TagElement {
-            name: "li".into(),
-            attributes: Default::default(),
-            children: "4".into(),
-          },
-          TagElement {
-            name: "li".into(),
-            attributes: Default::default(),
-            children: "5".into(),
-          },
-        )
-          .into(),
-      }
-      .into(),
-    };
-
-    assert_eq!(
-      element.to_string(),
-      "<div class=\"test\"><ul><li>1</li><li>2</li><li>3</li><li>4</li><li>5</li></ul></div>"
     );
   }
 }

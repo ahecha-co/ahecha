@@ -1,9 +1,4 @@
-use std::{
-  collections::HashMap,
-  fmt::{Result, Write},
-};
-
-use crate::escape_html;
+use std::fmt::{Result, Write};
 
 pub trait Render: Sized {
   /// Render the component to a writer.
@@ -18,17 +13,9 @@ pub trait Render: Sized {
   }
 }
 
-/// Renders a hashmap as html attributes
-impl Render for HashMap<String, String> {
-  fn render_into<W: Write>(self, writer: &mut W) -> Result {
-    let mut keys_values = self.iter().collect::<Vec<(&String, &String)>>();
-    keys_values.sort_by(|a, b| a.0.cmp(b.0));
-
-    for (key, value) in keys_values.iter() {
-      write!(writer, " {}=\"", key)?;
-      escape_html(value, writer)?;
-      write!(writer, "\"")?;
-    }
+/// Renders `()` or nothing
+impl Render for () {
+  fn render_into<W: Write>(self, _writer: &mut W) -> Result {
     Ok(())
   }
 }

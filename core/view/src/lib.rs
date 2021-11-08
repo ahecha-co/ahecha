@@ -11,7 +11,7 @@ pub use html_escaping::escape_html;
 mod backend;
 mod html_escaping;
 
-pub use backend::{body::BodyElement as Node, render::Render};
+pub use backend::render::Render;
 
 pub type Attributes<'a> = Option<HashMap<&'a str, Cow<'a, str>>>;
 

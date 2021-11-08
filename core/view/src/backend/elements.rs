@@ -1,18 +1,25 @@
+use crate::Render;
+
+use super::attributes::RenderAttributes;
+
 mod numbers;
 mod tag;
 mod text;
 mod tuples;
 
-pub trait HtmlElement<T>: Default {
-  type Attributes: Default + Clone;
+pub trait HtmlElement<A, C>
+where
+  A: RenderAttributes,
+  C: Render,
+{
   /// Set the initial values of the custom element, this is called when creating the element
-  fn create(&mut self, name: String, attributes: Self::Attributes, children: Option<T>);
+  fn new(name: &str, attributes: A, children: Option<C>) -> Self;
 
   /// The attributes of the custom element
-  fn attributes(&self) -> Self::Attributes;
+  fn attributes(&self) -> &A;
 
   /// The view of the view of the custom
-  fn render(&self) -> Option<T> {
+  fn render(&self) -> Option<C> {
     None
   }
 }
@@ -20,31 +27,26 @@ pub trait HtmlElement<T>: Default {
 #[cfg(test)]
 mod tests {
   use super::{tag::TagElement, *};
-  use crate::backend::render::Render;
 
   #[test]
   fn test_html_element() {
-    let element = TagElement {
-      name: "div".into(),
-      attributes: Default::default(),
-      children: (
+    let element = TagElement::new(
+      "div",
+      (),
+      (
         "Hello, Block!",
-        TagElement {
-          name: "ul".into(),
-          attributes: [("class".into(), "list".into())].iter().cloned().collect(),
-          children: [1, 2, 3]
+        TagElement::new(
+          "ul",
+          ("class", "list"),
+          [1, 2, 3]
             .iter()
-            .map(|i| TagElement {
-              name: "li".into(),
-              attributes: Default::default(),
-              children: (*i).into(),
-            })
+            .map(|i| TagElement::new("li", (), (*i).into()))
             .collect::<Vec<_>>()
             .into(),
-        },
+        ),
       )
         .into(),
-    };
+    );
 
     assert_eq!(
       element.to_string(),
