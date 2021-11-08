@@ -70,13 +70,13 @@ impl ToTokens for HtmlSource {
         .ident
         .to_string()
         .to_case(Case::Kebab);
-      // let attrs = self.attributes.for_simple_element();
+      let attrs = self.attributes.for_simple_element();
       let struct_attrs = self.attributes.for_custom_element(name_str.to_string());
       // TODO: I need to pass the attributes to the custom element wrapper
       quote! {
         etagere::view::HtmlElement {
           name: #name_str,
-          attributes: (),
+          attributes: #attrs,
           children: (#name #struct_attrs).into(),
         }
       }
