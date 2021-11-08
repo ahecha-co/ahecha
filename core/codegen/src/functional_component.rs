@@ -12,10 +12,17 @@ pub fn create_functional_component(f: syn::ItemFn) -> TokenStream {
 
   let input_blocks = if inputs.len() > 0 {
     let input_names: Vec<_> = inputs.iter().collect();
-    quote!({ #(#vis #input_names),* })
+    quote!(#(#vis #input_names),*,)
   } else {
-    quote!(;)
+    quote!()
   };
+
+  let input_blocks = quote!(
+    {
+      #input_blocks
+      #vis __custom_element_name: String
+    }
+  );
 
   let input_readings = if inputs.is_empty() {
     quote!()
@@ -36,9 +43,16 @@ pub fn create_functional_component(f: syn::ItemFn) -> TokenStream {
       .collect();
 
     quote!(
-      let #struct_name { #(#input_names), * } = self;
+      #(#input_names),*,
     )
   };
+
+  let input_readings = quote! (
+    let #struct_name {
+      #input_readings
+      __custom_element_name
+    } = self;
+  );
 
   quote! {
     #[derive(Debug)]
@@ -51,14 +65,16 @@ pub fn create_functional_component(f: syn::ItemFn) -> TokenStream {
           #block
         };
 
-        etagere::view::Render::render_into(result, w)
+        write!(w, "{}", result)
       }
     }
 
     impl #impl_generics Into<String> for #struct_name #ty_generics #where_clause {
       fn into(self) -> String {
-        #input_readings
-        #block
+        use etagere::view::Render;
+        let mut result = String::new();
+        self.render_into(&mut result).unwrap();
+        result
       }
     }
   }

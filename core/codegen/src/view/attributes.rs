@@ -21,9 +21,10 @@ impl ViewAttributes {
     Self { attributes }
   }
 
-  pub fn for_custom_element<'c>(&self) -> CustomElementAttributes<'_> {
+  pub fn for_custom_element<'c>(&self, custom_element_name: String) -> CustomElementAttributes<'_> {
     CustomElementAttributes {
       attributes: &self.attributes,
+      custom_element_name,
     }
   }
 
@@ -77,11 +78,12 @@ impl Parse for ViewAttributes {
 
 pub struct CustomElementAttributes<'a> {
   attributes: &'a Attributes,
+  custom_element_name: String,
 }
 
 impl<'a> ToTokens for CustomElementAttributes<'a> {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-    let attrs: Vec<_> = self
+    let mut attrs: Vec<_> = self
       .attributes
       .iter()
       .map(|attribute| {
@@ -93,6 +95,9 @@ impl<'a> ToTokens for CustomElementAttributes<'a> {
         }
       })
       .collect();
+
+    let custom_element_name = self.custom_element_name.clone();
+    attrs.push(quote!( __custom_element_name : #custom_element_name .to_string() ));
 
     quote!( { #(#attrs),* } ).to_tokens(tokens);
   }
