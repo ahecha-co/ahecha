@@ -22,6 +22,7 @@ proc-macro-error="1.0.4"
 quote="1.0.9"
 syn={version="1.0.78",features=["full"]}
 regex="1.5.4"
+tuple_list = "0.1.3"
 
 [dev-dependencies]
 etagere_view={path="../view", version="*"}

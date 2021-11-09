@@ -69,7 +69,11 @@ mod test {
   fn test_tag_element_with_attributes() {
     let element = HtmlElement {
       name: "div",
-      attributes: vec![("class", "test"), ("id", "test"), ("style", "color: red;")],
+      attributes: ::tuple_list::tuple_list!(
+        ("class", "test"),
+        ("id", "test"),
+        ("style", "color: red;"),
+      ),
       children: ().into(),
     };
 
@@ -83,7 +87,7 @@ mod test {
   fn test_tag_element_with_one_child() {
     let element = HtmlElement {
       name: "div",
-      attributes: (("class", "test"),),
+      attributes: (("class", "test"), ()),
       children: HtmlElement {
         name: "h1",
         attributes: (),
@@ -102,12 +106,12 @@ mod test {
   fn test_ag_element_with_children() {
     let element = HtmlElement {
       name: "div",
-      attributes: (("class", "test"),),
-      children: (
+      attributes: (("class", "test"), ()),
+      children: ::tuple_list::tuple_list!(
         HtmlElement {
           name: "h1",
           attributes: (),
-          children: (
+          children: ::tuple_list::tuple_list!(
             "Hello ",
             HtmlElement {
               name: "span",
@@ -115,7 +119,7 @@ mod test {
               children: "World".into(),
             },
           )
-            .into(),
+          .into(),
         },
         HtmlElement {
           name: "p",
@@ -123,7 +127,7 @@ mod test {
           children: "This is a paragraph".into(),
         },
       )
-        .into(),
+      .into(),
     };
 
     assert_eq!(
@@ -136,7 +140,7 @@ mod test {
   fn test_tag_element_with_children_list() {
     let element = HtmlElement {
       name: "div",
-      attributes: (("class", "test"),),
+      attributes: (("class", "test"), ()),
       children: HtmlElement {
         name: "ul",
         attributes: (),

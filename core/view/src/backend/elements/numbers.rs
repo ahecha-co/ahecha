@@ -22,18 +22,18 @@ mod test {
     let element: String = HtmlElement {
       name: "div",
       attributes: (),
-      children: (
+      children: ::tuple_list::tuple_list!(
         HtmlElement {
           name: "span",
           attributes: (),
-          children: ("Hello", " ", 1u8).into(),
+          children: ::tuple_list::tuple_list!("Hello", " ", 1u8).into(),
         },
         ", ",
         "World",
         " ",
         2u8,
       )
-        .into(),
+      .into(),
     }
     .into();
 

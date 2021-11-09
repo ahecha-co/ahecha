@@ -30,6 +30,13 @@ fn test_html_with_code_block() {
 }
 
 #[test]
+fn test_html_list() {
+  let text = "Text";
+  let res: String = html! { <ul><li>1</li><li>2</li><li>3</li></ul> };
+  assert_eq!(res, "<ul><li>1</li><li>2</li><li>3</li></ul>");
+}
+
+#[test]
 fn test_functional_component() {
   #[component]
   fn HelloWorld() {

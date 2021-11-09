@@ -5,6 +5,8 @@ use syn::{
   Result,
 };
 
+pub use tuple_list;
+
 use self::{
   attributes::ViewAttributes,
   children::Children,

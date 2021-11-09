@@ -1,4 +1,7 @@
 use std::fmt::{Display, Result, Write};
+use tuple_list::TupleList;
+
+use crate::escape_html;
 
 use super::RenderAttributes;
 
@@ -8,38 +11,24 @@ impl RenderAttributes for () {
   }
 }
 
-// TODO: write a macro_rule to implement for more tuples
-impl<A: Display> RenderAttributes for ((&str, A),) {
+impl<A> RenderAttributes for (&str, A)
+where
+  A: Display,
+{
   fn render_attributes_into<W: Write>(&self, writer: &mut W) -> Result {
-    self.0.render_attributes_into(writer)
+    write!(writer, " {}=\"", self.0)?;
+    escape_html(&self.1, writer)?;
+    write!(writer, "\"")
   }
 }
 
-impl<A: Display, B: Display> RenderAttributes for ((&str, A), (&str, B)) {
-  fn render_attributes_into<W: Write>(&self, writer: &mut W) -> Result {
-    self.0.render_attributes_into(writer)?;
-    self.1.render_attributes_into(writer)?;
-    Ok(())
-  }
-}
-
-impl<A: Display, B: Display, C: Display> RenderAttributes for ((&str, A), (&str, B), (&str, C)) {
-  fn render_attributes_into<W: Write>(&self, writer: &mut W) -> Result {
-    self.0.render_attributes_into(writer)?;
-    self.1.render_attributes_into(writer)?;
-    self.2.render_attributes_into(writer)?;
-    Ok(())
-  }
-}
-
-impl<A: Display, B: Display, C: Display, D: Display> RenderAttributes
-  for ((&str, A), (&str, B), (&str, C), (&str, D))
+impl<Head, Tail> RenderAttributes for (Head, Tail)
+where
+  Head: RenderAttributes,
+  Tail: RenderAttributes + TupleList,
 {
   fn render_attributes_into<W: Write>(&self, writer: &mut W) -> Result {
     self.0.render_attributes_into(writer)?;
-    self.1.render_attributes_into(writer)?;
-    self.2.render_attributes_into(writer)?;
-    self.3.render_attributes_into(writer)?;
-    Ok(())
+    self.1.render_attributes_into(writer)
   }
 }
