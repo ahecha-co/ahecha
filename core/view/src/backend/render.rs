@@ -6,7 +6,7 @@ pub trait Render: Sized {
   fn render_into<W: Write>(self, writer: &mut W) -> Result;
 
   /// Render the component to string
-  fn to_string(self) -> String {
+  fn render(self) -> String {
     let mut buf = String::new();
     self.render_into(&mut buf).unwrap();
     buf

@@ -35,9 +35,6 @@ mod test {
       )),
     };
 
-    assert_eq!(
-      element.to_string(),
-      "<div><span>Hello 1</span>, World 2</div>"
-    );
+    assert_eq!(element.render(), "<div><span>Hello 1</span>, World 2</div>");
   }
 }

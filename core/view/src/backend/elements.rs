@@ -62,7 +62,7 @@ mod test {
       children: Option::<()>::None,
     };
 
-    assert_eq!(element.to_string(), "<div/>");
+    assert_eq!(element.render(), "<div/>");
   }
 
   #[test]
@@ -78,7 +78,7 @@ mod test {
     };
 
     assert_eq!(
-      element.to_string(),
+      element.render(),
       "<div class=\"test\" id=\"test\" style=\"color: red;\"/>"
     );
   }
@@ -96,7 +96,7 @@ mod test {
     };
 
     assert_eq!(
-      element.to_string(),
+      element.render(),
       "<div class=\"test\"><h1>Hello World</h1></div>"
     );
   }
@@ -128,7 +128,7 @@ mod test {
     };
 
     assert_eq!(
-      element.to_string(),
+      element.render(),
       "<div class=\"test\"><h1>Hello <span>World</span></h1><p>This is a paragraph</p></div>"
     );
   }
@@ -157,7 +157,7 @@ mod test {
     };
 
     assert_eq!(
-      element.to_string(),
+      element.render(),
       "<div class=\"test\"><ul><li>Hello</li><li>World</li></ul></div>"
     );
   }
