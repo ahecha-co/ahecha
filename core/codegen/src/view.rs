@@ -79,7 +79,7 @@ impl ToTokens for HtmlSource {
         etagere::view::HtmlElement {
           name: #name_str,
           attributes: #attrs,
-          children: (#name #struct_attrs).into(),
+          children: Some(#name #struct_attrs),
         }
       }
     } else {

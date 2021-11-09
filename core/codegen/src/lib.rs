@@ -153,7 +153,7 @@ pub fn page(_metadata: TokenStream, input: TokenStream) -> TokenStream {
 pub fn html(input: TokenStream) -> TokenStream {
   let view = parse_macro_input!(input as HtmlSource);
   quote! {
-    #view.into()
+    #view .into()
   }
   .into()
 }
