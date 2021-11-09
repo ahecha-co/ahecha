@@ -130,7 +130,7 @@ impl<'a> ToTokens for HtmlTagAttributes<'a> {
         .collect();
 
       let hashmap_declaration = quote! {
-        [ #(#attrs),*]
+        (#(#attrs),*)
       };
 
       hashmap_declaration.to_tokens(tokens);

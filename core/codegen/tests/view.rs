@@ -55,7 +55,7 @@ fn test_functional_component_with_attributes() {
     html! {
       <div>
         <h1>{title}</h1>
-        <p>"Count:" {count}</p>
+        <p>"Count: " {count}</p>
       </div>
     }
   }
@@ -63,6 +63,6 @@ fn test_functional_component_with_attributes() {
   let result: String = html! { <PostContent title="Hello" count={5} /> };
   assert_eq!(
     result,
-    "<post-content title=\"hello\" count=5><div><h1>Hello</h1><p>Count: 5</p></div></hello-world>"
+    "<post-content title=\"Hello\" count=\"5\"><div><h1>Hello</h1><p>Count: 5</p></div></post-content>"
   );
 }
