@@ -31,9 +31,28 @@ fn test_html_with_code_block() {
 
 #[test]
 fn test_html_list() {
-  let text = "Text";
   let res: String = html! { <ul><li>1</li><li>2</li><li>3</li></ul> };
   assert_eq!(res, "<ul><li>1</li><li>2</li><li>3</li></ul>");
+}
+
+#[test]
+fn test_html_conditional_block() {
+  let title = "A title";
+  let image = Some("https://cataas.com/cat");
+  let res: String = html! {
+    <div>
+      <h1>{title}</h1>
+      { if let Some(image) = image {
+        html! {<img src={image} />}
+      } else {
+        None
+      }}
+    </div>
+  };
+  assert_eq!(
+    res,
+    "<div><h1>A title</h1><img src=\"https://cataas.com/cat\"/></div>"
+  );
 }
 
 #[test]
@@ -71,5 +90,28 @@ fn test_functional_component_with_attributes() {
   assert_eq!(
     result,
     "<post-content title=\"Hello\" count=\"5\"><div><h1>Hello</h1><p>Count: 5</p></div></post-content>"
+  );
+}
+
+#[test]
+fn test_functional_component_with_optional_attributes() {
+  #[component]
+  fn OptionalContent<'a>(content: Option<&'a str>) {
+    html! {
+      <div>
+        {
+          match content {
+            Some(content) => html! {<p>{content}</p>},
+            _ => None,
+          }
+        }
+      </div>
+    }
+  }
+
+  let result: String = html! { <OptionalContent content={Some("Something")} /> };
+  assert_eq!(
+    result,
+    "<optional-content content=\"Something\"><div><p>Something</p></div></optional-content>"
   );
 }

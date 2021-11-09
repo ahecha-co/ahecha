@@ -62,7 +62,7 @@ mod test {
       children: Option::<()>::None,
     };
 
-    assert_eq!(element.to_string(), "<div></div>");
+    assert_eq!(element.to_string(), "<div/>");
   }
 
   #[test]
@@ -79,7 +79,7 @@ mod test {
 
     assert_eq!(
       element.to_string(),
-      "<div class=\"test\" id=\"test\" style=\"color: red;\"></div>"
+      "<div class=\"test\" id=\"test\" style=\"color: red;\"/>"
     );
   }
 

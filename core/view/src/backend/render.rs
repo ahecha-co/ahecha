@@ -61,3 +61,28 @@ impl Render for bool {
     Ok(())
   }
 }
+
+// TODO: Play with the idea of removing the tuple_list and instead generate the renderer for each case?
+/*
+macro_rules! impl_render {(
+    $( $n:ident $(, $k:ident)* $(,)? )?
+) => (
+    impl<$($n : Render, $($k : Render),*)?> Render for ( $($n, $($k),*)? ) {
+        fn render (self: Self)
+        {
+            let ( $($n, $($k),*)? ) = self;
+         $( $n.render();
+         $( $k.render(); )*)?
+        }
+    }
+
+    $(
+        impl_render! { $($k),* }
+    )?
+)}
+impl_render!(_6, _5, _4, _3, _2, _1);
+
+trait Render {
+  fn render(self: Self);
+}
+*/
