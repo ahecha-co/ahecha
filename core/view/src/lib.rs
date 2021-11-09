@@ -1,4 +1,5 @@
 pub use html_escaping::escape_html;
+pub use tuple_list;
 
 mod backend;
 mod html_escaping;

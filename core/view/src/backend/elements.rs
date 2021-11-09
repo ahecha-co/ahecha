@@ -59,7 +59,7 @@ mod test {
     let element = HtmlElement {
       name: "div",
       attributes: (),
-      children: ().into(),
+      children: Option::<()>::None,
     };
 
     assert_eq!(element.to_string(), "<div></div>");
@@ -69,12 +69,12 @@ mod test {
   fn test_tag_element_with_attributes() {
     let element = HtmlElement {
       name: "div",
-      attributes: ::tuple_list::tuple_list!(
+      attributes: tuple_list::tuple_list!(
         ("class", "test"),
         ("id", "test"),
         ("style", "color: red;"),
       ),
-      children: ().into(),
+      children: Option::<()>::None,
     };
 
     assert_eq!(
@@ -88,12 +88,11 @@ mod test {
     let element = HtmlElement {
       name: "div",
       attributes: (("class", "test"), ()),
-      children: HtmlElement {
+      children: Some(HtmlElement {
         name: "h1",
         attributes: (),
-        children: "Hello World".into(),
-      }
-      .into(),
+        children: Some("Hello World"),
+      }),
     };
 
     assert_eq!(
@@ -107,27 +106,25 @@ mod test {
     let element = HtmlElement {
       name: "div",
       attributes: (("class", "test"), ()),
-      children: ::tuple_list::tuple_list!(
+      children: Some(tuple_list::tuple_list!(
         HtmlElement {
           name: "h1",
           attributes: (),
-          children: ::tuple_list::tuple_list!(
+          children: Some(tuple_list::tuple_list!(
             "Hello ",
             HtmlElement {
               name: "span",
               attributes: (),
-              children: "World".into(),
+              children: Some("World"),
             },
-          )
-          .into(),
+          )),
         },
         HtmlElement {
           name: "p",
           attributes: (),
-          children: "This is a paragraph".into(),
+          children: Some("This is a paragraph"),
         },
-      )
-      .into(),
+      )),
     };
 
     assert_eq!(
@@ -141,24 +138,22 @@ mod test {
     let element = HtmlElement {
       name: "div",
       attributes: (("class", "test"), ()),
-      children: HtmlElement {
+      children: Some(HtmlElement {
         name: "ul",
         attributes: (),
-        children: vec![
+        children: Some(vec![
           HtmlElement {
             name: "li",
             attributes: (),
-            children: "Hello".into(),
+            children: Some("Hello"),
           },
           HtmlElement {
             name: "li",
             attributes: (),
-            children: "World".into(),
+            children: Some("World"),
           },
-        ]
-        .into(),
-      }
-      .into(),
+        ]),
+      }),
     };
 
     assert_eq!(
