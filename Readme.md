@@ -1,8 +1,9 @@
 # Etagere
 
 [![Clippy + fmt](https://github.com/norman784/etagere/actions/workflows/check-and-lint.yaml/badge.svg)](https://github.com/norman784/etagere/actions/workflows/check-and-lint.yaml)
+[![](https://img.shields.io/crates/v/etagere.svg?color=brightgreen&style=flat-square)](https://crates.io/crates/etagere)
 [![Tests](https://github.com/norman784/etagere/actions/workflows/test.yml/badge.svg)](https://github.com/norman784/etagere/actions/workflows/test.yml)
-
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A View Model framework written in rust, inspired by [next.js](https://nextjs.org).
 
