@@ -1,5 +1,9 @@
 # Etagere
 
+[![Check and Lint](https://github.com/norman784/etagere/actions/workflows/check-and-lint.yaml/badge.svg)](https://github.com/norman784/etagere/actions/workflows/check-and-lint.yaml)
+[![Test with Code Coverage](https://github.com/norman784/etagere/actions/workflows/test.yml/badge.svg)](https://github.com/norman784/etagere/actions/workflows/test.yml)
+
+
 A View Model framework written in rust, inspired by [next.js](https://nextjs.org).
 
 ## Motivation
