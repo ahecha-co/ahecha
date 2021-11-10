@@ -24,7 +24,6 @@ impl Children {
       1 => quote! { Some(tuple_list::tuple_list!(#(#children),*)) },
       _ => quote! { Some(tuple_list::tuple_list!(#(#children),*)) },
     }
-    .into()
   }
 }
 

@@ -10,7 +10,6 @@ use std::fmt::{Result, Write};
 /// // assert_eq!(buf, "&lt;hello world=&quot;attribute&quot; /&gt;");
 /// ```
 pub fn escape_html<W: Write>(html: &str, writer: &mut W) -> Result {
-  let html = format!("{}", html);
   for c in html.chars() {
     match c {
       '>' => write!(writer, "&gt;")?,

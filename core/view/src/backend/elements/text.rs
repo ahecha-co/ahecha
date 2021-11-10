@@ -9,7 +9,7 @@ impl Render for String {
 
 impl Render for &str {
   fn render_into<W: Write>(self, writer: &mut W) -> Result {
-    escape_html(&self, writer)
+    escape_html(self, writer)
   }
 }
 

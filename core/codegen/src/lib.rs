@@ -32,7 +32,7 @@ pub fn route(_metadata: TokenStream, input: TokenStream) -> TokenStream {
   methods.extend(&mutation_methods);
   let method = methods
     .iter()
-    .find(|&m| ident == m.to_string() || ident.starts_with(&format!("{}_", m)));
+    .find(|&m| ident == *m || ident.starts_with(&format!("{}_", m)));
 
   if let Some(method) = method {
     let method = format_ident!("{}", method);
@@ -84,10 +84,7 @@ pub fn route(_metadata: TokenStream, input: TokenStream) -> TokenStream {
       }
       .into()
     } else {
-      panic!(
-        "The file path `{:?}` isn't a valid route",
-        source.path().to_owned()
-      );
+      panic!("The file path `{:?}` isn't a valid route", source.path());
     }
   } else {
     panic!(

@@ -20,10 +20,10 @@ pub(crate) fn path_route_builder(file_path: &str) -> Option<PathRoute> {
       .to_vec()
       .iter()
       .map(|p| {
-        if re.is_match(&p) {
+        if re.is_match(p) {
           let param = &p[2..(p.len() - 2)];
           let res = format!("<{}>", param);
-          path_params.push(format!("{}", param));
+          path_params.push(param.to_string());
           res
         } else {
           p.clone()
@@ -54,11 +54,11 @@ pub(crate) fn path_route_builder(file_path: &str) -> Option<PathRoute> {
       path = path[0..path.len() - 5].to_string();
     }
 
-    return Some(PathRoute {
+    Some(PathRoute {
       path,
       path_with_params,
       path_params,
-    });
+    })
   } else {
     None
   }

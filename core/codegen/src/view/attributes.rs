@@ -21,7 +21,7 @@ impl ViewAttributes {
     Self { attributes }
   }
 
-  pub fn for_custom_element<'c>(&self, custom_element_name: String) -> CustomElementAttributes<'_> {
+  pub fn for_custom_element(&self, custom_element_name: String) -> CustomElementAttributes<'_> {
     CustomElementAttributes {
       attributes: &self.attributes,
       custom_element_name,

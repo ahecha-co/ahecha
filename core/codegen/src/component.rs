@@ -107,18 +107,13 @@ impl ComponentBuilder {
   pub(crate) fn new(item_struct: &ItemStruct) -> Self {
     let ident = item_struct.ident.clone();
     let name = ident.to_string().to_case(Case::Kebab);
-    let mut fields = item_struct
-      .fields
-      .iter()
-      .map(|f| f.clone())
-      .collect::<Vec<_>>();
+    let mut fields = item_struct.fields.iter().cloned().collect::<Vec<_>>();
 
     // TODO: Check for other fields as store: GlobalStore<T>, state: State<S>, etc
-    if fields
+    if !fields
       .iter()
       .filter_map(|field| field.ident.clone())
-      .find(|ident| ident.to_string() == "children")
-      .is_none()
+      .any(|ident| ident == "children")
     {
       fields.push(Field {
         attrs: vec![],
@@ -128,15 +123,14 @@ impl ComponentBuilder {
         // vis: syn::Visibility::Inherited,
         ident: Some(Ident::new("children", Span::call_site())),
         colon_token: None,
-        ty: Type::Verbatim(quote!(Option<etagere::view::Node<'a>>).into()),
+        ty: Type::Verbatim(quote!(Option<etagere::view::Node<'a>>)),
       });
     }
 
-    if fields
+    if !fields
       .iter()
       .filter_map(|field| field.ident.clone())
-      .find(|ident| ident.to_string() == "name")
-      .is_none()
+      .any(|ident| ident == "name")
     {
       fields.push(Field {
         attrs: vec![],
@@ -146,7 +140,7 @@ impl ComponentBuilder {
         // vis: syn::Visibility::Inherited,
         ident: Some(Ident::new("name", Span::call_site())),
         colon_token: None,
-        ty: Type::Verbatim(quote!(&'a str).into()),
+        ty: Type::Verbatim(quote!(&'a str)),
       });
     }
 
@@ -165,20 +159,18 @@ impl ComponentBuilder {
         quote! {
           #f
         }
-        .into()
       })
       .collect();
 
     quote! {
       #(#declaration_fields),*
     }
-    .into()
   }
 
   pub fn implementations(&self) -> TokenStream {
     let out: Vec<TokenStream> = vec![self.impl_default(), self.impl_into_string()];
 
-    quote! { #(#out)* }.into()
+    quote! { #(#out)* }
   }
 
   fn impl_default(&self) -> TokenStream {
@@ -200,7 +192,6 @@ impl ComponentBuilder {
             #field_ident: Default::default()
           }
         }
-        .into()
       })
       .collect();
 
@@ -212,9 +203,7 @@ impl ComponentBuilder {
           }
         }
       }
-
     }
-    .into()
   }
 
   fn impl_into_string(&self) -> TokenStream {
@@ -227,6 +216,5 @@ impl ComponentBuilder {
         }
       }
     }
-    .into()
   }
 }

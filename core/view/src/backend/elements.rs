@@ -38,15 +38,25 @@ where
   }
 }
 
-impl<A, C> Into<String> for HtmlElement<A, C>
+// impl<A, C> Into<String> for HtmlElement<A, C>
+// where
+//   A: RenderAttributes,
+//   C: Render,
+// {
+//   fn into(self) -> String {
+//     let mut result = String::new();
+//     self.render_into(&mut result).unwrap();
+//     result
+//   }
+// }
+
+impl<A, C> From<HtmlElement<A, C>> for String
 where
   A: RenderAttributes,
   C: Render,
 {
-  fn into(self) -> String {
-    let mut result = String::new();
-    self.render_into(&mut result).unwrap();
-    result
+  fn from(element: HtmlElement<A, C>) -> Self {
+    element.render()
   }
 }
 
