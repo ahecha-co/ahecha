@@ -5,6 +5,8 @@ use syn::{
   Result,
 };
 
+pub use tuple_list;
+
 use self::{
   attributes::ViewAttributes,
   children::Children,
@@ -17,13 +19,13 @@ mod child;
 mod children;
 mod tag;
 
-pub struct HtmlSourceNode {
+pub struct HtmlSource {
   pub name: syn::Path,
   attributes: ViewAttributes,
   children: Children,
 }
 
-impl Parse for HtmlSourceNode {
+impl Parse for HtmlSource {
   fn parse(input: ParseStream) -> Result<Self> {
     let open_tag = input.parse::<OpenTag>()?;
 
@@ -36,7 +38,7 @@ impl Parse for HtmlSourceNode {
       children
     };
 
-    Ok(HtmlSourceNode {
+    Ok(HtmlSource {
       name: open_tag.name,
       attributes: open_tag.attributes,
       children,
@@ -44,7 +46,7 @@ impl Parse for HtmlSourceNode {
   }
 }
 
-impl HtmlSourceNode {
+impl HtmlSource {
   pub fn is_custom_element(&self) -> bool {
     match self.name.get_ident() {
       None => true,
@@ -57,7 +59,7 @@ impl HtmlSourceNode {
   }
 }
 
-impl ToTokens for HtmlSourceNode {
+impl ToTokens for HtmlSource {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
     let name = &self.name;
 
@@ -70,36 +72,26 @@ impl ToTokens for HtmlSourceNode {
         .ident
         .to_string()
         .to_case(Case::Kebab);
-      let attrs = self.attributes.for_custom_element();
-      let children = self.children.as_tokens();
+      let attrs = self.attributes.for_simple_element();
+      let struct_attrs = self.attributes.for_custom_element(name_str.to_string());
+      // TODO: I need to pass the attributes to the custom element wrapper
       quote! {
-        etagere::view::Node::CustomElement(
-          Box::new(
-            etagere::view::CustomElementWrapper {
-              name: #name_str,
-              custom_element: Box::new({
-                let mut element = #name ::default();
-                element.create(#name #attrs, #children);
-                element
-              }),
-            }
-          )
-        )
+        etagere::view::HtmlElement {
+          name: #name_str,
+          attributes: #attrs,
+          children: Some(#name #struct_attrs),
+        }
       }
     } else {
       let attrs = self.attributes.for_simple_element();
       let children = self.children.as_tokens();
 
       quote! {
-        etagere::view::Node::HtmlElement(
-          Box::new(
-            etagere::view::HtmlElement {
-              name: stringify!(#name),
-              attributes: #attrs,
-              children: #children,
-            }
-          )
-        )
+        etagere::view::HtmlElement {
+          name: stringify!(#name),
+          attributes: #attrs,
+          children: #children,
+        }
       }
     };
 

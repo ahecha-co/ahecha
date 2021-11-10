@@ -1,54 +1,164 @@
 mod numbers;
-mod tag;
 mod text;
 mod tuples;
 
-pub trait HtmlElement<T>: Default {
-  type Attributes: Default + Clone;
-  /// Set the initial values of the custom element, this is called when creating the element
-  fn create(&mut self, name: String, attributes: Self::Attributes, children: Option<T>);
+use std::fmt::{Result, Write};
 
-  /// The attributes of the custom element
-  fn attributes(&self) -> Self::Attributes;
+use crate::backend::{attributes::RenderAttributes, render::Render};
 
-  /// The view of the view of the custom
-  fn render(&self) -> Option<T> {
-    None
+pub struct HtmlElement<A, C>
+where
+  A: RenderAttributes,
+  C: Render,
+{
+  pub name: &'static str,
+  pub attributes: A,
+  pub children: Option<C>,
+}
+
+impl<A, C> Render for HtmlElement<A, C>
+where
+  A: RenderAttributes,
+  C: Render,
+{
+  fn render_into<W: Write>(self, writer: &mut W) -> Result {
+    write!(writer, "<{}", self.name)?;
+    self.attributes.render_attributes_into(writer)?;
+
+    match self.children {
+      None => {
+        write!(writer, "/>")
+      }
+      Some(children) => {
+        write!(writer, ">")?;
+        children.render_into(writer)?;
+        write!(writer, "</{}>", self.name)
+      }
+    }
+  }
+}
+
+impl<A, C> Into<String> for HtmlElement<A, C>
+where
+  A: RenderAttributes,
+  C: Render,
+{
+  fn into(self) -> String {
+    let mut result = String::new();
+    self.render_into(&mut result).unwrap();
+    result
   }
 }
 
 #[cfg(test)]
-mod tests {
-  use super::{tag::TagElement, *};
-  use crate::backend::render::Render;
+mod test {
+  use super::*;
 
   #[test]
-  fn test_html_element() {
-    let element = TagElement {
-      name: "div".into(),
-      attributes: Default::default(),
-      children: (
-        "Hello, Block!",
-        TagElement {
-          name: "ul".into(),
-          attributes: [("class".into(), "list".into())].iter().cloned().collect(),
-          children: [1, 2, 3]
-            .iter()
-            .map(|i| TagElement {
-              name: "li".into(),
-              attributes: Default::default(),
-              children: (*i).into(),
-            })
-            .collect::<Vec<_>>()
-            .into(),
-        },
-      )
-        .into(),
+  fn test_tag_element() {
+    let element = HtmlElement {
+      name: "div",
+      attributes: (),
+      children: Option::<()>::None,
+    };
+
+    assert_eq!(element.render(), "<div/>");
+  }
+
+  #[test]
+  fn test_tag_element_with_attributes() {
+    let element = HtmlElement {
+      name: "div",
+      attributes: tuple_list::tuple_list!(
+        ("class", "test"),
+        ("id", "test"),
+        ("style", "color: red;"),
+      ),
+      children: Option::<()>::None,
     };
 
     assert_eq!(
-      element.to_string(),
-      "<div>Hello, Block!<ul class=\"list\"><li>1</li><li>2</li><li>3</li></ul></div>"
+      element.render(),
+      "<div class=\"test\" id=\"test\" style=\"color: red;\"/>"
+    );
+  }
+
+  #[test]
+  fn test_tag_element_with_one_child() {
+    let element = HtmlElement {
+      name: "div",
+      attributes: (("class", "test"), ()),
+      children: Some(HtmlElement {
+        name: "h1",
+        attributes: (),
+        children: Some("Hello World"),
+      }),
+    };
+
+    assert_eq!(
+      element.render(),
+      "<div class=\"test\"><h1>Hello World</h1></div>"
+    );
+  }
+
+  #[test]
+  fn test_ag_element_with_children() {
+    let element = HtmlElement {
+      name: "div",
+      attributes: (("class", "test"), ()),
+      children: Some(tuple_list::tuple_list!(
+        HtmlElement {
+          name: "h1",
+          attributes: (),
+          children: Some(tuple_list::tuple_list!(
+            "Hello ",
+            HtmlElement {
+              name: "span",
+              attributes: (),
+              children: Some("World"),
+            },
+          )),
+        },
+        HtmlElement {
+          name: "p",
+          attributes: (),
+          children: Some("This is a paragraph"),
+        },
+      )),
+    };
+
+    assert_eq!(
+      element.render(),
+      "<div class=\"test\"><h1>Hello <span>World</span></h1><p>This is a paragraph</p></div>"
+    );
+  }
+
+  #[test]
+  fn test_tag_element_with_children_list() {
+    let element = HtmlElement {
+      name: "div",
+      attributes: (("class", "test"), ()),
+      children: Some(HtmlElement {
+        name: "ul",
+        attributes: (),
+        children: Some(vec![
+          HtmlElement {
+            name: "li",
+            attributes: (),
+            children: Some("Hello"),
+          },
+          HtmlElement {
+            name: "li",
+            attributes: (),
+            children: Some("World"),
+          },
+        ]),
+      }),
+    };
+
+    assert_eq!(
+      element.render(),
+      "<div class=\"test\"><ul><li>Hello</li><li>World</li></ul></div>"
     );
   }
 }

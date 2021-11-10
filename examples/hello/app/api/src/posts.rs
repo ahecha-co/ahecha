@@ -1,4 +1,4 @@
-use etagere::route;
+use etagere::prelude::*;
 use models::Post;
 use rocket::serde::json::Json;
 

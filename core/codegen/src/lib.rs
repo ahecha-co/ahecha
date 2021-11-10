@@ -9,35 +9,18 @@ use proc_macro::{Span, TokenStream};
 use quote::{format_ident, quote};
 use syn::{parse_macro_input, FnArg, ItemFn, ItemStruct, Pat};
 
-use crate::{component::ComponentBuilder, route::path_route_builder, view::HtmlSourceNode};
+use crate::{component::ComponentBuilder, route::path_route_builder, view::HtmlSource};
 
 mod component;
-mod function_component;
+mod functional_component;
 mod route;
 mod view;
 
 #[proc_macro_attribute]
 pub fn component(_metadata: TokenStream, item: TokenStream) -> TokenStream {
   let f = parse_macro_input!(item as ItemFn);
-  function_component::create_function_component(f)
+  functional_component::create_functional_component(f)
 }
-// pub fn component(_metadata: TokenStream, input: TokenStream) -> TokenStream {
-//   let tokens = parse_macro_input!(input as ItemStruct);
-//   let component_builder = ComponentBuilder::new(&tokens);
-//   let ident = &tokens.ident;
-//   let fields = component_builder.get_fields_declaration();
-//   let implementations = component_builder.implementations();
-
-//   quote! {
-//     #[derive(Clone)]
-//     pub struct #ident {
-//       #fields
-//     }
-
-//     #implementations
-//   }
-//   .into()
-// }
 
 #[proc_macro_attribute]
 pub fn route(_metadata: TokenStream, input: TokenStream) -> TokenStream {
@@ -168,6 +151,9 @@ pub fn page(_metadata: TokenStream, input: TokenStream) -> TokenStream {
 
 #[proc_macro]
 pub fn html(input: TokenStream) -> TokenStream {
-  let view = parse_macro_input!(input as HtmlSourceNode);
-  quote! { #view }.into()
+  let view = parse_macro_input!(input as HtmlSource);
+  quote! {
+    #view .into()
+  }
+  .into()
 }

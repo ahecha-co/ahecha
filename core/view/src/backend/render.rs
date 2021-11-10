@@ -1,9 +1,4 @@
-use std::{
-  collections::HashMap,
-  fmt::{Result, Write},
-};
-
-use crate::escape_html;
+use std::fmt::{Result, Write};
 
 pub trait Render: Sized {
   /// Render the component to a writer.
@@ -11,24 +6,16 @@ pub trait Render: Sized {
   fn render_into<W: Write>(self, writer: &mut W) -> Result;
 
   /// Render the component to string
-  fn to_string(self) -> String {
+  fn render(self) -> String {
     let mut buf = String::new();
     self.render_into(&mut buf).unwrap();
     buf
   }
 }
 
-/// Renders a hashmap as html attributes
-impl Render for HashMap<String, String> {
-  fn render_into<W: Write>(self, writer: &mut W) -> Result {
-    let mut keys_values = self.iter().collect::<Vec<(&String, &String)>>();
-    keys_values.sort_by(|a, b| a.0.cmp(b.0));
-
-    for (key, value) in keys_values.iter() {
-      write!(writer, " {}=\"", key)?;
-      escape_html(value, writer)?;
-      write!(writer, "\"")?;
-    }
+/// Renders `()` or nothing
+impl Render for () {
+  fn render_into<W: Write>(self, _writer: &mut W) -> Result {
     Ok(())
   }
 }
@@ -74,3 +61,28 @@ impl Render for bool {
     Ok(())
   }
 }
+
+// TODO: Play with the idea of removing the tuple_list and instead generate the renderer for each case?
+/*
+macro_rules! impl_render {(
+    $( $n:ident $(, $k:ident)* $(,)? )?
+) => (
+    impl<$($n : Render, $($k : Render),*)?> Render for ( $($n, $($k),*)? ) {
+        fn render (self: Self)
+        {
+            let ( $($n, $($k),*)? ) = self;
+         $( $n.render();
+         $( $k.render(); )*)?
+        }
+    }
+
+    $(
+        impl_render! { $($k),* }
+    )?
+)}
+impl_render!(_6, _5, _4, _3, _2, _1);
+
+trait Render {
+  fn render(self: Self);
+}
+*/

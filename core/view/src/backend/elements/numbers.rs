@@ -15,30 +15,26 @@ impl_renderable!(u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize,
 
 #[cfg(test)]
 mod test {
-  use crate::backend::{elements::tag::TagElement, render::Render};
+  use crate::{HtmlElement, Render};
 
   #[test]
   fn test_render_into() {
-    let element = TagElement {
-      name: "div".into(),
-      attributes: Default::default(),
-      children: (
-        TagElement {
-          name: "span".into(),
-          attributes: Default::default(),
-          children: ("Hello", " ", 1).into(),
+    let element = HtmlElement {
+      name: "div",
+      attributes: (),
+      children: Some(tuple_list::tuple_list!(
+        HtmlElement {
+          name: "span",
+          attributes: (),
+          children: Some(tuple_list::tuple_list!("Hello", " ", 1u8)),
         },
         ", ",
         "World",
         " ",
-        2,
-      )
-        .into(),
+        2u8,
+      )),
     };
 
-    assert_eq!(
-      element.to_string(),
-      "<div><span>Hello 1</span>, World 2</div>"
-    );
+    assert_eq!(element.render(), "<div><span>Hello 1</span>, World 2</div>");
   }
 }
