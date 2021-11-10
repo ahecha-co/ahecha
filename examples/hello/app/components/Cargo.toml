@@ -11,3 +11,4 @@ frontend = ["etagere/frontend"]
 
 [dependencies]
 etagere = { path = "../../../../core/lib", version = "*" }
+models = { path = "../models", version = "*" }

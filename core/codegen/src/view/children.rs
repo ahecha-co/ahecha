@@ -20,9 +20,9 @@ impl Children {
     let children: Vec<_> = self.nodes.iter().map(|child| quote! { #child }).collect();
 
     match children.len() {
-      0 => quote! { etagere::view::Node::None },
-      1 => quote! { #(#children),* },
-      _ => quote! { etagere::view::Node::List(vec![#(#children),*]) },
+      0 => quote! { Option::<()>::None },
+      1 => quote! { Some(tuple_list::tuple_list!(#(#children),*)) },
+      _ => quote! { Some(tuple_list::tuple_list!(#(#children),*)) },
     }
     .into()
   }

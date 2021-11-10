@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use proc_macro_error::emit_error;
 use quote::{quote, ToTokens};
 use syn::{
@@ -11,7 +9,7 @@ use syn::{
 
 use super::attribute::ViewAttribute;
 
-pub type Attributes = HashSet<ViewAttribute>;
+pub type Attributes = Vec<ViewAttribute>;
 
 #[derive(Default)]
 pub struct ViewAttributes {
@@ -23,9 +21,10 @@ impl ViewAttributes {
     Self { attributes }
   }
 
-  pub fn for_custom_element<'c>(&self) -> CustomElementAttributes<'_> {
+  pub fn for_custom_element<'c>(&self, custom_element_name: String) -> CustomElementAttributes<'_> {
     CustomElementAttributes {
       attributes: &self.attributes,
+      custom_element_name,
     }
   }
 
@@ -36,18 +35,20 @@ impl ViewAttributes {
   }
 
   pub fn parse(input: ParseStream, is_custom_element: bool) -> Result<Self> {
-    let mut parsed_self = input.parse::<Self>()?;
+    let parsed_self = input.parse::<Self>()?;
 
     let new_attributes: Attributes = parsed_self
       .attributes
-      .drain()
-      .filter_map(|attribute| match attribute.validate(is_custom_element) {
-        Ok(x) => Some(x),
-        Err(err) => {
-          emit_error!(err.span(), "Invalid attribute: {}", err);
-          None
-        }
-      })
+      .iter()
+      .filter_map(
+        |attribute| match attribute.clone().validate(is_custom_element) {
+          Ok(x) => Some(x),
+          Err(err) => {
+            emit_error!(err.span(), "Invalid attribute: {}", err);
+            None
+          }
+        },
+      )
       .collect();
 
     Ok(ViewAttributes::new(new_attributes))
@@ -56,7 +57,7 @@ impl ViewAttributes {
 
 impl Parse for ViewAttributes {
   fn parse(input: ParseStream) -> Result<Self> {
-    let mut attributes: HashSet<ViewAttribute> = HashSet::new();
+    let mut attributes: Vec<ViewAttribute> = vec![];
     while input.peek(syn::Ident::peek_any) {
       let attribute = input.parse::<ViewAttribute>()?;
       let ident = attribute.ident();
@@ -68,7 +69,7 @@ impl Parse for ViewAttributes {
         );
       }
 
-      attributes.insert(attribute);
+      attributes.push(attribute);
     }
 
     Ok(ViewAttributes::new(attributes))
@@ -77,11 +78,12 @@ impl Parse for ViewAttributes {
 
 pub struct CustomElementAttributes<'a> {
   attributes: &'a Attributes,
+  custom_element_name: String,
 }
 
 impl<'a> ToTokens for CustomElementAttributes<'a> {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-    let attrs: Vec<_> = self
+    let mut attrs: Vec<_> = self
       .attributes
       .iter()
       .map(|attribute| {
@@ -89,18 +91,15 @@ impl<'a> ToTokens for CustomElementAttributes<'a> {
         let value = attribute.value_tokens();
 
         quote! {
-          #ident: #value,
+          #ident : #value
         }
       })
       .collect();
 
-    let quoted = if attrs.len() == 0 {
-      quote!(vec![])
-    } else {
-      quote!(vec![#(#attrs),*])
-    };
+    let custom_element_name = self.custom_element_name.clone();
+    attrs.push(quote!( __custom_element_name : #custom_element_name .to_string() ));
 
-    quoted.to_tokens(tokens);
+    quote!( { #(#attrs),* } ).to_tokens(tokens);
   }
 }
 
@@ -111,7 +110,7 @@ pub struct HtmlTagAttributes<'a> {
 impl<'a> ToTokens for HtmlTagAttributes<'a> {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
     if self.attributes.is_empty() {
-      quote!(vec![]).to_tokens(tokens);
+      quote!(()).to_tokens(tokens);
     } else {
       let attrs: Vec<_> = self
         .attributes
@@ -124,15 +123,14 @@ impl<'a> ToTokens for HtmlTagAttributes<'a> {
           });
 
           let value = attribute.value_tokens();
-
           quote! {
-            (#ident, #value)
+            (#ident,  #value)
           }
         })
         .collect();
 
       let hashmap_declaration = quote! {
-        vec![ #(#attrs),*]
+        tuple_list::tuple_list!(#(#attrs),*)
       };
 
       hashmap_declaration.to_tokens(tokens);

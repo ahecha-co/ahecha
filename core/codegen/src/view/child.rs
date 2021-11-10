@@ -4,12 +4,12 @@ use syn::{
   Result,
 };
 
-use super::HtmlSourceNode;
+use super::HtmlSource;
 
 pub enum Child {
   RawBlock(syn::Block),
   Text(syn::ExprLit),
-  View(HtmlSourceNode),
+  View(HtmlSource),
 }
 
 impl ToTokens for Child {
@@ -19,10 +19,10 @@ impl ToTokens for Child {
         let first = &block.stmts[0];
         quote!(#first)
       } else {
-        quote!(block)
+        quote!(#block)
       }
       .to_tokens(tokens),
-      Self::Text(str) => quote! { etagere::view::Node::Text(#str) }.to_tokens(tokens),
+      Self::Text(str) => quote! { #str }.to_tokens(tokens),
       Self::View(view) => view.to_tokens(tokens),
     }
   }
@@ -30,7 +30,7 @@ impl ToTokens for Child {
 
 impl Parse for Child {
   fn parse(input: ParseStream) -> Result<Self> {
-    match input.parse::<HtmlSourceNode>() {
+    match input.parse::<HtmlSource>() {
       Ok(view) => Ok(Self::View(view)),
       Err(_) => {
         if input.peek(syn::token::Brace) {

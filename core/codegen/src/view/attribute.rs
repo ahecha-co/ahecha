@@ -10,6 +10,7 @@ use syn::{
 
 pub type AttributeKey = syn::punctuated::Punctuated<syn::Ident, syn::Token![-]>;
 
+#[derive(Clone)]
 pub enum ViewAttribute {
   Punned(AttributeKey),
   WithStr(AttributeKey, syn::LitStr),
