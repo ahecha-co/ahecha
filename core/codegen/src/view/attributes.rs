@@ -87,7 +87,7 @@ impl<'a> ToTokens for CustomElementAttributes<'a> {
       .attributes
       .iter()
       .map(|attribute| {
-        let ident = format!("{:?}", attribute.ident());
+        let ident = attribute.ident();
         let value = attribute.value_tokens();
 
         quote! {

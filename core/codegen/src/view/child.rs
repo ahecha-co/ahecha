@@ -17,7 +17,7 @@ impl ToTokens for Child {
     match self {
       Self::RawBlock(block) => if block.stmts.len() == 1 {
         let first = &block.stmts[0];
-        quote!(#first .into())
+        quote!(#first)
       } else {
         quote!(#block)
       }

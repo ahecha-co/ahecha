@@ -35,29 +35,6 @@ fn test_html_list() {
   assert_eq!(res, "<ul><li>1</li><li>2</li><li>3</li></ul>");
 }
 
-//     fn render(&self) -> Html<'a> {
-//       html! {
-//         <div>
-//           <h1>{ self.attributes.title }</h1>
-//           <p>{ self.attributes.body }</p>
-//         </div>
-//       }
-//     }
-//   }
-
-//   let res: String = html! { <PostElement title="Hello" body="World">"Text"</PostElement> }.into();
-//   assert_eq!(
-//     res,
-//     "<post-element title=\"Hello\" body=\"World\"><h1>Hello</h1><p>World</p></post-element>"
-//   );
-// }
-
-// #[test]
-// fn test_html_with_code_block() {
-//   let text = "Text";
-//   let res: String = html! { <div>{ text }</div> }.into();
-//   assert_eq!(res, "<div>Text</div>");
-// }
 #[test]
 fn test_html_conditional_block() {
   let title = "A title";
