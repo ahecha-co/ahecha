@@ -1,4 +1,4 @@
-use etagere::prelude::*;
+use ita::prelude::*;
 
 #[component]
 pub fn PostComponent<'a>(title: &'a str, body: &'a str, image: Option<&'a str>) {

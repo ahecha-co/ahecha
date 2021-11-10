@@ -123,7 +123,7 @@ impl ComponentBuilder {
         // vis: syn::Visibility::Inherited,
         ident: Some(Ident::new("children", Span::call_site())),
         colon_token: None,
-        ty: Type::Verbatim(quote!(Option<etagere::view::Node<'a>>)),
+        ty: Type::Verbatim(quote!(Option<ita::view::Node<'a>>)),
       });
     }
 

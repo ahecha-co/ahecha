@@ -6,14 +6,14 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-backend = ["etagere/backend", "rocket"]
-frontend = ["etagere/frontend"]
+backend = ["ita/backend", "rocket"]
+frontend = ["ita/frontend"]
 
 [dependencies]
-etagere = { path = "../../../../core/lib", version = "*" }
+ita = { path = "../../../../core/lib", version = "*" }
 rocket = { version = "0.5.0-rc.1", optional = true, features = ["json"] }
 
 models = { path = "../models", version="*" }
 
 [build-dependencies]
-etagere_build = { path = "../../../../core/build", version = "*" }
+ita_build = { path = "../../../../core/build", version = "*" }

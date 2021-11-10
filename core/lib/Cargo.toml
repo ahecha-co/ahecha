@@ -1,15 +1,15 @@
 [package]
-name = "etagere"
+name = "ita"
 version = "0.0.1"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
-backend = ["etagere_codegen/backend"]
-frontend = ["etagere_codegen/frontend"]
+backend = ["ita_codegen/backend"]
+frontend = ["ita_codegen/frontend"]
 
-rocket = ["etagere_codegen/rocket"]
+rocket = ["ita_codegen/rocket"]
 
 [dependencies]
-etagere_codegen={ path="../codegen", version="*" }
-etagere_view={ path="../view", version="*" }
+ita_codegen={ path="../codegen", version="*" }
+ita_view={ path="../view", version="*" }

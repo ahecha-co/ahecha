@@ -1,7 +1,7 @@
-use etagere_codegen::*;
+use ita_codegen::*;
 
-mod etagere {
-  pub use etagere_view as view;
+mod ita {
+  pub use ita_view as view;
 }
 
 #[test]

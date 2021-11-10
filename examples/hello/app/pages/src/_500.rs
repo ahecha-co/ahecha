@@ -1,4 +1,4 @@
-use etagere::*;
+use ita::*;
 
 #[derive(Page)]
 pub struct Page500;

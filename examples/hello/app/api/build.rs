@@ -1,4 +1,4 @@
-use etagere_build::generate_routes;
+use ita_build::generate_routes;
 use std::{env, fs, path::Path};
 
 fn main() {

@@ -1,5 +1,5 @@
 use crate::posts::POSTS;
-use etagere::route;
+use ita::route;
 use models::Post;
 use rocket::serde::json::Json;
 

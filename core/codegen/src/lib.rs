@@ -110,7 +110,7 @@ pub fn page(_metadata: TokenStream, input: TokenStream) -> TokenStream {
     // let ident_path = format_ident!("{}_path", ident.to_string().to_case(Case::Snake));
     let ident_route = format_ident!("{}_route", ident.to_string().to_case(Case::Snake));
     quote! {
-      use etagere::view::{CustomElement, Renderable};
+      use ita::view::{CustomElement, Renderable};
 
       // #[cfg(feature = "backend", feature="rocket")]
       #[cfg(feature="rocket")]
