@@ -5,6 +5,7 @@ extern crate proc_macro;
 use core::panic;
 
 use convert_case::{Case, Casing};
+use nom::error::ErrorKind;
 use proc_macro::{Span, TokenStream};
 use quote::{format_ident, quote};
 use syn::{parse_macro_input, FnArg, ItemFn, ItemStruct, Pat};
@@ -175,16 +176,16 @@ pub fn html_parser(input: TokenStream) -> TokenStream {
     .replace(" =", "=")
     .replace("/ ", "/");
 
-  match html::parse(input_html.as_bytes()) {
+  match html::parse::<(&str, ErrorKind)>(&input_html) {
     Ok((res, parsed_html)) => {
       assert!(
         res.is_empty(),
         "Couldn't parse the following code:\n\n```\n{}\n```\n\nIf you think is a bug please report it in Github with a minimal reproducible example. https://github.com/ahecha-co/ahecha/issues",
-        std::str::from_utf8(&res).unwrap()
+        res
       );
 
       quote! {
-        #(#parsed_html,)*
+        vec![#(#parsed_html,)*]
       }
       .into()
     }
