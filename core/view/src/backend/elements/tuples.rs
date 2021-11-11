@@ -1,6 +1,6 @@
 use std::fmt::{Result, Write};
 
-use tuple_list::TupleList;
+use ita_tuple_list::TupleList;
 
 use crate::backend::render::Render;
 

@@ -22,11 +22,11 @@ mod test {
     let element = HtmlElement {
       name: "div",
       attributes: (),
-      children: Some(tuple_list::tuple_list!(
+      children: Some(tuple_list!(
         HtmlElement {
           name: "span",
           attributes: (),
-          children: Some(tuple_list::tuple_list!("Hello", " ", 1u8)),
+          children: Some(tuple_list!("Hello", " ", 1u8)),
         },
         ", ",
         "World",

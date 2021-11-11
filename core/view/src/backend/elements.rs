@@ -79,11 +79,7 @@ mod test {
   fn test_tag_element_with_attributes() {
     let element = HtmlElement {
       name: "div",
-      attributes: tuple_list::tuple_list!(
-        ("class", "test"),
-        ("id", "test"),
-        ("style", "color: red;"),
-      ),
+      attributes: tuple_list!(("class", "test"), ("id", "test"), ("style", "color: red;"),),
       children: Option::<()>::None,
     };
 
@@ -116,11 +112,11 @@ mod test {
     let element = HtmlElement {
       name: "div",
       attributes: (("class", "test"), ()),
-      children: Some(tuple_list::tuple_list!(
+      children: Some(tuple_list!(
         HtmlElement {
           name: "h1",
           attributes: (),
-          children: Some(tuple_list::tuple_list!(
+          children: Some(tuple_list!(
             "Hello ",
             HtmlElement {
               name: "span",
