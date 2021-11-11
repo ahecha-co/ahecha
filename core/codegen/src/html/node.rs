@@ -1,10 +1,12 @@
 mod block;
 mod component;
+mod doctype;
 mod element;
 mod text;
 
 pub use block::HtmlBlock;
 pub use component::HtmlComponent;
+pub use doctype::HtmlDoctype;
 pub use element::HtmlElement;
 use quote::{quote, ToTokens};
 pub use text::HtmlText;
@@ -13,6 +15,7 @@ pub use text::HtmlText;
 pub enum HtmlNode {
   Block(HtmlBlock),
   Component(HtmlComponent),
+  Doctype(HtmlDoctype),
   Element(HtmlElement),
   None,
   Text(HtmlText),
@@ -23,6 +26,7 @@ impl ToTokens for HtmlNode {
     match self {
       HtmlNode::Block(block) => block.to_tokens(tokens),
       HtmlNode::Component(component) => component.to_tokens(tokens),
+      HtmlNode::Doctype(doctype) => doctype.to_tokens(tokens),
       HtmlNode::Element(element) => element.to_tokens(tokens),
       HtmlNode::None => {
         let none = quote! { None };
