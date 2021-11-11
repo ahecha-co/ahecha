@@ -13,6 +13,7 @@ use crate::{component::ComponentBuilder, route::path_route_builder, view::HtmlSo
 
 mod component;
 mod functional_component;
+mod html;
 mod route;
 mod view;
 
@@ -151,6 +152,26 @@ pub fn html(input: TokenStream) -> TokenStream {
   let view = parse_macro_input!(input as HtmlSource);
   quote! {
     #view .into()
+  }
+  .into()
+}
+
+#[proc_macro]
+pub fn html_parser(input: TokenStream) -> TokenStream {
+  let input_html = input
+    .to_string()
+    .replace("< ", "<")
+    .replace(" >", ">")
+    .replace("< /", "</")
+    .replace(" / >", "/>")
+    .replace("> ", ">")
+    .replace(" <", "<")
+    .replace(" = ", "=")
+    .replace("/ ", "/");
+  let (res, parsed_html) = html::parse(input_html.as_bytes()).unwrap();
+  assert!(res.is_empty());
+  quote! {
+    #parsed_html
   }
   .into()
 }
