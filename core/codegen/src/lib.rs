@@ -165,6 +165,8 @@ pub fn html_parser(input: TokenStream) -> TokenStream {
     .replace("\r", "")
     .replace("\t", "")
     .replace("<! ", "<!")
+    .replace("<!- -", "<!--")
+    .replace("- ->", "-->")
     .replace("< ", "<")
     .replace(" >", ">")
     .replace("< /", "</")
@@ -184,8 +186,14 @@ pub fn html_parser(input: TokenStream) -> TokenStream {
         res
       );
 
+      let mut tuple_list = quote! { () };
+
+      for node in parsed_html.iter().rev() {
+        tuple_list = quote! { (#node, #tuple_list) }
+      }
+
       quote! {
-        vec![#(#parsed_html,)*]
+        (#tuple_list)
       }
       .into()
     }

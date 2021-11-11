@@ -2,8 +2,8 @@ use std::str;
 
 use nom::{
   branch::alt,
-  bytes::complete::{tag, take_till, take_while},
-  combinator::opt,
+  bytes::complete::{tag, tag_no_case, take_till, take_until, take_while},
+  combinator::{eof, opt},
   error::{context, ContextError, ParseError},
   multi::{many0, many_till},
   sequence::{delimited, preceded},
@@ -50,11 +50,17 @@ fn parse_attribute<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
   Ok((input, (key.to_string(), value.to_string())))
 }
 
+fn parse_attributes0<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+  input: &'a str,
+) -> IResult<&'a str, Vec<Attribute>, E> {
+  many0(delimited(opt(sp), parse_attribute, opt(sp)))(input)
+}
+
 fn parse_tag_name_attributes0<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
   input: &'a str,
 ) -> IResult<&'a str, HtmlElement, E> {
   let (input, name) = parse_tag_name(input)?;
-  let (input, attributes) = opt(many0(parse_attribute))(input)?;
+  let (input, attributes) = parse_attributes0(input)?;
   Ok((
     input,
     HtmlElement {
@@ -65,21 +71,53 @@ fn parse_tag_name_attributes0<'a, E: ParseError<&'a str> + ContextError<&'a str>
   ))
 }
 
+fn parse_named_self_closing_tag<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+  name: &'a str,
+) -> impl FnMut(&'a str) -> IResult<&'a str, HtmlElement, E> {
+  move |input: &'a str| {
+    let name = format!("<{}", name);
+    let (input, attrs) = delimited(tag(name.as_str()), parse_attributes0, tag(">"))(input)?;
+    Ok((
+      input,
+      HtmlElement {
+        attributes: attrs.into(),
+        children: Default::default(),
+        name: "meta".to_string(),
+      },
+    ))
+  }
+}
+
 fn parse_self_closing_tag<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
   input: &'a str,
 ) -> IResult<&'a str, HtmlNode, E> {
-  let (input, html_tag) = delimited(tag("<"), parse_tag_name_attributes0, tag("/>"))(input)?;
+  let (input, html_tag) = alt((
+    delimited(tag("<"), parse_tag_name_attributes0, tag("/>")),
+    parse_named_self_closing_tag("meta"),
+    parse_named_self_closing_tag("link"),
+    parse_named_self_closing_tag("img"),
+    parse_named_self_closing_tag("br"),
+    parse_named_self_closing_tag("hr"),
+    parse_named_self_closing_tag("input"),
+  ))(input)?;
+
   Ok((input, html_tag.into()))
 }
 
-fn parse_tag_with_children0<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+fn parse_tag_with_children<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
   input: &'a str,
 ) -> IResult<&'a str, HtmlNode, E> {
   let (input, mut html_tag) = delimited(tag("<"), parse_tag_name_attributes0, tag(">"))(input)?;
   let closing_tag = format!("</{}>", &html_tag.name);
   let (input, (children, _)) = many_till(parse_node, tag(closing_tag.as_str()))(input)?;
 
-  html_tag.children = Children { nodes: children };
+  html_tag.children = Children {
+    nodes: children
+      .into_iter()
+      .filter(|n| n.is_some())
+      .map(|n| n.unwrap())
+      .collect(),
+  };
 
   Ok((input, html_tag.into()))
 }
@@ -111,25 +149,42 @@ fn parse_block<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 fn parse_doctype<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
   input: &'a str,
 ) -> IResult<&'a str, HtmlNode, E> {
-  let (input, _) = alt((tag("<!DOCTYPE html>"), tag("<!doctype html>")))(input)?;
+  let (input, _) = tag_no_case("<!DOCTYPE html>")(input)?;
   Ok((input, HtmlNode::Doctype(HtmlDoctype::Html5)))
+}
+
+fn parse_comments<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+  input: &'a str,
+) -> IResult<&'a str, HtmlNode, E> {
+  let (input, comment) = preceded(tag("<!--"), take_until("-->"))(input)?;
+
+  Ok((
+    input,
+    HtmlNode::Comment(HtmlComment {
+      comment: comment.to_string(),
+    }),
+  ))
 }
 
 fn parse_node<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
   input: &'a str,
-) -> IResult<&'a str, HtmlNode, E> {
+) -> IResult<&'a str, Option<HtmlNode>, E> {
+  // if input.len() == 0 {
+  //   return (input, ErrorKind((input, None)));
+  // }
+
   let res = context(
     "parse",
     preceded(
       opt(sp),
-      alt((
+      opt(alt((
         parse_doctype,
+        parse_comments,
         parse_self_closing_tag,
-        parse_tag_with_children0,
+        parse_tag_with_children,
         parse_block,
         parse_text,
-        // parse_empty,
-      )),
+      ))),
     ),
   )(input);
 
@@ -139,8 +194,16 @@ fn parse_node<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 pub fn parse<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
   input: &'a str,
 ) -> IResult<&'a str, Vec<HtmlNode>, E> {
-  let (input, nodes) = delimited(opt(sp), parse_node, opt(sp))(input)?;
-  Ok((input, vec![nodes]))
+  let (input, (nodes, _)) = many_till(parse_node, eof)(input)?;
+
+  Ok((
+    input,
+    nodes
+      .into_iter()
+      .filter(|n| n.is_some())
+      .map(|n| n.unwrap())
+      .collect(),
+  ))
 }
 
 #[cfg(test)]
@@ -198,7 +261,7 @@ mod test {
   #[test]
   fn test_tag() {
     let input = "<div></div>";
-    let (remainder, node) = parse_tag_with_children0::<(&str, ErrorKind)>(input).unwrap();
+    let (remainder, node) = parse_tag_with_children::<(&str, ErrorKind)>(input).unwrap();
     assert_eq!(remainder, "");
     match node {
       HtmlNode::Element(tag) => {
@@ -212,7 +275,7 @@ mod test {
   #[test]
   fn test_tag_with_children() {
     let input = "<div><h1>Hello</h1></div>";
-    let (remainder, node) = parse_tag_with_children0::<(&str, ErrorKind)>(input).unwrap();
+    let (remainder, node) = parse_tag_with_children::<(&str, ErrorKind)>(input).unwrap();
     assert_eq!(remainder, "");
     match node {
       HtmlNode::Element(tag) => {
@@ -228,7 +291,7 @@ mod test {
     let input = "<div><h1>Hello</h1><p>World</p></div>";
     let (remainder, node) = parse_node::<(&str, ErrorKind)>(input).unwrap();
     assert_eq!(remainder, "");
-    match node {
+    match node.unwrap() {
       HtmlNode::Element(tag) => {
         assert_eq!(tag.name, "div");
         assert_eq!(tag.children.nodes.len(), 2);
@@ -240,7 +303,7 @@ mod test {
   #[test]
   fn test_tag_deep_nested() {
     let input = "<div><h1><h2><h3><h4>Hello</h4></h3></h2></h1><p>World</p></div>";
-    let (remainder, node) = parse_tag_with_children0::<(&str, ErrorKind)>(input).unwrap();
+    let (remainder, node) = parse_tag_with_children::<(&str, ErrorKind)>(input).unwrap();
     assert_eq!(remainder, "");
     match node {
       HtmlNode::Element(tag) => {
@@ -278,7 +341,7 @@ mod test {
     let input = "<custom-element attr1=\"v1\" attr2=\"v2\">Content</custom-element>";
     let (remainder, node) = parse_node::<(&str, ErrorKind)>(input).unwrap();
     assert_eq!(remainder, "");
-    match node {
+    match node.unwrap() {
       HtmlNode::Element(tag) => {
         assert_eq!(tag.name, "custom-element")
       }
@@ -291,7 +354,7 @@ mod test {
     let input = "<Component attr1=\"v1\" attr2=\"v2\">Content</Component>";
     let (remainder, node) = parse_node::<(&str, ErrorKind)>(input).unwrap();
     assert_eq!(remainder, "");
-    match node {
+    match node.unwrap() {
       HtmlNode::Component(tag) => {
         assert_eq!(tag.name, "Component")
       }
