@@ -160,6 +160,10 @@ pub fn html(input: TokenStream) -> TokenStream {
 pub fn html_parser(input: TokenStream) -> TokenStream {
   let input_html = input
     .to_string()
+    .replace("\n", "")
+    .replace("\r", "")
+    .replace("\t", "")
+    .replace("<! ", "<!")
     .replace("< ", "<")
     .replace(" >", ">")
     .replace("< /", "</")
@@ -167,11 +171,23 @@ pub fn html_parser(input: TokenStream) -> TokenStream {
     .replace("> ", ">")
     .replace(" <", "<")
     .replace(" = ", "=")
+    .replace("= ", "=")
+    .replace(" =", "=")
     .replace("/ ", "/");
-  let (res, parsed_html) = html::parse(input_html.as_bytes()).unwrap();
-  assert!(res.is_empty());
-  quote! {
-    #parsed_html
+
+  match html::parse(input_html.as_bytes()) {
+    Ok((res, parsed_html)) => {
+      assert!(
+        res.is_empty(),
+        "Couldn't parse the following code:\n\n```\n{}\n```\n\nIf you think is a bug please report it in Github with a minimal reproducible example. https://github.com/ahecha-co/ahecha/issues",
+        std::str::from_utf8(&res).unwrap()
+      );
+
+      quote! {
+        #(#parsed_html,)*
+      }
+      .into()
+    }
+    Err(e) => panic!("{}", e),
   }
-  .into()
 }
