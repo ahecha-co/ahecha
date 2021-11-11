@@ -6,4 +6,4 @@ pub use html_escaping::escape_html;
 mod backend;
 mod html_escaping;
 
-pub use backend::{elements::HtmlElement, render::Render};
+pub use backend::{doctype::HtmlDoctype, elements::HtmlElement, render::Render};
