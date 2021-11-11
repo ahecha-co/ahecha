@@ -1,5 +1,3 @@
-use std::ops::Not;
-
 use quote::{quote, ToTokens};
 
 use super::node::HtmlNode;
@@ -11,7 +9,12 @@ pub struct Children {
 
 impl ToTokens for Children {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-    let list = self.nodes.iter().map(|node| quote!(#node));
-    quote!(Some((#(#list),*))).to_tokens(tokens);
+    let mut list = quote! { () };
+
+    for node in self.nodes.iter().rev() {
+      list = quote! { (#node, #list) }
+    }
+
+    quote! { Some(#list) }.to_tokens(tokens);
   }
 }

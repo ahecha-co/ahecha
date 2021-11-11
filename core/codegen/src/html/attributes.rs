@@ -25,7 +25,12 @@ impl From<Option<Vec<Attribute>>> for Attributes {
 
 impl ToTokens for Attributes {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-    let list = self.attrs.iter().map(|(key, value)| quote!((#key, #value)));
-    quote!((#(#list),*)).to_tokens(tokens);
+    let mut list = quote! { () };
+
+    for (key, value) in self.attrs.iter().rev() {
+      list = quote! { ((#key, #value), #list) }
+    }
+
+    list.to_tokens(tokens);
   }
 }
