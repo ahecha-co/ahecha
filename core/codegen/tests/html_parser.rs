@@ -64,6 +64,26 @@ fn test_custom_element_without_macro_attr() {
 }
 
 #[test]
+fn test_custom_element_with_macro_attr() {
+  #[custom_element]
+  fn CustomElement() {
+    html_parser!(
+      <div class="main">I am a custom element</div>
+    )
+    .render()
+  }
+
+  let res = html_parser! {
+    <CustomElement></CustomElement>
+  };
+
+  assert_eq!(
+    res.render(),
+    "<custom-element><div class=\"main\">I am a custom element</div></custom-element>"
+  );
+}
+
+#[test]
 fn test_parse_bootstrap_sign_up_example() {
   let res = html_parser!(
     <!doctype html>

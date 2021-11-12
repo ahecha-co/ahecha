@@ -13,6 +13,7 @@ use syn::{parse_macro_input, FnArg, ItemFn, ItemStruct, Pat};
 use crate::{component::ComponentBuilder, route::path_route_builder, view::HtmlSource};
 
 mod component;
+mod custom_element;
 mod functional_component;
 mod html;
 mod route;
@@ -22,6 +23,12 @@ mod view;
 pub fn component(_metadata: TokenStream, item: TokenStream) -> TokenStream {
   let f = parse_macro_input!(item as ItemFn);
   functional_component::create_functional_component(f)
+}
+
+#[proc_macro_attribute]
+pub fn custom_element(_metadata: TokenStream, item: TokenStream) -> TokenStream {
+  let f = parse_macro_input!(item as ItemFn);
+  custom_element::create_custom_element(f)
 }
 
 #[proc_macro_attribute]
