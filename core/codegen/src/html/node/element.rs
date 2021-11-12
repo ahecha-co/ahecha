@@ -32,7 +32,7 @@ impl ToTokens for HtmlElement {
     let name = syn::Ident::new(&self.name, proc_macro2::Span::call_site());
 
     let element = quote!(
-      ita::view::HtmlElement {
+      ahecha::view::HtmlElement {
         attributes: #attributes,
         children: #children,
         name: stringify!(#name),

@@ -1,4 +1,4 @@
-use ita::*;
+use ahecha::*;
 
 #[derive(Page)]
 pub struct Page404;

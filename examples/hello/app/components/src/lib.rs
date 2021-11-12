@@ -1,4 +1,4 @@
-use ita::prelude::*;
+use ahecha::prelude::*;
 
 #[component]
 pub fn PostComponent<'a>(title: &'a str, body: &'a str, image: Option<&'a str>) {

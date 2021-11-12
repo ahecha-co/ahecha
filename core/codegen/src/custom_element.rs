@@ -56,7 +56,7 @@ pub fn create_custom_element(f: syn::ItemFn) -> TokenStream {
     #[derive(Debug)]
     #vis struct #struct_name #impl_generics #input_blocks
 
-    impl #impl_generics ita::view::Render for #struct_name #ty_generics #where_clause {
+    impl #impl_generics ahecha::view::Render for #struct_name #ty_generics #where_clause {
       fn render_into<W: std::fmt::Write>(self, w: &mut W) -> ::std::fmt::Result {
         let result: String = {
           #input_readings
@@ -69,7 +69,7 @@ pub fn create_custom_element(f: syn::ItemFn) -> TokenStream {
 
     impl #impl_generics Into<String> for #struct_name #ty_generics #where_clause {
       fn into(self) -> String {
-        use ita::view::Render;
+        use ahecha::view::Render;
         let mut result = String::new();
         self.render_into(&mut result).unwrap();
         result

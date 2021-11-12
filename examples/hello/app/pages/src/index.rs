@@ -1,4 +1,4 @@
-use ita::prelude::*;
+use ahecha::prelude::*;
 
 use components::PostComponent;
 

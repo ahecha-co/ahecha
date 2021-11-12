@@ -74,7 +74,7 @@ impl ToTokens for HtmlSource {
       let struct_attrs = self.attributes.for_custom_element(name_str.to_string());
       // TODO: I need to pass the attributes to the custom element wrapper
       quote! {
-        ita::view::HtmlElement {
+        ahecha::view::HtmlElement {
           name: #name_str,
           attributes: #attrs,
           children: Some(#name #struct_attrs),
@@ -85,7 +85,7 @@ impl ToTokens for HtmlSource {
       let children = self.children.as_tokens();
 
       quote! {
-        ita::view::HtmlElement {
+        ahecha::view::HtmlElement {
           name: stringify!(#name),
           attributes: #attrs,
           children: #children,

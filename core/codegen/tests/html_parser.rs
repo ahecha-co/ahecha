@@ -1,7 +1,7 @@
-use ita::view::Render;
+use ahecha::view::Render;
 use ita_codegen::*;
 
-mod ita {
+mod ahecha {
   pub use ita_view as view;
 }
 

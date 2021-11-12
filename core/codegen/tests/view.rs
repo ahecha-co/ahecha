@@ -1,6 +1,6 @@
 use ita_codegen::*;
 
-mod ita {
+mod ahecha {
   pub use ita_view as view;
 }
 

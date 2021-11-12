@@ -6,11 +6,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-backend = ["ita/backend", "api/backend"]
-frontend = ["ita/frontend", "api/frontend"]
+backend = ["ahecha/backend", "api/backend"]
+frontend = ["ahecha/frontend", "api/frontend"]
 
 [dependencies]
-ita = { path = "../../../../core/lib", version = "*" }
+ahecha = { path = "../../../../core/lib", version = "*" }
 rocket = { version = "0.5.0-rc.1", optional = true }
 
 api = { path = "../api", version="*" }

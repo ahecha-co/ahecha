@@ -1,5 +1,5 @@
 use crate::posts::POSTS;
-use ita::route;
+use ahecha::route;
 use models::Post;
 use rocket::serde::json::Json;
 

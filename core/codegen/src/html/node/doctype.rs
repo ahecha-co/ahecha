@@ -15,7 +15,7 @@ impl Into<HtmlNode> for HtmlDoctype {
 
 impl ToTokens for HtmlDoctype {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-    quote!(ita::view::HtmlDoctype::Html5).to_tokens(tokens);
+    quote!(ahecha::view::HtmlDoctype::Html5).to_tokens(tokens);
   }
 }
 
