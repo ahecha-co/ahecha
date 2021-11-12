@@ -1,7 +1,9 @@
+#[macro_use]
+extern crate ita_tuple_list;
+
 pub use html_escaping::escape_html;
-pub use tuple_list;
 
 mod backend;
 mod html_escaping;
 
-pub use backend::{elements::HtmlElement, render::Render};
+pub use backend::{doctype::HtmlDoctype, elements::HtmlElement, render::Render};

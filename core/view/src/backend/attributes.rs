@@ -1,5 +1,5 @@
+use ita_tuple_list::TupleList;
 use std::fmt::{Result, Write};
-use tuple_list::TupleList;
 
 use crate::escape_html;
 
