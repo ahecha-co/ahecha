@@ -1,4 +1,4 @@
-use ita_build::generate_routes;
+use ahecha_build::generate_routes;
 use std::{env, fs, path::Path};
 
 fn main() {

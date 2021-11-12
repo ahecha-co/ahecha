@@ -1,5 +1,5 @@
 [package]
-name = "ita_codegen"
+name = "ahecha_codegen"
 version = "0.0.1"
 edition = "2021"
 
@@ -23,7 +23,7 @@ proc-macro-error="1.0.4"
 quote="1.0.9"
 syn={version="1.0.78",features=["full"]}
 regex="1.5.4"
-ita_tuple_list={ path = "../tuple_list", version = "*" }
+ahecha_tuple_list={ path = "../tuple_list", version = "*" }
 
 [dev-dependencies]
-ita_view={path="../view", version="*"}
+ahecha_view={path="../view", version="*"}

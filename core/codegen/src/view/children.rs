@@ -21,8 +21,8 @@ impl Children {
 
     match children.len() {
       0 => quote! { Option::<()>::None },
-      1 => quote! { Some(ita_tuple_list::tuple_list!(#(#children),*)) },
-      _ => quote! { Some(ita_tuple_list::tuple_list!(#(#children),*)) },
+      1 => quote! { Some(ahecha_tuple_list::tuple_list!(#(#children),*)) },
+      _ => quote! { Some(ahecha_tuple_list::tuple_list!(#(#children),*)) },
     }
   }
 }

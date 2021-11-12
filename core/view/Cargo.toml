@@ -1,5 +1,5 @@
 [package]
-name = "ita_view"
+name = "ahecha_view"
 version = "0.0.1"
 edition = "2021"
 
@@ -7,5 +7,5 @@ edition = "2021"
 [lib]
 
 [dependencies]
-ita_tuple_list={ path = "../tuple_list", version = "*" }
+ahecha_tuple_list={ path = "../tuple_list", version = "*" }
 # web-sys={version="0.3.55",features=["Document", "DomParser", "HtmlCollection", "HtmlElement", "HtmlDivElement", "SupportedType"]}

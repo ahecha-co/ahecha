@@ -18,4 +18,4 @@ components = { path = "../components", version="*" }
 models = { path = "../models", version="*" }
 
 [build-dependencies]
-ita_build = { path = "../../../../core/build", version = "*" }
+ahecha_build = { path = "../../../../core/build", version = "*" }

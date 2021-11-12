@@ -5,11 +5,11 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
-backend = ["ita_codegen/backend"]
-frontend = ["ita_codegen/frontend"]
+backend = ["ahecha_codegen/backend"]
+frontend = ["ahecha_codegen/frontend"]
 
-rocket = ["ita_codegen/rocket"]
+rocket = ["ahecha_codegen/rocket"]
 
 [dependencies]
-ita_codegen={ path="../codegen", version="*" }
-ita_view={ path="../view", version="*" }
+ahecha_codegen={ path="../codegen", version="*" }
+ahecha_view={ path="../view", version="*" }

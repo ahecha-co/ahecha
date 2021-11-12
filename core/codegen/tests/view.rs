@@ -1,7 +1,7 @@
-use ita_codegen::*;
+use ahecha_codegen::*;
 
 mod ahecha {
-  pub use ita_view as view;
+  pub use ahecha_view as view;
 }
 
 #[test]

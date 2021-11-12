@@ -130,7 +130,7 @@ impl<'a> ToTokens for HtmlTagAttributes<'a> {
         .collect();
 
       let hashmap_declaration = quote! {
-        ita_tuple_list::tuple_list!(#(#attrs),*)
+        ahecha_tuple_list::tuple_list!(#(#attrs),*)
       };
 
       hashmap_declaration.to_tokens(tokens);

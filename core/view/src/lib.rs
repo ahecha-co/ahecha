@@ -1,5 +1,5 @@
 #[macro_use]
-extern crate ita_tuple_list;
+extern crate ahecha_tuple_list;
 
 pub use html_escaping::escape_html;
 
