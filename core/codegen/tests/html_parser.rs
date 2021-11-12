@@ -35,6 +35,35 @@ fn test_html_tag_nested() {
 }
 
 #[test]
+fn test_custom_element_without_macro_attr() {
+  struct CustomElement {}
+
+  impl CustomElement {
+    fn view(&self) -> String {
+      html_parser!(
+        <div class="main">I am a custom element</div>
+      )
+      .render()
+    }
+  }
+
+  impl Render for CustomElement {
+    fn render_into<W: std::fmt::Write>(self, writer: &mut W) -> std::fmt::Result {
+      write!(writer, "{}", self.view())
+    }
+  }
+
+  let res = html_parser! {
+    <CustomElement></CustomElement>
+  };
+
+  assert_eq!(
+    res.render(),
+    "<custom-element><div class=\"main\">I am a custom element</div></custom-element>"
+  );
+}
+
+#[test]
 fn test_parse_bootstrap_sign_up_example() {
   let res = html_parser!(
     <!doctype html>
