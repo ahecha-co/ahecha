@@ -1,6 +1,4 @@
-# Ita
-
-> Meaning **stone** in Guarani, spanish pronounciation `itá`
+# Achecha
 
 [![Clippy + fmt](https://github.com/norman784/ahecha/actions/workflows/check-and-lint.yaml/badge.svg)](https://github.com/norman784/ahecha/actions/workflows/check-and-lint.yaml)
 [![Crate](https://img.shields.io/crates/v/ahecha.svg?color=brightgreen&style=flat-square)](https://crates.io/crates/ahecha)
