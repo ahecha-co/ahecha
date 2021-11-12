@@ -4,7 +4,7 @@ mod tuples;
 
 use std::fmt::{Result, Write};
 
-use crate::html::{attributes::RenderAttributes, render::Render};
+use crate::backend::{attributes::RenderAttributes, render::Render};
 
 pub struct HtmlElement<A, C>
 where

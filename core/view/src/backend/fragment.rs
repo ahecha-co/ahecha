@@ -1,6 +1,6 @@
 use std::fmt::{Result, Write};
 
-use crate::html::render::Render;
+use crate::backend::render::Render;
 
 pub struct HtmlFragment<C>
 where
