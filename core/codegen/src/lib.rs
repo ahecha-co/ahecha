@@ -83,10 +83,6 @@ pub fn route(_metadata: TokenStream, input: TokenStream) -> TokenStream {
         .collect::<Vec<_>>();
 
       quote! {
-        #[cfg(feature = "rocket")]
-        #[rocket::#method(#path_with_params)]
-        #tokens
-
         pub fn #ident_path(#(#fn_args),*) -> String {
           format!(#path, #(#replace),*)
         }
@@ -121,9 +117,6 @@ pub fn page(_metadata: TokenStream, input: TokenStream) -> TokenStream {
     quote! {
       use ahecha::view::{CustomElement, Renderable};
 
-      // #[cfg(feature = "backend", feature="rocket")]
-      #[cfg(feature="rocket")]
-      #[rocket::get(#path)]
       pub fn #ident_route<'a>() -> #ident<'a> {
         #ident ::default()
       }
@@ -137,17 +130,6 @@ pub fn page(_metadata: TokenStream, input: TokenStream) -> TokenStream {
       // pub fn #ident_path() -> String {
       //   format!(#path)
       // }
-
-      #[cfg(feature = "rocket")]
-      impl<'a> rocket::response::Responder<'a, 'static> for #ident<'a> {
-        fn respond_to(self, _: &'a rocket::request::Request<'_>) -> rocket::response::Result<'static> {
-          let body = self.render().to_string();
-          rocket::response::Response::build()
-            .sized_body(body.len(), std::io::Cursor::new(body))
-            .header(rocket::http::ContentType::new("text", "html"))
-            .ok()
-        }
-      }
     }
     .into()
   } else {

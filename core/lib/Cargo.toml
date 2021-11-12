@@ -8,8 +8,6 @@ edition = "2021"
 backend = ["ahecha_codegen/backend"]
 frontend = ["ahecha_codegen/frontend"]
 
-rocket = ["ahecha_codegen/rocket"]
-
 [dependencies]
 ahecha_codegen={ path="../codegen", version="*" }
 ahecha_view={ path="../view", version="*" }
