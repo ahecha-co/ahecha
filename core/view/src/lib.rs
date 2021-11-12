@@ -3,7 +3,7 @@ extern crate ahecha_tuple_list;
 
 pub use html_escaping::escape_html;
 
-mod backend;
+mod html;
 mod html_escaping;
 
-pub use backend::{doctype::HtmlDoctype, elements::HtmlElement, render::Render};
+pub use html::{doctype::HtmlDoctype, elements::HtmlElement, render::Render};
