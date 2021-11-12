@@ -2,7 +2,7 @@ use std::fmt::{Result, Write};
 
 macro_rules! impl_renderable {
   ($($t:ty),*) => {
-    $(impl crate::backend::render::Render for $t {
+    $(impl crate::html::render::Render for $t {
         fn render_into<W: Write>(self, writer: &mut W) -> Result {
           write!(writer, "{}", self)
         }

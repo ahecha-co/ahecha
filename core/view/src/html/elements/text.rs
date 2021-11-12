@@ -1,4 +1,4 @@
-use crate::{backend::render::Render, html_escaping::escape_html};
+use crate::{html::render::Render, html_escaping::escape_html};
 use std::fmt::{Result, Write};
 
 impl Render for String {

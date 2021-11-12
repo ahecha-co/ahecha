@@ -7,13 +7,13 @@ mod ahecha {
 
 #[test]
 fn test_html_tag() {
-  let res = html_parser! { <div attr="value">Hello</div> };
+  let res = html! { <div attr="value">Hello</div> };
   assert_eq!(res.render(), "<div attr=\"value\">Hello</div>");
 }
 
 #[test]
 fn test_html_tag_with_multiple_attributes() {
-  let res = html_parser! { <div attr="value" attr2="value2">Hello</div> };
+  let res = html! { <div attr="value" attr2="value2">Hello</div> };
   assert_eq!(
     res.render(),
     "<div attr=\"value\" attr2=\"value2\">Hello</div>"
@@ -22,7 +22,7 @@ fn test_html_tag_with_multiple_attributes() {
 
 #[test]
 fn test_html_tag_nested() {
-  let res = html_parser! {
+  let res = html! {
     <div class="main">
       <h1 class="heading">I am a test</h1>
       <p class="paragraph">Lorem ipsum dolor sit amet.</p>
@@ -40,7 +40,7 @@ fn test_custom_element_without_macro_attr() {
 
   impl CustomElement {
     fn view(&self) -> String {
-      html_parser!(
+      html!(
         <div class="main">I am a custom element</div>
       )
       .render()
@@ -53,7 +53,7 @@ fn test_custom_element_without_macro_attr() {
     }
   }
 
-  let res = html_parser! {
+  let res = html! {
     <CustomElement></CustomElement>
   };
 
@@ -67,13 +67,13 @@ fn test_custom_element_without_macro_attr() {
 fn test_custom_element_with_macro_attr() {
   #[custom_element]
   fn CustomElement() {
-    html_parser!(
+    html!(
       <div class="main">I am a custom element</div>
     )
     .render()
   }
 
-  let res = html_parser! {
+  let res = html! {
     <CustomElement></CustomElement>
   };
 
@@ -85,7 +85,7 @@ fn test_custom_element_with_macro_attr() {
 
 #[test]
 fn test_parse_bootstrap_sign_up_example() {
-  let res = html_parser!(
+  let res = html!(
     <!doctype html>
     <html lang="en">
       <head>

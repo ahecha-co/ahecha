@@ -2,7 +2,7 @@ use std::fmt::{Result, Write};
 
 use ahecha_tuple_list::TupleList;
 
-use crate::backend::render::Render;
+use crate::html::render::Render;
 
 impl<Head, Tail> Render for (Head, Tail)
 where
