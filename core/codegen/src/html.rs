@@ -119,7 +119,17 @@ fn parse_tag_with_children<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
       .collect(),
   };
 
-  Ok((input, html_tag.into()))
+  if html_tag.name.is_empty() {
+    Ok((
+      input,
+      HtmlFragment {
+        children: html_tag.children,
+      }
+      .into(),
+    ))
+  } else {
+    Ok((input, html_tag.into()))
+  }
 }
 
 fn parse_text<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
@@ -355,8 +365,21 @@ mod test {
     let (remainder, node) = parse_node::<(&str, ErrorKind)>(input).unwrap();
     assert_eq!(remainder, "");
     match node.unwrap() {
-      HtmlNode::Component(tag) => {
+      HtmlNode::CustomElement(tag) => {
         assert_eq!(tag.name, "Component")
+      }
+      _ => panic!("Expected block"),
+    }
+  }
+
+  #[test]
+  fn test_parse_partial() {
+    let input = "<><div>I'm a partial</div></>";
+    let (remainder, node) = parse_node::<(&str, ErrorKind)>(input).unwrap();
+    assert_eq!(remainder, "");
+    match node.unwrap() {
+      HtmlNode::Fragment(tag) => {
+        assert_eq!(tag.children.nodes.len(), 1)
       }
       _ => panic!("Expected block"),
     }

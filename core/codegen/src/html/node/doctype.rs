@@ -18,3 +18,9 @@ impl ToTokens for HtmlDoctype {
     quote!(ita::view::HtmlDoctype::Html5).to_tokens(tokens);
   }
 }
+
+impl ToString for HtmlDoctype {
+  fn to_string(&self) -> String {
+    "<!DOCTYPE html>".to_string()
+  }
+}

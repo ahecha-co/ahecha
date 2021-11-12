@@ -15,7 +15,14 @@ impl Into<HtmlNode> for HtmlComment {
 
 impl ToTokens for HtmlComment {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-    let comment = format!("<!-- {} -->", &self.comment);
+    let comment = self.to_string();
     quote!( #comment ).to_tokens(tokens);
+  }
+}
+
+impl ToString for HtmlComment {
+  fn to_string(&self) -> String {
+    let comment = format!("<!-- {} -->", &self.comment);
+    return comment;
   }
 }

@@ -1,6 +1,5 @@
 use ita::view::Render;
 use ita_codegen::*;
-use ita_view::HtmlElement;
 
 mod ita {
   pub use ita_view as view;
@@ -81,7 +80,6 @@ fn test_parse_bootstrap_sign_up_example() {
         <link href="signin.css" rel="stylesheet">
       </head>
       <body class="text-center">
-
         <main class="form-signin">
           <form>
             <img class="mb-4" src="/docs/5.1/assets/brand/bootstrap-logo.svg" alt="" width="72" height="57">
@@ -105,7 +103,6 @@ fn test_parse_bootstrap_sign_up_example() {
             <p class="mt-5 mb-3 text-muted">&copy; 2017-2021</p>
           </form>
         </main>
-
       </body>
     </html>
   );

@@ -13,3 +13,9 @@ impl ToTokens for HtmlText {
     });
   }
 }
+
+impl ToString for HtmlText {
+  fn to_string(&self) -> String {
+    self.text.clone()
+  }
+}

@@ -13,3 +13,9 @@ impl ToTokens for HtmlBlock {
     });
   }
 }
+
+impl ToString for HtmlBlock {
+  fn to_string(&self) -> String {
+    self.block.clone()
+  }
+}

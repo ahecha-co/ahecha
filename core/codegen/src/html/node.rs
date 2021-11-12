@@ -1,25 +1,29 @@
 mod block;
 mod comment;
-mod component;
+mod custom_element;
 mod doctype;
 mod element;
+mod fragment;
 mod text;
+
+use quote::ToTokens;
 
 pub use block::HtmlBlock;
 pub use comment::HtmlComment;
-pub use component::HtmlComponent;
+pub use custom_element::HtmlCustomElement;
 pub use doctype::HtmlDoctype;
 pub use element::HtmlElement;
-use quote::ToTokens;
+pub use fragment::HtmlFragment;
 pub use text::HtmlText;
 
 #[derive(Debug)]
 pub enum HtmlNode {
   Block(HtmlBlock),
   Comment(HtmlComment),
-  Component(HtmlComponent),
+  CustomElement(HtmlCustomElement),
   Doctype(HtmlDoctype),
   Element(HtmlElement),
+  Fragment(HtmlFragment),
   Text(HtmlText),
 }
 
@@ -28,10 +32,25 @@ impl ToTokens for HtmlNode {
     match self {
       HtmlNode::Block(block) => block.to_tokens(tokens),
       HtmlNode::Comment(comment) => comment.to_tokens(tokens),
-      HtmlNode::Component(component) => component.to_tokens(tokens),
+      HtmlNode::CustomElement(custom_element) => custom_element.to_tokens(tokens),
       HtmlNode::Doctype(doctype) => doctype.to_tokens(tokens),
       HtmlNode::Element(element) => element.to_tokens(tokens),
+      HtmlNode::Fragment(fragment) => fragment.to_tokens(tokens),
       HtmlNode::Text(text) => text.to_tokens(tokens),
+    }
+  }
+}
+
+impl ToString for HtmlNode {
+  fn to_string(&self) -> String {
+    match self {
+      HtmlNode::Block(block) => block.to_string(),
+      HtmlNode::Comment(comment) => comment.to_string(),
+      HtmlNode::CustomElement(custom_element) => custom_element.to_string(),
+      HtmlNode::Doctype(doctype) => doctype.to_string(),
+      HtmlNode::Element(element) => element.to_string(),
+      HtmlNode::Fragment(fragment) => fragment.to_string(),
+      HtmlNode::Text(text) => text.to_string(),
     }
   }
 }
