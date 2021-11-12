@@ -3,7 +3,7 @@
 > Meaning **stone** in Guarani, spanish pronounciation `itá`
 
 [![Clippy + fmt](https://github.com/norman784/ahecha/actions/workflows/check-and-lint.yaml/badge.svg)](https://github.com/norman784/ahecha/actions/workflows/check-and-lint.yaml)
-[![](https://img.shields.io/crates/v/ahecha.svg?color=brightgreen&style=flat-square)](https://crates.io/crates/ahecha)
+[![Crate](https://img.shields.io/crates/v/ahecha.svg?color=brightgreen&style=flat-square)](https://crates.io/crates/ahecha)
 [![Tests](https://github.com/norman784/ahecha/actions/workflows/test.yml/badge.svg)](https://github.com/norman784/ahecha/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -24,6 +24,20 @@ but still isn't enough, so my goal is to try to port a similar experience into R
 - Flexible
 - Eliminate the need to maintain routes
 - ~~Brainless ORM/migration system~~
+
+## Features
+
+- [x] Html templating
+- [ ] Custom elements SSR
+- [ ] Custom elements hydrate
+- [ ] No more string routes references
+- [ ] Mutation API (POST, PUT, PATCH, DELETE requests) with server and client side support
+- [ ] Query API (GET request) with server and client side support
+- [ ] Rest API support
+- [ ] Page support
+- [ ] Warp integration
+- [ ] Rocket integration
+- [ ] Actix-web integration
 
 ### Build component based webs
 
