@@ -1,3 +1,4 @@
+use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 
 #[derive(Debug)]
@@ -7,7 +8,7 @@ pub struct HtmlBlock {
 
 impl ToTokens for HtmlBlock {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-    let block = &self.block;
+    let block: TokenStream = self.block.parse().unwrap();
     tokens.extend(quote! {
       #block
     });

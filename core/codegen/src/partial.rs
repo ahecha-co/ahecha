@@ -1,9 +1,10 @@
 use proc_macro::TokenStream;
+use proc_macro_error::emit_error;
 use quote::quote;
 
 use crate::utils::FnStruct;
 
-pub fn create_custom_element(f: syn::ItemFn) -> TokenStream {
+pub fn create_partial(f: syn::ItemFn) -> TokenStream {
   let fn_struct: FnStruct = f.into();
 
   let vis = fn_struct.vis();
@@ -15,6 +16,24 @@ pub fn create_custom_element(f: syn::ItemFn) -> TokenStream {
   let input_blocks = fn_struct.input_blocks();
 
   let input_readings = fn_struct.input_readings();
+
+  let struct_str_name = struct_name.to_string();
+  if struct_str_name.to_uppercase().chars().next().unwrap()
+    != struct_str_name.chars().next().unwrap()
+  {
+    emit_error!(
+      struct_name.span(),
+      "Partials must start with a upper letter"
+    );
+  }
+
+  if !struct_str_name.ends_with("Partial") {
+    emit_error!(
+      struct_name.span(),
+      "Partials must have the `Partial` suffix, example: `{}Partial`",
+      struct_str_name
+    );
+  }
 
   quote! {
     #[derive(Debug)]
@@ -33,10 +52,7 @@ pub fn create_custom_element(f: syn::ItemFn) -> TokenStream {
 
     impl #impl_generics Into<String> for #struct_name #ty_generics #where_clause {
       fn into(self) -> String {
-        use ahecha::view::Render;
-        let mut result = String::new();
-        self.render_into(&mut result).unwrap();
-        result
+        self.render()
       }
     }
   }

@@ -41,7 +41,6 @@ fn test_custom_element_with_macro_attr() {
     html!(
       <div class="main">I am a custom element</div>
     )
-    .render()
   }
 
   let res = html! {

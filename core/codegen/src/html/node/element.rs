@@ -2,7 +2,7 @@ use quote::{quote, ToTokens};
 
 use crate::html::{attributes::Attributes, children::Children};
 
-use super::{HtmlCustomElement, HtmlNode};
+use super::{HtmlCustomElement, HtmlNode, HtmlPartial};
 
 #[derive(Debug)]
 pub struct HtmlElement {
@@ -14,11 +14,19 @@ pub struct HtmlElement {
 impl Into<HtmlNode> for HtmlElement {
   fn into(self) -> HtmlNode {
     if self.name.chars().nth(0).unwrap_or_default().is_uppercase() {
-      HtmlNode::CustomElement(HtmlCustomElement {
-        attributes: self.attributes,
-        children: self.children,
-        name: self.name,
-      })
+      if self.name.ends_with("Partial") {
+        HtmlNode::Partial(HtmlPartial {
+          attributes: self.attributes,
+          children: self.children,
+          name: self.name,
+        })
+      } else {
+        HtmlNode::CustomElement(HtmlCustomElement {
+          attributes: self.attributes,
+          children: self.children,
+          name: self.name,
+        })
+      }
     } else {
       HtmlNode::Element(self)
     }

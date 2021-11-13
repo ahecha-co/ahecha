@@ -4,6 +4,7 @@ mod custom_element;
 mod doctype;
 mod element;
 mod fragment;
+mod partial;
 mod text;
 
 use quote::ToTokens;
@@ -14,6 +15,7 @@ pub use custom_element::HtmlCustomElement;
 pub use doctype::HtmlDoctype;
 pub use element::HtmlElement;
 pub use fragment::HtmlFragment;
+pub use partial::HtmlPartial;
 pub use text::HtmlText;
 
 #[derive(Debug)]
@@ -24,6 +26,7 @@ pub enum HtmlNode {
   Doctype(HtmlDoctype),
   Element(HtmlElement),
   Fragment(HtmlFragment),
+  Partial(HtmlPartial),
   Text(HtmlText),
 }
 
@@ -36,6 +39,7 @@ impl ToTokens for HtmlNode {
       HtmlNode::Doctype(doctype) => doctype.to_tokens(tokens),
       HtmlNode::Element(element) => element.to_tokens(tokens),
       HtmlNode::Fragment(fragment) => fragment.to_tokens(tokens),
+      HtmlNode::Partial(partial) => partial.to_tokens(tokens),
       HtmlNode::Text(text) => text.to_tokens(tokens),
     }
   }
@@ -50,6 +54,7 @@ impl ToString for HtmlNode {
       HtmlNode::Doctype(doctype) => doctype.to_string(),
       HtmlNode::Element(element) => element.to_string(),
       HtmlNode::Fragment(fragment) => fragment.to_string(),
+      HtmlNode::Partial(partial) => partial.to_string(),
       HtmlNode::Text(text) => text.to_string(),
     }
   }
