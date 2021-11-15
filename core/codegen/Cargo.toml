@@ -23,3 +23,5 @@ ahecha_tuple_list={ path = "../tuple_list", version = "*" }
 
 [dev-dependencies]
 ahecha_view={path="../view", version="*"}
+tokio = { version = "1.13.0", features = ["macros"] }
+warp = "0.3.2"
