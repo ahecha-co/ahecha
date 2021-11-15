@@ -1,19 +1,17 @@
-use convert_case::{Case, Casing};
 use quote::{quote, ToTokens};
 
 use crate::html::{attributes::Attributes, children::Children};
 
 #[derive(Debug)]
-pub struct HtmlCustomElement {
+pub struct HtmlPartial {
   pub attributes: Attributes,
   pub children: Children,
   pub name: String,
 }
 
-impl ToTokens for HtmlCustomElement {
+impl ToTokens for HtmlPartial {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
     let ident = syn::Ident::new(&self.name, proc_macro2::Span::call_site());
-    let name = &self.name.to_case(Case::Kebab);
     let attributes = &self.attributes;
     let children = &self.children;
 
@@ -31,22 +29,20 @@ impl ToTokens for HtmlCustomElement {
     }
 
     let element = quote!(
-      ahecha::view::HtmlElement {
-        attributes: #attributes,
+      ahecha::view::HtmlFragment {
         children: Some((
           #ident {
             #(#attrs,)*
           },
           ()
         )),
-        name: #name,
       }
     );
     element.to_tokens(tokens);
   }
 }
 
-impl ToString for HtmlCustomElement {
+impl ToString for HtmlPartial {
   fn to_string(&self) -> String {
     format!("<{}>...</{}>", self.name, self.name)
   }

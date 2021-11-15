@@ -7,9 +7,9 @@ pub enum HtmlDoctype {
   Html5,
 }
 
-impl Into<HtmlNode> for HtmlDoctype {
-  fn into(self) -> HtmlNode {
-    return HtmlNode::Doctype(self);
+impl From<HtmlDoctype> for HtmlNode {
+  fn from(element: HtmlDoctype) -> Self {
+    HtmlNode::Doctype(element)
   }
 }
 

@@ -7,9 +7,9 @@ pub struct HtmlComment {
   pub comment: String,
 }
 
-impl Into<HtmlNode> for HtmlComment {
-  fn into(self) -> HtmlNode {
-    return HtmlNode::Comment(self);
+impl From<HtmlComment> for HtmlNode {
+  fn from(comment: HtmlComment) -> Self {
+    HtmlNode::Comment(comment)
   }
 }
 
@@ -22,7 +22,6 @@ impl ToTokens for HtmlComment {
 
 impl ToString for HtmlComment {
   fn to_string(&self) -> String {
-    let comment = format!("<!-- {} -->", &self.comment);
-    return comment;
+    format!("<!-- {} -->", &self.comment)
   }
 }

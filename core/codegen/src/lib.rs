@@ -6,11 +6,14 @@ use core::panic;
 
 use nom::error::ErrorKind;
 use proc_macro::TokenStream;
+use proc_macro_error::proc_macro_error;
 use quote::quote;
 use syn::{parse_macro_input, ItemFn};
 
 mod custom_element;
 mod html;
+mod partial;
+mod utils;
 
 #[proc_macro_attribute]
 pub fn custom_element(_metadata: TokenStream, item: TokenStream) -> TokenStream {
@@ -20,6 +23,7 @@ pub fn custom_element(_metadata: TokenStream, item: TokenStream) -> TokenStream 
 
 #[proc_macro]
 pub fn html(input: TokenStream) -> TokenStream {
+  // If there's a better way to stringify a TokenStream without losing the original format, please let me know.
   let input_html = input
     .to_string()
     .replace("\n", "")
@@ -27,6 +31,8 @@ pub fn html(input: TokenStream) -> TokenStream {
     .replace("\t", "")
     .replace("<! ", "<!")
     .replace("<!- -", "<!--")
+    .replace("} }", "}}")
+    .replace("{ {", "{{")
     .replace("- ->", "-->")
     .replace("< ", "<")
     .replace(" >", ">")
@@ -60,4 +66,11 @@ pub fn html(input: TokenStream) -> TokenStream {
     }
     Err(e) => panic!("{}", e),
   }
+}
+
+#[proc_macro_attribute]
+#[proc_macro_error]
+pub fn partial(_metadata: TokenStream, item: TokenStream) -> TokenStream {
+  let f = parse_macro_input!(item as ItemFn);
+  partial::create_partial(f)
 }

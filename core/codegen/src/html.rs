@@ -60,6 +60,7 @@ fn parse_tag_name_attributes0<'a, E: ParseError<&'a str> + ContextError<&'a str>
   input: &'a str,
 ) -> IResult<&'a str, HtmlElement, E> {
   let (input, name) = parse_tag_name(input)?;
+  let (input, _) = take_while(|c| c == ' ')(input)?;
   let (input, attributes) = parse_attributes0(input)?;
   Ok((
     input,
@@ -112,11 +113,7 @@ fn parse_tag_with_children<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
   let (input, (children, _)) = many_till(parse_node, tag(closing_tag.as_str()))(input)?;
 
   html_tag.children = Children {
-    nodes: children
-      .into_iter()
-      .filter(|n| n.is_some())
-      .map(|n| n.unwrap())
-      .collect(),
+    nodes: children.into_iter().flatten().collect(),
   };
 
   if html_tag.name.is_empty() {
@@ -135,6 +132,7 @@ fn parse_tag_with_children<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 fn parse_text<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
   input: &'a str,
 ) -> IResult<&'a str, HtmlNode, E> {
+  // TODO: We need a way to match against `{{` and `<` at the same time
   let (input, text) = take_while(|c| c != '<' && c != '{')(input)?;
   Ok((
     input,
@@ -147,7 +145,7 @@ fn parse_text<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 fn parse_block<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
   input: &'a str,
 ) -> IResult<&'a str, HtmlNode, E> {
-  let (input, text) = delimited(tag("{"), take_while(|c| c != '}'), tag("}"))(input)?;
+  let (input, text) = delimited(tag("{"), take_until("}"), tag("}"))(input)?;
   Ok((
     input,
     HtmlNode::Block(HtmlBlock {
@@ -196,9 +194,9 @@ fn parse_node<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
         parse_text,
       ))),
     ),
-  )(input);
+  )(input)?;
 
-  res
+  Ok(res)
 }
 
 pub fn parse<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
@@ -206,14 +204,7 @@ pub fn parse<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 ) -> IResult<&'a str, Vec<HtmlNode>, E> {
   let (input, (nodes, _)) = many_till(parse_node, eof)(input)?;
 
-  Ok((
-    input,
-    nodes
-      .into_iter()
-      .filter(|n| n.is_some())
-      .map(|n| n.unwrap())
-      .collect(),
-  ))
+  Ok((input, nodes.into_iter().flatten().collect()))
 }
 
 #[cfg(test)]

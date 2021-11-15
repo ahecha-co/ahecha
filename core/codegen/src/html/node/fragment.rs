@@ -9,9 +9,9 @@ pub struct HtmlFragment {
   pub children: Children,
 }
 
-impl Into<HtmlNode> for HtmlFragment {
-  fn into(self) -> HtmlNode {
-    HtmlNode::Fragment(self)
+impl From<HtmlFragment> for HtmlNode {
+  fn from(fragment: HtmlFragment) -> Self {
+    HtmlNode::Fragment(fragment)
   }
 }
 
