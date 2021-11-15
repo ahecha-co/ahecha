@@ -62,6 +62,8 @@ where
 
 #[cfg(test)]
 mod test {
+  use ahecha_tuple_list::tuple_list;
+
   use super::*;
 
   #[test]
