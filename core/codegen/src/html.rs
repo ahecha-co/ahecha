@@ -113,11 +113,7 @@ fn parse_tag_with_children<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
   let (input, (children, _)) = many_till(parse_node, tag(closing_tag.as_str()))(input)?;
 
   html_tag.children = Children {
-    nodes: children
-      .into_iter()
-      .filter(|n| n.is_some())
-      .map(|n| n.unwrap())
-      .collect(),
+    nodes: children.into_iter().flatten().collect(),
   };
 
   if html_tag.name.is_empty() {
@@ -208,14 +204,7 @@ pub fn parse<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 ) -> IResult<&'a str, Vec<HtmlNode>, E> {
   let (input, (nodes, _)) = many_till(parse_node, eof)(input)?;
 
-  Ok((
-    input,
-    nodes
-      .into_iter()
-      .filter(|n| n.is_some())
-      .map(|n| n.unwrap())
-      .collect(),
-  ))
+  Ok((input, nodes.into_iter().flatten().collect()))
 }
 
 #[cfg(test)]

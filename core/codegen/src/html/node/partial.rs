@@ -18,7 +18,7 @@ impl ToTokens for HtmlPartial {
     let mut attrs = vec![];
 
     for (key, value) in attributes.attrs.iter() {
-      let key = syn::Ident::new(&key, proc_macro2::Span::call_site());
+      let key = syn::Ident::new(key, proc_macro2::Span::call_site());
       attrs.push(quote! {
         #key: #value
       });

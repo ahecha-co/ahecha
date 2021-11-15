@@ -35,7 +35,7 @@ impl FnStruct {
     &self.f.sig.inputs
   }
 
-  pub fn block(&self) -> &Box<Block> {
+  pub fn block(&self) -> &Block {
     &self.f.block
   }
 
@@ -53,7 +53,6 @@ impl FnStruct {
         #input_blocks
       }
     )
-    .into()
   }
 
   pub fn input_readings(&self) -> TokenStream {
@@ -87,7 +86,6 @@ impl FnStruct {
         #input_readings
       } = self;
     )
-    .into()
   }
 }
 
