@@ -6,8 +6,8 @@ mod ahecha {
 }
 
 #[page]
-pub fn TestPage() {
+pub fn CountPage(count: u32) {
   html! {
-    <div>Test page</div>
+    <div>Test page <span>{ count }</span></div>
   }
 }

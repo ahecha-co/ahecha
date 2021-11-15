@@ -9,8 +9,8 @@ mod ahecha {
 
 #[test]
 fn test_generate_route() {
-  assert_eq!(page::index::IndexPage::route(), "/");
-  assert_eq!(page::test::TestPage::route(), "/test");
+  assert_eq!(page::index::IndexPage::uri(), "/");
+  assert_eq!(page::__count__::CountPage::uri(5), "/5");
 }
 
 #[tokio::test]
@@ -29,7 +29,7 @@ async fn test_test_page_request() {
   let response = warp::test::request()
     .method("GET")
     .path("/test")
-    .reply(&page::test::TestPage::mount())
+    .reply(&page::__count__::CountPage::mount())
     .await;
   assert_eq!(response.status(), 200);
   assert_eq!(response.body(), "<div>Test page</div>");

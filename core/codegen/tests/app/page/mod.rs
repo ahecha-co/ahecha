@@ -1,2 +1,2 @@
+pub mod __count__;
 pub mod index;
-pub mod test;

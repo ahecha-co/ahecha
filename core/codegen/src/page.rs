@@ -2,7 +2,7 @@ use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use proc_macro_error::emit_error;
 use quote::quote;
-use syn::spanned::Spanned;
+use syn::{punctuated::Punctuated, spanned::Spanned, token::Comma, FnArg, Pat, PatPath};
 
 use crate::utils::FnStruct;
 
@@ -65,16 +65,22 @@ impl Into<Ident> for HttpMethod {
   }
 }
 
-#[derive(Debug)]
+// #[derive(Debug)]
 pub struct Route {
   pub method: HttpMethod,
   pub name: String,
   pub parts: Vec<String>,
+  pub route_params: Punctuated<FnArg, Comma>,
   pub route_type: RouteType,
 }
 
 impl Route {
-  fn new(name: String, route_type: RouteType, url_path: String) -> Self {
+  fn new(
+    name: String,
+    route_type: RouteType,
+    url_path: String,
+    fields: &Punctuated<FnArg, Comma>,
+  ) -> Self {
     let mut parts: Vec<String> = if url_path.ends_with(".rs") {
       url_path[..url_path.len() - 3].split('/')
     } else {
@@ -86,7 +92,8 @@ impl Route {
       let s = s.to_string();
 
       if s.starts_with("__") && s.ends_with("__") {
-        format!("<{}>", &s[2..s.len() - 2])
+        let field_name = &s[2..s.len() - 2];
+        format!("<{}>", field_name)
       } else {
         s
       }
@@ -112,39 +119,20 @@ impl Route {
         .map(|s| s.to_owned())
         .collect::<Vec<_>>()
         .to_owned(),
+      route_params: fields.clone(),
       route_type,
     }
   }
 
-  fn path_name(&self) -> String {
-    format!("/{}", self.parts.join("/"))
-  }
-
-  fn build(&self, fn_struct: &FnStruct) -> proc_macro2::TokenStream {
-    let method: Ident = self.method.into();
-    // let mut route = quote! { warp:: #method () };
-    let mut route: Option<proc_macro2::TokenStream> = None;
-
-    for part in self.parts.iter() {
-      // let value = if part.starts_with("<") && part.ends_with(">") {
-      //   let part = part[1..part.len() - 1].to_string();
-      //   let part = Ident::new(&part, Span::call_site());
-      //   quote!( warp::path( #part ))
-      // } else {
-      if let Some(r) = route {
-        route = Some(quote!( #r . #method ( #part ) ));
-      } else {
-        route = Some(quote!( warp::path( #part ) ));
+  fn build_uri(&self) -> proc_macro2::TokenStream {
+    if self.route_params.is_empty() {
+      let url_path = format!("/{}", self.parts.join("/"));
+      quote! {
+        #url_path .to_string()
       }
-      // };
-    }
-
-    let block = fn_struct.block();
-    let input_readings = if fn_struct.inputs().is_empty() {
-      quote!()
     } else {
-      let input_names: Vec<_> = fn_struct
-        .inputs()
+      let params: Vec<_> = self
+        .route_params
         .iter()
         .filter_map(|argument| match argument {
           syn::FnArg::Typed(typed) => Some(typed),
@@ -159,9 +147,53 @@ impl Route {
         })
         .collect();
 
-      quote!(
-        #(#input_names),*,
-      )
+      let url_path = format!(
+        "/{}",
+        self
+          .parts
+          .iter()
+          .map(|f| {
+            if f.starts_with("<") && f.ends_with(">") {
+              "{}"
+            } else {
+              &f
+            }
+          })
+          .collect::<Vec<&str>>()
+          .join("/")
+      );
+
+      quote! {
+        format!(#url_path, #(#params,)*)
+      }
+    }
+  }
+
+  fn build(&self, fn_struct: &FnStruct) -> proc_macro2::TokenStream {
+    let method: Ident = self.method.into();
+    // let mut route = quote! { warp:: #method () };
+    let mut route: Option<proc_macro2::TokenStream> = None;
+
+    for part in self.parts.iter() {
+      let uri = if part.starts_with("<") && part.ends_with(">") {
+        quote!(warp::path::param())
+      } else {
+        quote!( $part )
+      };
+      if let Some(r) = route {
+        route = Some(quote!( #r . #method ( #uri ) ));
+      } else {
+        route = Some(quote!( warp::path( #uri ) ));
+      }
+      // };
+    }
+
+    let block = fn_struct.block();
+    let input_readings = if fn_struct.inputs().is_empty() {
+      quote!()
+    } else {
+      let input_names: Vec<_> = fn_struct.inputs().iter().collect();
+      quote!(#(#input_names),*,)
     };
 
     let route = if let Some(route) = route {
@@ -171,18 +203,27 @@ impl Route {
     };
 
     quote! {
-      use warp::Filter;
+      {
+        use warp::Filter;
 
-      #route .map(|#input_readings| {
-          warp::http::Response::builder()
-            .header("Content-Type", "text/html")
-            .body( #block .render() )
-        })
+        #route
+          // .with(f)
+          .map(|#input_readings| {
+            // warp::http::Response::builder()
+            //   .header("Content-Type", "text/html")
+            //   .body( #block .render() )
+            #block .render()
+          })
+      }
     }
   }
 }
 
-pub fn generate_route_path(name: String, route_type: RouteType) -> Route {
+pub fn generate_route_path(
+  name: String,
+  route_type: RouteType,
+  fields: &Punctuated<FnArg, Comma>,
+) -> Route {
   let span = proc_macro::Span::call_site();
   let source = span.source_file();
   let path = source.path().to_str().unwrap().to_owned();
@@ -197,7 +238,7 @@ pub fn generate_route_path(name: String, route_type: RouteType) -> Route {
   .unwrap()
   .to_owned();
 
-  Route::new(name, route_type, format!("/{}", url_path))
+  Route::new(name, route_type, format!("/{}", url_path), fields)
 }
 
 pub fn create_page(f: syn::ItemFn) -> TokenStream {
@@ -209,6 +250,7 @@ pub fn create_page(f: syn::ItemFn) -> TokenStream {
   let ty_generics = fn_struct.type_generics();
   let where_clause = fn_struct.where_clause();
   let input_blocks = fn_struct.input_blocks();
+  let input_fields = fn_struct.input_fields();
 
   let struct_str_name = struct_name.to_string();
   if struct_str_name.to_uppercase().chars().next().unwrap()
@@ -225,8 +267,8 @@ pub fn create_page(f: syn::ItemFn) -> TokenStream {
     );
   }
 
-  let route = generate_route_path(struct_name.to_string(), RouteType::Page);
-  let path_name = route.path_name();
+  let route = generate_route_path(struct_name.to_string(), RouteType::Page, fn_struct.inputs());
+  let uri = route.build_uri();
   let mount_route = route.build(&fn_struct);
 
   quote! {
@@ -234,23 +276,29 @@ pub fn create_page(f: syn::ItemFn) -> TokenStream {
     #vis struct #struct_name #impl_generics #input_blocks
 
     impl #ty_generics #struct_name #impl_generics #where_clause {
-      pub fn route() -> &'static str {
-        #path_name
+      pub fn uri(#input_fields) -> String {
+        #uri
       }
 
-      // pub fn mount(f: Fn(impl warp::Filter<Extract=(), Error=warp::Rejection> + Clone + Send + Sync) -> (impl warp::Filter<Extract=(), Error=warp::Rejection> + Clone + Send + Sync)) {
-      //   #mount_route
-      // }
-      pub fn mount() -> impl warp::Filter<Extract = (Result<warp::http::Response<String>, warp::http::Error>,), Error = warp::Rejection> + Copy {
+      pub fn mount() -> impl warp::Filter<Extract = (String,), Error = warp::Rejection> + Clone + Send + Sync + 'static
+      {
         #mount_route
       }
-    }
 
-    // impl #impl_generics Into<String> for #struct_name #ty_generics #where_clause {
-    //   fn into(self) -> String {
-    //     self.render()
-    //   }
-    // }
+      // TODO: It seems that this will be easier to implement with a macro
+      // pub fn mount_with_middleware<F, T>(f: F) -> impl warp::Filter<Extract = (T,)> + Clone + Send + Sync + 'static
+      // where
+      //   F: warp::Filter<Extract = (T,)> + Clone + Send + Sync + 'static,
+      //   F::Extract: warp::Reply,
+      //   // C: Fn(F) -> F,
+      //   // // A: warp::Filter<Extract = (), Error = warp::Rejection> + Copy,
+      //   // F: warp::Filter<Extract = (T,), Error = warp::Rejection> + Clone + Send + Sync + 'static,
+      //   // F::Extract: warp::Reply,
+      //   //A: warp::Filter + Clone,
+      // {
+      //   #mount_route
+      // }
+    }
   }
   .into()
 }

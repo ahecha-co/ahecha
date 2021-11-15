@@ -55,6 +55,17 @@ impl FnStruct {
     )
   }
 
+  pub fn input_fields(&self) -> TokenStream {
+    let input_fields = if !self.inputs().is_empty() {
+      let input_names: Vec<_> = self.inputs().iter().collect();
+      quote!(#(#input_names),*,)
+    } else {
+      quote!()
+    };
+
+    quote!(#input_fields)
+  }
+
   pub fn input_readings(&self) -> TokenStream {
     let input_readings = if self.inputs().is_empty() {
       quote!()
