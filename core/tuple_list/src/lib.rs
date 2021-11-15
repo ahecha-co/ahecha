@@ -138,7 +138,7 @@ macro_rules! define_tuple_list_traits {
         }
         impl Tuple for () {
             type TupleList = ();
-            fn into_tuple_list(self) -> () { () }
+            fn into_tuple_list(self) -> () { }
         }
         impl<'a> AsTupleOfRefs<'a> for () {
             type TupleOfRefs = ();
