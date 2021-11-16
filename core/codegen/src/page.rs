@@ -2,7 +2,9 @@ use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use proc_macro_error::emit_error;
 use quote::quote;
-use syn::{punctuated::Punctuated, spanned::Spanned, token::Comma, FnArg, Pat, PatPath};
+use syn::{
+  punctuated::Punctuated, spanned::Spanned, token::Comma, FnArg, Pat, PatIdent, PatPath, PatType,
+};
 
 use crate::utils::FnStruct;
 
@@ -65,165 +67,160 @@ impl Into<Ident> for HttpMethod {
   }
 }
 
+#[derive(Clone)]
+pub struct RoutePartDynamic {
+  ident: Ident,
+  ty: Box<syn::Type>,
+}
+
+impl RoutePartDynamic {
+  fn from(arg: &FnArg) -> Option<Self> {
+    match arg {
+      FnArg::Typed(PatType { pat, ty, .. }) => {
+        if let Pat::Ident(PatIdent { ident, .. }) = &**pat {
+          Some(RoutePartDynamic {
+            ident: ident.clone(),
+            ty: ty.clone(),
+          })
+        } else {
+          None
+        }
+      }
+      _ => None,
+    }
+  }
+
+  fn cmp(&self, ident: &str) -> bool {
+    &self.ident.to_string() == ident
+  }
+}
+
+impl ToString for RoutePartDynamic {
+  fn to_string(&self) -> String {
+    format!("<{}>", self.ident)
+  }
+}
+
+#[derive(Clone)]
+pub enum RoutePart {
+  Static(String),
+  Dynamic(RoutePartDynamic),
+}
+
+impl ToString for RoutePart {
+  fn to_string(&self) -> String {
+    match self {
+      RoutePart::Static(s) => s.clone(),
+      RoutePart::Dynamic(d) => d.to_string(),
+    }
+  }
+}
+
 // #[derive(Debug)]
 pub struct Route {
   pub method: HttpMethod,
-  pub name: String,
-  pub parts: Vec<String>,
-  pub route_params: Punctuated<FnArg, Comma>,
+  pub parts: Vec<RoutePart>,
   pub route_type: RouteType,
 }
 
 impl Route {
-  fn new(
-    name: String,
-    route_type: RouteType,
-    url_path: String,
-    fields: &Punctuated<FnArg, Comma>,
-  ) -> Self {
-    let mut parts: Vec<String> = if url_path.ends_with(".rs") {
-      url_path[..url_path.len() - 3].split('/')
-    } else {
-      url_path.split('/')
-    }
-    .into_iter()
-    .filter(|s| !s.is_empty())
-    .map(|s| {
-      let s = s.to_string();
+  fn new(route_type: RouteType, url_path: String, fields: &Punctuated<FnArg, Comma>) -> Self {
+    let mut url_params = fields.iter().flat_map(|arg| RoutePartDynamic::from(arg));
+    let parts = url_path
+      .split('/')
+      .map(|part| {
+        let mut part = if part.ends_with(".rs") {
+          part.get(..part.len() - 3).unwrap().to_string()
+        } else {
+          part.to_string()
+        };
 
-      if s.starts_with("__") && s.ends_with("__") {
-        let field_name = &s[2..s.len() - 2];
-        format!("<{}>", field_name)
-      } else {
-        s
-      }
-    })
-    .collect();
+        if part.starts_with("__") && part.ends_with("__") {
+          if let Some(part) =
+            url_params.find(|param| param.cmp(part.get(2..part.len() - 2).unwrap()))
+          {
+            RoutePart::Dynamic(part.clone())
+          } else {
+            emit_error!(part.span(), "route parameter `{}` not found", part);
+            RoutePart::Static(part.to_string())
+          }
+        } else {
+          part = if part == "index" {
+            "".to_string()
+          } else {
+            part
+          };
 
-    let mut last: String = parts.clone().into_iter().last().unwrap();
-    last = if last.starts_with("index") {
-      last[5..].to_string()
-    } else {
-      last
-    };
-
-    let last_index = parts.len() - 1;
-    let _ = std::mem::replace(&mut parts[last_index], last);
+          RoutePart::Static(part)
+        }
+      })
+      .collect::<Vec<RoutePart>>();
 
     Self {
       method: HttpMethod::Get,
-      name,
-      parts: parts
-        .iter()
-        .filter(|s| !s.is_empty())
-        .map(|s| s.to_owned())
-        .collect::<Vec<_>>()
-        .to_owned(),
-      route_params: fields.clone(),
+      parts,
       route_type,
     }
   }
 
+  fn build(&self, fn_struct: &FnStruct) -> proc_macro2::TokenStream {
+    let block = fn_struct.block();
+
+    quote! {
+      #block
+    }
+  }
+
   fn build_uri(&self) -> proc_macro2::TokenStream {
-    if self.route_params.is_empty() {
-      let url_path = format!("/{}", self.parts.join("/"));
+    let params = self
+      .parts
+      .iter()
+      .flat_map(|part| match part {
+        RoutePart::Static(_) => None,
+        RoutePart::Dynamic(d) => {
+          let ident = d.ident.clone();
+          Some(quote! { #ident })
+        }
+      })
+      .collect::<Vec<_>>();
+
+    let url_path = self
+      .parts
+      .iter()
+      .map(|part| match part {
+        RoutePart::Static(s) => s.clone(),
+        RoutePart::Dynamic(_) => "{}".to_string(),
+      })
+      .collect::<Vec<_>>()
+      .join("/");
+
+    if params.is_empty() {
       quote! {
         #url_path .to_string()
       }
     } else {
-      let params: Vec<_> = self
-        .route_params
-        .iter()
-        .filter_map(|argument| match argument {
-          syn::FnArg::Typed(typed) => Some(typed),
-          syn::FnArg::Receiver(rec) => {
-            emit_error!(rec.span(), "Don't use `self` on components");
-            None
-          }
-        })
-        .map(|value| {
-          let pat = &value.pat;
-          quote!(#pat)
-        })
-        .collect();
-
-      let url_path = format!(
-        "/{}",
-        self
-          .parts
-          .iter()
-          .map(|f| {
-            if f.starts_with("<") && f.ends_with(">") {
-              "{}"
-            } else {
-              &f
-            }
-          })
-          .collect::<Vec<&str>>()
-          .join("/")
-      );
-
       quote! {
         format!(#url_path, #(#params,)*)
       }
     }
   }
 
-  fn build(&self, fn_struct: &FnStruct) -> proc_macro2::TokenStream {
-    let method: Ident = self.method.into();
-    // let mut route = quote! { warp:: #method () };
-    let mut route: Option<proc_macro2::TokenStream> = None;
+  fn params_types(&self) -> proc_macro2::TokenStream {
+    let types = self
+      .parts
+      .iter()
+      .filter_map(|part| match part {
+        RoutePart::Static(_) => None,
+        RoutePart::Dynamic(d) => Some(&d.ty),
+      })
+      .map(|ty| quote!( #ty ))
+      .collect::<Vec<_>>();
 
-    for part in self.parts.iter() {
-      let uri = if part.starts_with("<") && part.ends_with(">") {
-        quote!(warp::path::param())
-      } else {
-        quote!( $part )
-      };
-      if let Some(r) = route {
-        route = Some(quote!( #r . #method ( #uri ) ));
-      } else {
-        route = Some(quote!( warp::path( #uri ) ));
-      }
-      // };
-    }
-
-    let block = fn_struct.block();
-    let input_readings = if fn_struct.inputs().is_empty() {
-      quote!()
-    } else {
-      let input_names: Vec<_> = fn_struct.inputs().iter().collect();
-      quote!(#(#input_names),*,)
-    };
-
-    let route = if let Some(route) = route {
-      quote! { #route .and(warp::path::end()) }
-    } else {
-      quote! { warp::path::end() }
-    };
-
-    quote! {
-      {
-        use warp::Filter;
-
-        #route
-          // .with(f)
-          .map(|#input_readings| {
-            // warp::http::Response::builder()
-            //   .header("Content-Type", "text/html")
-            //   .body( #block .render() )
-            #block .render()
-          })
-      }
-    }
+    quote!( #(#types),* )
   }
 }
 
-pub fn generate_route_path(
-  name: String,
-  route_type: RouteType,
-  fields: &Punctuated<FnArg, Comma>,
-) -> Route {
+pub fn generate_route_path(route_type: RouteType, fields: &Punctuated<FnArg, Comma>) -> Route {
   let span = proc_macro::Span::call_site();
   let source = span.source_file();
   let path = source.path().to_str().unwrap().to_owned();
@@ -238,7 +235,7 @@ pub fn generate_route_path(
   .unwrap()
   .to_owned();
 
-  Route::new(name, route_type, format!("/{}", url_path), fields)
+  Route::new(route_type, format!("/{}", url_path), fields)
 }
 
 pub fn create_page(f: syn::ItemFn) -> TokenStream {
@@ -267,12 +264,11 @@ pub fn create_page(f: syn::ItemFn) -> TokenStream {
     );
   }
 
-  let route = generate_route_path(struct_name.to_string(), RouteType::Page, fn_struct.inputs());
+  let route = generate_route_path(RouteType::Page, fn_struct.inputs());
   let uri = route.build_uri();
   let mount_route = route.build(&fn_struct);
 
   quote! {
-    #[derive(Debug)]
     #vis struct #struct_name #impl_generics #input_blocks
 
     impl #ty_generics #struct_name #impl_generics #where_clause {
@@ -280,24 +276,9 @@ pub fn create_page(f: syn::ItemFn) -> TokenStream {
         #uri
       }
 
-      pub fn mount() -> impl warp::Filter<Extract = (String,), Error = warp::Rejection> + Clone + Send + Sync + 'static
-      {
-        #mount_route
+      pub fn mount(#input_fields) -> String {
+        #mount_route .render()
       }
-
-      // TODO: It seems that this will be easier to implement with a macro
-      // pub fn mount_with_middleware<F, T>(f: F) -> impl warp::Filter<Extract = (T,)> + Clone + Send + Sync + 'static
-      // where
-      //   F: warp::Filter<Extract = (T,)> + Clone + Send + Sync + 'static,
-      //   F::Extract: warp::Reply,
-      //   // C: Fn(F) -> F,
-      //   // // A: warp::Filter<Extract = (), Error = warp::Rejection> + Copy,
-      //   // F: warp::Filter<Extract = (T,), Error = warp::Rejection> + Clone + Send + Sync + 'static,
-      //   // F::Extract: warp::Reply,
-      //   //A: warp::Filter + Clone,
-      // {
-      //   #mount_route
-      // }
     }
   }
   .into()
