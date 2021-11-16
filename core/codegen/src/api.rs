@@ -29,13 +29,14 @@ pub fn create_api(f: syn::ItemFn) -> TokenStream {
   let route = generate_route_path(RouteType::Api, struct_str_name.clone(), fn_struct.inputs());
   let uri = route.build_uri();
   let mount_route = route.build(&fn_struct);
+  let uri_input_fields = route.params();
 
   quote! {
     #[allow(non_camel_case_types)]
     #vis struct #struct_name #impl_generics #input_blocks
 
     impl #ty_generics #struct_name #impl_generics #where_clause {
-      pub fn uri(#input_fields) -> String {
+      pub fn uri(#uri_input_fields) -> String {
         #uri
       }
 

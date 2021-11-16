@@ -1,6 +1,6 @@
 use proc_macro2::{Ident, Span};
 use proc_macro_error::emit_error;
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn::{punctuated::Punctuated, spanned::Spanned, token::Comma, FnArg, Pat, PatIdent, PatType};
 
 use crate::utils::FnStruct;
@@ -105,6 +105,14 @@ impl ToString for RoutePartDynamic {
   }
 }
 
+impl ToTokens for RoutePartDynamic {
+  fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+    let ident = &self.ident;
+    let ty = &self.ty;
+    quote!( #ident: #ty ).to_tokens(tokens);
+  }
+}
+
 #[derive(Clone)]
 pub enum RoutePart {
   Static(String),
@@ -202,6 +210,20 @@ impl Route {
         format!(#url_path, #(#params,)*)
       }
     }
+  }
+
+  pub fn params(&self) -> proc_macro2::TokenStream {
+    let types = self
+      .parts
+      .iter()
+      .filter_map(|part| match part {
+        RoutePart::Static(_) => None,
+        RoutePart::Dynamic(d) => Some(d),
+      })
+      .map(|d| quote!( #d ))
+      .collect::<Vec<_>>();
+
+    quote!( #(#types),* )
   }
 
   pub fn params_types(&self) -> proc_macro2::TokenStream {

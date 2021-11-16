@@ -1,5 +1,7 @@
 use app::api;
 
+use crate::app::SuperUser;
+
 mod app;
 
 #[test]
@@ -23,6 +25,9 @@ fn test_get_id_api_request() {
 
 #[test]
 fn test_post_id_api_request() {
-  let response = api::__id__::post::mount(200);
+  let user = SuperUser {
+    name: "root".into(),
+  };
+  let response = api::__id__::post::mount(user, 200);
   assert_eq!(response, 200);
 }
