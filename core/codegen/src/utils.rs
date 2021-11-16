@@ -98,6 +98,11 @@ impl FnStruct {
       } = self;
     )
   }
+
+  pub fn return_type(&self) -> TokenStream {
+    let return_type = &self.f.sig.output;
+    quote!(#return_type)
+  }
 }
 
 impl From<ItemFn> for FnStruct {
