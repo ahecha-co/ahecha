@@ -10,6 +10,7 @@ use proc_macro_error::proc_macro_error;
 use quote::quote;
 use syn::{parse_macro_input, ItemFn};
 
+mod api;
 mod custom_element;
 mod html;
 mod page;
@@ -18,8 +19,15 @@ mod routes;
 mod utils;
 
 #[proc_macro_attribute]
-pub fn custom_element(_metadata: TokenStream, item: TokenStream) -> TokenStream {
-  let f = parse_macro_input!(item as ItemFn);
+#[proc_macro_error]
+pub fn api(_metadata: TokenStream, input: TokenStream) -> TokenStream {
+  let f = parse_macro_input!(input as ItemFn);
+  api::create_api(f)
+}
+
+#[proc_macro_attribute]
+pub fn custom_element(_metadata: TokenStream, input: TokenStream) -> TokenStream {
+  let f = parse_macro_input!(input as ItemFn);
   custom_element::create_custom_element(f)
 }
 
@@ -72,14 +80,14 @@ pub fn html(input: TokenStream) -> TokenStream {
 
 #[proc_macro_attribute]
 #[proc_macro_error]
-pub fn partial(_metadata: TokenStream, item: TokenStream) -> TokenStream {
-  let f = parse_macro_input!(item as ItemFn);
+pub fn partial(_metadata: TokenStream, input: TokenStream) -> TokenStream {
+  let f = parse_macro_input!(input as ItemFn);
   partial::create_partial(f)
 }
 
 #[proc_macro_attribute]
 #[proc_macro_error]
-pub fn page(_metadata: TokenStream, item: TokenStream) -> TokenStream {
-  let f = parse_macro_input!(item as ItemFn);
+pub fn page(_metadata: TokenStream, nput: TokenStream) -> TokenStream {
+  let f = parse_macro_input!(nput as ItemFn);
   page::create_page(f)
 }

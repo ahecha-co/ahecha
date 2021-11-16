@@ -1,6 +1,6 @@
 use proc_macro2::{Ident, Span};
 use proc_macro_error::emit_error;
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn::{punctuated::Punctuated, spanned::Spanned, token::Comma, FnArg, Pat, PatIdent, PatType};
 
 use crate::utils::FnStruct;
@@ -24,13 +24,17 @@ pub enum HttpMethod {
 impl From<String> for HttpMethod {
   fn from(method: String) -> Self {
     match method.to_lowercase().as_str() {
+      "get" => HttpMethod::Get,
       "post" => HttpMethod::Post,
       "put" => HttpMethod::Put,
       "delete" => HttpMethod::Delete,
       "patch" => HttpMethod::Patch,
       "head" => HttpMethod::Head,
       "options" => HttpMethod::Options,
-      _ => HttpMethod::Get,
+      _ => {
+        emit_error!(Span::call_site(), "Unsupported HTTP method: {}", method);
+        HttpMethod::Get
+      }
     }
   }
 }
@@ -38,27 +42,17 @@ impl From<String> for HttpMethod {
 impl From<Ident> for HttpMethod {
   fn from(method: Ident) -> Self {
     match method.to_string().to_lowercase().as_str() {
+      "get" => HttpMethod::Get,
       "post" => HttpMethod::Post,
       "put" => HttpMethod::Put,
       "delete" => HttpMethod::Delete,
       "patch" => HttpMethod::Patch,
       "head" => HttpMethod::Head,
       "options" => HttpMethod::Options,
-      _ => HttpMethod::Get,
-    }
-  }
-}
-
-impl Into<Ident> for HttpMethod {
-  fn into(self) -> Ident {
-    match self {
-      HttpMethod::Get => Ident::new("get", Span::call_site()),
-      HttpMethod::Post => Ident::new("post", Span::call_site()),
-      HttpMethod::Put => Ident::new("put", Span::call_site()),
-      HttpMethod::Delete => Ident::new("delete", Span::call_site()),
-      HttpMethod::Patch => Ident::new("patch", Span::call_site()),
-      HttpMethod::Head => Ident::new("head", Span::call_site()),
-      HttpMethod::Options => Ident::new("options", Span::call_site()),
+      _ => {
+        emit_error!(Span::call_site(), "Unsupported HTTP method: {}", method);
+        HttpMethod::Get
+      }
     }
   }
 }
@@ -87,13 +81,21 @@ impl RoutePartDynamic {
   }
 
   fn cmp(&self, ident: &str) -> bool {
-    &self.ident.to_string() == ident
+    self.ident == ident
   }
 }
 
 impl ToString for RoutePartDynamic {
   fn to_string(&self) -> String {
     format!("<{}>", self.ident)
+  }
+}
+
+impl ToTokens for RoutePartDynamic {
+  fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+    let ident = &self.ident;
+    let ty = &self.ty;
+    quote!( #ident: #ty ).to_tokens(tokens);
   }
 }
 
@@ -116,12 +118,11 @@ impl ToString for RoutePart {
 pub struct Route {
   pub method: HttpMethod,
   pub parts: Vec<RoutePart>,
-  pub route_type: RouteType,
 }
 
 impl Route {
-  pub fn new(route_type: RouteType, url_path: String, fields: &Punctuated<FnArg, Comma>) -> Self {
-    let mut url_params = fields.iter().flat_map(|arg| RoutePartDynamic::from(arg));
+  pub fn new(method: HttpMethod, url_path: String, fields: &Punctuated<FnArg, Comma>) -> Self {
+    let mut url_params = fields.iter().flat_map(RoutePartDynamic::from);
     let parts = url_path
       .split('/')
       .map(|part| {
@@ -135,7 +136,7 @@ impl Route {
           if let Some(part) =
             url_params.find(|param| param.cmp(part.get(2..part.len() - 2).unwrap()))
           {
-            RoutePart::Dynamic(part.clone())
+            RoutePart::Dynamic(part)
           } else {
             emit_error!(part.span(), "route parameter `{}` not found", part);
             RoutePart::Static(part.to_string())
@@ -152,11 +153,7 @@ impl Route {
       })
       .collect::<Vec<RoutePart>>();
 
-    Self {
-      method: HttpMethod::Get,
-      parts,
-      route_type,
-    }
+    Self { method, parts }
   }
 
   pub fn build(&self, fn_struct: &FnStruct) -> proc_macro2::TokenStream {
@@ -201,6 +198,20 @@ impl Route {
     }
   }
 
+  pub fn params(&self) -> proc_macro2::TokenStream {
+    let types = self
+      .parts
+      .iter()
+      .filter_map(|part| match part {
+        RoutePart::Static(_) => None,
+        RoutePart::Dynamic(d) => Some(d),
+      })
+      .map(|d| quote!( #d ))
+      .collect::<Vec<_>>();
+
+    quote!( #(#types),* )
+  }
+
   pub fn params_types(&self) -> proc_macro2::TokenStream {
     let types = self
       .parts
@@ -216,7 +227,11 @@ impl Route {
   }
 }
 
-pub fn generate_route_path(route_type: RouteType, fields: &Punctuated<FnArg, Comma>) -> Route {
+pub fn generate_route_path(
+  route_type: RouteType,
+  fn_name: String,
+  fields: &Punctuated<FnArg, Comma>,
+) -> Route {
   let span = proc_macro::Span::call_site();
   let source = span.source_file();
   let path = source.path().to_str().unwrap().to_owned();
@@ -231,5 +246,10 @@ pub fn generate_route_path(route_type: RouteType, fields: &Punctuated<FnArg, Com
   .unwrap()
   .to_owned();
 
-  Route::new(route_type, format!("/{}", url_path), fields)
+  let method = match route_type {
+    RouteType::Api => HttpMethod::from(fn_name),
+    RouteType::Page => HttpMethod::Get,
+  };
+
+  Route::new(method, format!("/{}", url_path), fields)
 }
