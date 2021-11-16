@@ -14,6 +14,7 @@ mod custom_element;
 mod html;
 mod page;
 mod partial;
+mod routes;
 mod utils;
 
 #[proc_macro_attribute]
