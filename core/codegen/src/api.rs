@@ -26,7 +26,7 @@ pub fn create_api(f: syn::ItemFn) -> TokenStream {
     emit_error!(struct_name.span(), "Rest API functions must lower case");
   }
 
-  let route = generate_route_path(RouteType::Api, struct_str_name.clone(), fn_struct.inputs());
+  let route = generate_route_path(RouteType::Api, struct_str_name, fn_struct.inputs());
   let uri = route.build_uri();
   let mount_route = route.build(&fn_struct);
   let uri_input_fields = route.params();

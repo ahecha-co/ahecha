@@ -33,7 +33,7 @@ pub fn create_page(f: syn::ItemFn) -> TokenStream {
     );
   }
 
-  let route = generate_route_path(RouteType::Page, struct_str_name.clone(), fn_struct.inputs());
+  let route = generate_route_path(RouteType::Page, struct_str_name, fn_struct.inputs());
   let uri = route.build_uri();
   let mount_route = route.build(&fn_struct);
   let uri_input_fields = route.params();

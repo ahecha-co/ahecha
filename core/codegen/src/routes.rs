@@ -57,20 +57,6 @@ impl From<Ident> for HttpMethod {
   }
 }
 
-impl Into<Ident> for HttpMethod {
-  fn into(self) -> Ident {
-    match self {
-      HttpMethod::Get => Ident::new("get", Span::call_site()),
-      HttpMethod::Post => Ident::new("post", Span::call_site()),
-      HttpMethod::Put => Ident::new("put", Span::call_site()),
-      HttpMethod::Delete => Ident::new("delete", Span::call_site()),
-      HttpMethod::Patch => Ident::new("patch", Span::call_site()),
-      HttpMethod::Head => Ident::new("head", Span::call_site()),
-      HttpMethod::Options => Ident::new("options", Span::call_site()),
-    }
-  }
-}
-
 #[derive(Clone)]
 pub struct RoutePartDynamic {
   ident: Ident,
@@ -95,7 +81,7 @@ impl RoutePartDynamic {
   }
 
   fn cmp(&self, ident: &str) -> bool {
-    &self.ident.to_string() == ident
+    self.ident == ident
   }
 }
 
@@ -136,7 +122,7 @@ pub struct Route {
 
 impl Route {
   pub fn new(method: HttpMethod, url_path: String, fields: &Punctuated<FnArg, Comma>) -> Self {
-    let mut url_params = fields.iter().flat_map(|arg| RoutePartDynamic::from(arg));
+    let mut url_params = fields.iter().flat_map(RoutePartDynamic::from);
     let parts = url_path
       .split('/')
       .map(|part| {
@@ -150,7 +136,7 @@ impl Route {
           if let Some(part) =
             url_params.find(|param| param.cmp(part.get(2..part.len() - 2).unwrap()))
           {
-            RoutePart::Dynamic(part.clone())
+            RoutePart::Dynamic(part)
           } else {
             emit_error!(part.span(), "route parameter `{}` not found", part);
             RoutePart::Static(part.to_string())
