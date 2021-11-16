@@ -136,3 +136,7 @@ information to make the corresponding call (GET, POST, PUT, PATCH, DELETE)
 ### Tooling
 
 > TBD
+
+## Similar projects
+
+- [Perseus](https://github.com/arctic-hen7/perseus)
