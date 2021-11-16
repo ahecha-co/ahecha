@@ -12,7 +12,9 @@ use syn::{parse_macro_input, ItemFn};
 
 mod custom_element;
 mod html;
+mod page;
 mod partial;
+mod routes;
 mod utils;
 
 #[proc_macro_attribute]
@@ -73,4 +75,11 @@ pub fn html(input: TokenStream) -> TokenStream {
 pub fn partial(_metadata: TokenStream, item: TokenStream) -> TokenStream {
   let f = parse_macro_input!(item as ItemFn);
   partial::create_partial(f)
+}
+
+#[proc_macro_attribute]
+#[proc_macro_error]
+pub fn page(_metadata: TokenStream, item: TokenStream) -> TokenStream {
+  let f = parse_macro_input!(item as ItemFn);
+  page::create_page(f)
 }
