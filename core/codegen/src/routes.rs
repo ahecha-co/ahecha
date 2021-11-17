@@ -156,14 +156,6 @@ impl Route {
     Self { method, parts }
   }
 
-  pub fn build(&self, fn_struct: &FnStruct) -> proc_macro2::TokenStream {
-    let block = fn_struct.block();
-
-    quote! {
-      #block
-    }
-  }
-
   pub fn build_uri(&self) -> proc_macro2::TokenStream {
     let params = self
       .parts
