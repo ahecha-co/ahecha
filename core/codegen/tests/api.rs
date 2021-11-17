@@ -13,13 +13,13 @@ fn test_generate_route() {
 
 #[test]
 fn test_index_api_request() {
-  let response = api::index::get::mount();
+  let response = api::index::get::handler();
   assert_eq!(response, "Hello index api");
 }
 
 #[test]
 fn test_get_id_api_request() {
-  let response = api::__id__::get::mount(5);
+  let response = api::__id__::get::handler(5);
   assert_eq!(response, "{\"title\": \"Hello get 5 route\"}");
 }
 
@@ -28,6 +28,6 @@ fn test_post_id_api_request() {
   let user = SuperUser {
     name: "root".into(),
   };
-  let response = api::__id__::post::mount(user, 200);
+  let response = api::__id__::post::handler(user, 200);
   assert_eq!(response, 200);
 }

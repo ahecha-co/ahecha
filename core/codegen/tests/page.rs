@@ -1,3 +1,4 @@
+use ahecha_view::Render;
 use app::page;
 
 mod app;
@@ -14,12 +15,18 @@ fn test_generate_route() {
 
 #[test]
 fn test_index_page_request() {
-  let response = page::index::IndexPage::mount();
-  assert_eq!(response, "<div>Index page</div>");
+  let response = page::index::IndexPage::handler().render();
+  assert_eq!(
+    response,
+    "<html><head><title></title></head><body><div>Index page</div></body></html>"
+  );
 }
 
 #[test]
 fn test_test_page_request() {
-  let response = page::__count__::CountPage::mount(5);
-  assert_eq!(response, "<div>Test page<span>5</span></div>");
+  let response = page::__count__::CountPage::handler(5).render();
+  assert_eq!(
+    response,
+    "<html><head><title></title></head><body><div>Test page<span>5</span></div></body></html>"
+  );
 }

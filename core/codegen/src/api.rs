@@ -18,6 +18,7 @@ pub fn create_api(f: syn::ItemFn) -> TokenStream {
   let where_clause = fn_struct.where_clause();
   let input_blocks = fn_struct.input_blocks();
   let input_fields = fn_struct.input_fields();
+  let block = fn_struct.block();
 
   let struct_str_name = struct_name.to_string();
   if struct_str_name.to_lowercase().chars().next().unwrap()
@@ -28,7 +29,6 @@ pub fn create_api(f: syn::ItemFn) -> TokenStream {
 
   let route = generate_route_path(RouteType::Api, struct_str_name, fn_struct.inputs());
   let uri = route.build_uri();
-  let mount_route = route.build(&fn_struct);
   let uri_input_fields = route.params();
 
   quote! {
@@ -40,8 +40,8 @@ pub fn create_api(f: syn::ItemFn) -> TokenStream {
         #uri
       }
 
-      pub fn mount(#input_fields) #return_type {
-        #mount_route
+      pub fn handler(#input_fields) #return_type {
+        #block
       }
     }
   }

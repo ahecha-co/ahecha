@@ -12,6 +12,7 @@ use syn::{parse_macro_input, ItemFn};
 
 mod api;
 mod custom_element;
+mod document;
 mod html;
 mod page;
 mod partial;
@@ -29,6 +30,12 @@ pub fn api(_metadata: TokenStream, input: TokenStream) -> TokenStream {
 pub fn custom_element(_metadata: TokenStream, input: TokenStream) -> TokenStream {
   let f = parse_macro_input!(input as ItemFn);
   custom_element::create_custom_element(f)
+}
+
+#[proc_macro_attribute]
+pub fn document(_metadata: TokenStream, input: TokenStream) -> TokenStream {
+  let f = parse_macro_input!(input as ItemFn);
+  document::create_document(f)
 }
 
 #[proc_macro]
@@ -87,7 +94,8 @@ pub fn partial(_metadata: TokenStream, input: TokenStream) -> TokenStream {
 
 #[proc_macro_attribute]
 #[proc_macro_error]
-pub fn page(_metadata: TokenStream, nput: TokenStream) -> TokenStream {
-  let f = parse_macro_input!(nput as ItemFn);
-  page::create_page(f)
+pub fn page(metadata: TokenStream, input: TokenStream) -> TokenStream {
+  let attributes = parse_macro_input!(metadata as syn::AttributeArgs);
+  let f = parse_macro_input!(input as ItemFn);
+  page::create_page(f, attributes)
 }
