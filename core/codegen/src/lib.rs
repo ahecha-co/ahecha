@@ -43,8 +43,8 @@ pub fn html(input: TokenStream) -> TokenStream {
   // If there's a better way to stringify a TokenStream without losing the original format, please let me know.
   let input_html = input
     .to_string()
-    .replace("\n", "")
-    .replace("\r", "")
+    .replace("\n", " ")
+    .replace("\r", " ")
     .replace("\t", "")
     .replace("<! ", "<!")
     .replace("<!- -", "<!--")

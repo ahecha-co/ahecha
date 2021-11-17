@@ -1,6 +1,9 @@
 use quote::{quote, ToTokens};
 
-use crate::html::{attributes::Attributes, children::Children};
+use crate::html::{
+  attributes::{Attribute, Attributes},
+  children::Children,
+};
 
 #[derive(Debug)]
 pub struct HtmlPartial {
@@ -17,7 +20,7 @@ impl ToTokens for HtmlPartial {
 
     let mut attrs = vec![];
 
-    for (key, value) in attributes.attrs.iter() {
+    for Attribute { key, value } in attributes.attrs.iter() {
       let key = syn::Ident::new(key, proc_macro2::Span::call_site());
       attrs.push(quote! {
         #key: #value
