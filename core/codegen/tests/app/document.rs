@@ -1,11 +1,12 @@
-use ahecha_codegen::html;
+use ahecha_codegen::{document, html};
 
 mod ahecha {
   pub use ahecha_view as view;
 }
 
+#[document]
 pub fn Document<Head, Body>(
-  title: Option<&str>,
+  title: Option<&'static str>,
   head: Head,
   body: Body,
 ) -> impl ahecha_view::Render + '_
@@ -16,7 +17,7 @@ where
   html! {
     <html>
       <head>
-        <title>{ title.unwrap_or("") }</title>
+        <title>{ title.unwrap_or("Document title") }</title>
         { head }
       </head>
       <body>
