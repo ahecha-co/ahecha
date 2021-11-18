@@ -3,7 +3,7 @@ use std::str;
 use nom::{
   branch::alt,
   bytes::complete::{tag, tag_no_case, take_till, take_until, take_while},
-  combinator::{eof, opt},
+  combinator::{eof, map, opt},
   error::{context, ContextError, ParseError},
   multi::{many0, many_till},
   sequence::{delimited, preceded},
@@ -14,7 +14,7 @@ use node::*;
 
 use crate::html::children::Children;
 
-use self::attributes::Attribute;
+use self::attributes::{Attribute, AttributeValue};
 
 mod attributes;
 mod children;
@@ -29,6 +29,12 @@ fn sp<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
   // nom combinators like `take_while` return a function. That function is the
   // parser,to which we can pass the input
   take_while(move |c| chars.contains(c))(i)
+}
+
+fn parse_quoted_string<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+  input: &'a str,
+) -> IResult<&'a str, &'a str, E> {
+  delimited(tag("\""), take_till(|c| c == '"'), tag("\""))(input)
 }
 
 fn parse_tag_name<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
@@ -46,8 +52,23 @@ fn parse_attribute<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 ) -> IResult<&'a str, Attribute, E> {
   let (input, _) = take_while(|c| c == ' ')(input)?;
   let (input, key) = take_while(|c: char| c.is_alphanumeric())(input)?;
-  let (input, value) = delimited(tag("=\""), take_till(|c| c == '"'), tag("\""))(input)?;
-  Ok((input, (key.to_string(), value.to_string())))
+  let (input, value) = preceded(
+    tag("="),
+    alt((
+      map(parse_quoted_string, |v| {
+        AttributeValue::String(v.to_string())
+      }),
+      map(parse_block, |v| AttributeValue::Block(v.to_string())),
+    )),
+  )(input)?;
+
+  Ok((
+    input,
+    Attribute {
+      key: key.to_string(),
+      value,
+    },
+  ))
 }
 
 fn parse_attributes0<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
@@ -144,12 +165,19 @@ fn parse_text<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 
 fn parse_block<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
   input: &'a str,
+) -> IResult<&'a str, &'a str, E> {
+  let (input, block) = delimited(tag("{"), take_until("}"), tag("}"))(input)?;
+  Ok((input, block))
+}
+
+fn parse_block_node<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+  input: &'a str,
 ) -> IResult<&'a str, HtmlNode, E> {
-  let (input, text) = delimited(tag("{"), take_until("}"), tag("}"))(input)?;
+  let (input, block) = parse_block(input)?;
   Ok((
     input,
     HtmlNode::Block(HtmlBlock {
-      block: text.to_string(),
+      block: block.to_string(),
     }),
   ))
 }
@@ -190,7 +218,7 @@ fn parse_node<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
         parse_comments,
         parse_self_closing_tag,
         parse_tag_with_children,
-        parse_block,
+        parse_block_node,
         parse_text,
       ))),
     ),
@@ -210,6 +238,8 @@ pub fn parse<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 #[cfg(test)]
 mod test {
   use nom::error::ErrorKind;
+
+  use crate::html::attributes::AttributeValue;
 
   use super::*;
 
@@ -242,7 +272,13 @@ mod test {
     let input = "attr=\"value\" attr2=\"value2\"";
     let (remainder, attribute) = parse_attribute::<(&str, ErrorKind)>(input).unwrap();
     assert_eq!(remainder, " attr2=\"value2\"");
-    assert_eq!(attribute, ("attr".into(), "value".into()));
+    assert_eq!(
+      attribute,
+      Attribute {
+        key: "attr".to_string(),
+        value: AttributeValue::String("value".to_string())
+      }
+    );
   }
 
   #[test]
@@ -253,7 +289,22 @@ mod test {
     match node {
       HtmlNode::Element(tag) => {
         assert_eq!(tag.name, "div");
-        assert_eq!(tag.attributes.attrs, vec![]);
+        assert!(tag.attributes.attrs.is_empty());
+      }
+      _ => panic!("Expected tag"),
+    }
+  }
+
+  #[test]
+  fn test_self_closing_tag_with_attributes() {
+    let input = "<div class=\"main\" id=\"id\"/>";
+    let (remainder, node) = parse_self_closing_tag::<(&str, ErrorKind)>(input).unwrap();
+    assert_eq!(remainder, "");
+    match node {
+      HtmlNode::Element(tag) => {
+        assert_eq!(tag.name, "div");
+        assert_eq!(tag.attributes.attrs.len(), 2);
+        assert_eq!(tag.children.nodes.len(), 0);
       }
       _ => panic!("Expected tag"),
     }
@@ -267,7 +318,7 @@ mod test {
     match node {
       HtmlNode::Element(tag) => {
         assert_eq!(tag.name, "div");
-        assert_eq!(tag.attributes.attrs, vec![]);
+        assert!(tag.attributes.attrs.is_empty());
       }
       _ => panic!("Expected tag"),
     }
@@ -329,7 +380,7 @@ mod test {
   #[test]
   fn test_parse_block() {
     let input = "{ a block } Hello World</div>";
-    let (remainder, node) = parse_block::<(&str, ErrorKind)>(input).unwrap();
+    let (remainder, node) = parse_block_node::<(&str, ErrorKind)>(input).unwrap();
     assert_eq!(remainder, " Hello World</div>");
     match node {
       HtmlNode::Block(block) => assert_eq!(block.block, " a block "),

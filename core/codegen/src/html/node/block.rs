@@ -9,9 +9,10 @@ pub struct HtmlBlock {
 impl ToTokens for HtmlBlock {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
     let block: TokenStream = self.block.parse().unwrap();
-    tokens.extend(quote! {
+    quote! {
       #block
-    });
+    }
+    .to_tokens(tokens);
   }
 }
 

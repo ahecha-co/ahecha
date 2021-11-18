@@ -8,7 +8,7 @@ use nom::error::ErrorKind;
 use proc_macro::TokenStream;
 use proc_macro_error::proc_macro_error;
 use quote::quote;
-use syn::{parse_macro_input, ItemFn};
+use syn::{parse_macro_input, ExprCall, ItemFn};
 
 mod api;
 mod custom_element;
@@ -43,8 +43,8 @@ pub fn html(input: TokenStream) -> TokenStream {
   // If there's a better way to stringify a TokenStream without losing the original format, please let me know.
   let input_html = input
     .to_string()
-    .replace("\n", "")
-    .replace("\r", "")
+    .replace("\n", " ")
+    .replace("\r", " ")
     .replace("\t", "")
     .replace("<! ", "<!")
     .replace("<!- -", "<!--")
@@ -98,4 +98,16 @@ pub fn page(metadata: TokenStream, input: TokenStream) -> TokenStream {
   let attributes = parse_macro_input!(metadata as syn::AttributeArgs);
   let f = parse_macro_input!(input as ItemFn);
   page::create_page(f, attributes)
+}
+
+#[proc_macro]
+pub fn uri(input: TokenStream) -> TokenStream {
+  let f = parse_macro_input!(input as ExprCall);
+  let name = f.func.clone();
+  let args = f.args.clone();
+
+  quote! {
+    #name ::uri(#args)
+  }
+  .into()
 }

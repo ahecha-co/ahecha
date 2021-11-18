@@ -34,6 +34,47 @@ fn test_html_tag_nested() {
   );
 }
 
+#[test]
+fn test_html_with_doctype() {
+  let res = html! {
+    <!doctype html>
+    <html>
+      <head>
+        <title>Document title</title>
+      </head>
+      <body>
+        <header class="container">
+          <div class="row">
+            <div class="col-9"></div>
+          </div>
+        </header>
+      </body>
+    </html>
+  };
+  assert_eq!(
+    res.render(),
+    "<!doctype html><html><head><title>Document title</title></head><body><header class=\"container\"><div class=\"row\"><div class=\"col-9\"/></div></header></body></html>"
+  );
+}
+
+#[test]
+fn test_use_block_in_attribute_value() {
+  let res = html! { <div class={"container"}/> };
+  assert_eq!(res.render(), "<div class=\"container\"/>");
+}
+
+#[test]
+fn test_use_expression_block_in_attribute_value() {
+  let res = html! { <div class={ 2 + 2 }/> };
+  assert_eq!(res.render(), "<div class=\"4\"/>");
+}
+
+#[test]
+fn test_html_with_expression_block() {
+  let res = html! { <div>{ 2 + 2 }</div> };
+  assert_eq!(res.render(), "<div>4</div>");
+}
+
 // TODO: disabled until find a solution to handle the `{{` and `<` while parsing strings
 // #[test]
 // fn test_parse_bootstrap_sign_up_example() {

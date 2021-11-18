@@ -1,7 +1,7 @@
 use proc_macro::TokenStream;
 use proc_macro_error::emit_error;
 use quote::quote;
-use syn::{AttributeArgs, LitStr, Path};
+use syn::AttributeArgs;
 
 use crate::{
   page::attributes::PageAttributes,
@@ -22,7 +22,6 @@ pub fn create_page(f: syn::ItemFn, attrs: AttributeArgs) -> TokenStream {
   let input_blocks = fn_struct.input_blocks();
   let input_fields = fn_struct.input_fields();
   let block = fn_struct.block();
-  let maybe_title = quote!(None);
 
   let struct_str_name = struct_name.to_string();
   if struct_str_name.to_uppercase().chars().next().unwrap()
@@ -41,6 +40,13 @@ pub fn create_page(f: syn::ItemFn, attrs: AttributeArgs) -> TokenStream {
 
   let attributes = PageAttributes::from_meta(&attrs);
   let document = attributes.document;
+  let maybe_title = {
+    if let Some(title) = attributes.title {
+      quote! { Some(#title) }
+    } else {
+      quote!(None)
+    }
+  };
 
   let route = generate_route_path(RouteType::Page, struct_str_name, fn_struct.inputs());
   let uri = route.build_uri();
