@@ -9,12 +9,16 @@ pub struct Children {
 
 impl ToTokens for Children {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-    let mut list = quote! { () };
+    if self.nodes.is_empty() {
+      quote! { Option::<()>::None }.to_tokens(tokens);
+    } else {
+      let mut list = quote! { () };
 
-    for node in self.nodes.iter().rev() {
-      list = quote! { (#node, #list) }
+      for node in self.nodes.iter().rev() {
+        list = quote! { (#node, #list) }
+      }
+
+      quote! { Some(#list) }.to_tokens(tokens);
     }
-
-    quote! { Some(#list) }.to_tokens(tokens);
   }
 }

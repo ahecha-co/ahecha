@@ -296,6 +296,21 @@ mod test {
   }
 
   #[test]
+  fn test_self_closing_tag_with_attributes() {
+    let input = "<div class=\"main\" id=\"id\"/>";
+    let (remainder, node) = parse_self_closing_tag::<(&str, ErrorKind)>(input).unwrap();
+    assert_eq!(remainder, "");
+    match node {
+      HtmlNode::Element(tag) => {
+        assert_eq!(tag.name, "div");
+        assert_eq!(tag.attributes.attrs.len(), 2);
+        assert_eq!(tag.children.nodes.len(), 0);
+      }
+      _ => panic!("Expected tag"),
+    }
+  }
+
+  #[test]
   fn test_tag() {
     let input = "<div></div>";
     let (remainder, node) = parse_tag_with_children::<(&str, ErrorKind)>(input).unwrap();

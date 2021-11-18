@@ -53,7 +53,7 @@ fn test_html_with_doctype() {
   };
   assert_eq!(
     res.render(),
-    "<!doctype html><html><head><title>Document title</title></head><body><header class=\"container\"><div class=\"row\"><div class=\"col-9\"></div></div></header></body></html>"
+    "<!doctype html><html><head><title>Document title</title></head><body><header class=\"container\"><div class=\"row\"><div class=\"col-9\"/></div></header></body></html>"
   );
 }
 
