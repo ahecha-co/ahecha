@@ -105,14 +105,14 @@ fn test_self_closing_tags() {
       <embed Required attributes>
       <hr>
       <img src="images/stickman.gif" width="24" height="39" alt="Stickman">
-      <input _type="text" name="text" value="">
+      <input type="text" name="text" value="">
       <link rel="stylesheet" href="stylesheet.css">
       <meta name="description" content="">
       <param name="movie" value="movie.swf">
-      <source src="movie.ogg" _type="video/ogg">
+      <source src="movie.ogg" type="video/ogg">
       <track src="movie.vtt" kind="subtitles" srclang="en" label="English">
       <wbr>
     </html>
   };
-  assert_eq!(res.render(), "<html><area alt=\"text\" class=\"\" coords=\"\" shape=\"\"/><base href=\"https://example.com\" target=\"_blank\"/><br/><col span=\"2\" class=\"batman\"/><embed Required=\"true\" attributes=\"true\"/><hr/><img src=\"images/stickman.gif\" width=\"24\" height=\"39\" alt=\"Stickman\"/><input _type=\"text\" name=\"text\" value=\"\"/><link rel=\"stylesheet\" href=\"stylesheet.css\"/><meta name=\"description\" content=\"\"/><param name=\"movie\" value=\"movie.swf\"/><source src=\"movie.ogg\" _type=\"video/ogg\"/><track src=\"movie.vtt\" kind=\"subtitles\" srclang=\"en\" label=\"English\"/><wbr/></html>");
+  assert_eq!(res.render(), "<html><area alt=\"text\" class=\"\" coords=\"\" shape=\"\"/><base href=\"https://example.com\" target=\"_blank\"/><br/><col span=\"2\" class=\"batman\"/><embed Required=\"true\" attributes=\"true\"/><hr/><img src=\"images/stickman.gif\" width=\"24\" height=\"39\" alt=\"Stickman\"/><input type=\"text\" name=\"text\" value=\"\"/><link rel=\"stylesheet\" href=\"stylesheet.css\"/><meta name=\"description\" content=\"\"/><param name=\"movie\" value=\"movie.swf\"/><source src=\"movie.ogg\" type=\"video/ogg\"/><track src=\"movie.vtt\" kind=\"subtitles\" srclang=\"en\" label=\"English\"/><wbr/></html>");
 }

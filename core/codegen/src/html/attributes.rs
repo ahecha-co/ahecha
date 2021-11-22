@@ -75,7 +75,16 @@ impl Default for Attribute {
 
 impl Parse for Attribute {
   fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-    let key = input.parse()?;
+    let key = if input.peek(syn::token::Type) {
+      input.parse::<syn::token::Type>()?;
+      Ident::new("type", Span::call_site())
+    } else if input.peek(syn::token::For) {
+      input.parse::<syn::token::For>()?;
+      Ident::new("for", Span::call_site())
+    } else {
+      input.parse()?
+    };
+
     let value = if input.peek(syn::Token![=]) {
       input.parse::<syn::Token![=]>()?;
       input.parse()?
