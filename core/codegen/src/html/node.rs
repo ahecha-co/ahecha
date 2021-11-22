@@ -67,8 +67,8 @@ impl Parse for HtmlNode {
   fn parse(input: syn::parse::ParseStream) -> syn::parse::Result<Self> {
     if let Ok(block) = input.parse::<HtmlBlock>() {
       Ok(HtmlNode::Block(block))
-    // } else if let Ok(comment) = input.parse::<HtmlComment>() {
-    //   Ok(HtmlNode::Comment(comment))
+    } else if let Ok(comment) = input.parse::<HtmlComment>() {
+      Ok(HtmlNode::Comment(comment))
     } else if let Ok(doctype) = input.parse::<HtmlDoctype>() {
       Ok(HtmlNode::Doctype(doctype))
     } else if input.peek(syn::Token![<]) && input.peek2(syn::Ident) {

@@ -5,7 +5,7 @@ use super::HtmlNode;
 
 #[derive(Debug)]
 pub struct HtmlComment {
-  pub comment: String,
+  pub comment: Box<HtmlNode>,
 }
 
 impl From<HtmlComment> for HtmlNode {
@@ -16,32 +16,33 @@ impl From<HtmlComment> for HtmlNode {
 
 impl ToTokens for HtmlComment {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-    let comment = self.to_string();
+    let comment = &self.comment;
     quote!( #comment ).to_tokens(tokens);
   }
 }
 
 impl ToString for HtmlComment {
   fn to_string(&self) -> String {
-    format!("<!-- {} -->", &self.comment)
+    format!("<!-- {} -->", &self.comment.to_string())
   }
 }
 
 impl Parse for HtmlComment {
   fn parse(input: ParseStream) -> syn::Result<Self> {
-    input.parse::<syn::Token![<]>()?;
-    input.parse::<syn::Token![!]>()?;
-    input.parse::<syn::Token![-]>()?;
-    input.parse::<syn::Token![-]>()?;
-
-    let comment = input.parse::<syn::LitStr>()?;
-
-    input.parse::<syn::Token![-]>()?;
-    input.parse::<syn::Token![-]>()?;
-    input.parse::<syn::Token![>]>()?;
-
-    Ok(HtmlComment {
-      comment: comment.value(),
-    })
+    if input.peek(syn::Token![<]) && input.peek2(syn::Token![!]) && input.peek3(syn::Token![-]) {
+      input.parse::<syn::Token![<]>()?;
+      input.parse::<syn::Token![!]>()?;
+      input.parse::<syn::Token![-]>()?;
+      input.parse::<syn::Token![-]>()?;
+      let comment = input.parse::<HtmlNode>()?;
+      input.parse::<syn::Token![-]>()?;
+      input.parse::<syn::Token![-]>()?;
+      input.parse::<syn::Token![>]>()?;
+      Ok(HtmlComment {
+        comment: Box::new(comment),
+      })
+    } else {
+      Err(syn::Error::new(input.span(), "expected comment"))
+    }
   }
 }
