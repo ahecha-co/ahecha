@@ -1,39 +1,89 @@
-use quote::{quote, ToTokens};
+use std::fmt::Debug;
 
-#[derive(Debug, PartialEq)]
+use proc_macro2::{Ident, Span};
+use quote::{quote, ToTokens};
+use syn::{ext::IdentExt, parse::Parse, Block, Lit, LitBool, LitStr};
+
 pub enum AttributeValue {
-  Block(String),
-  None,
-  String(String),
+  Block(Block),
+  Lit(Lit),
 }
 
 impl ToTokens for AttributeValue {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
     match self {
       AttributeValue::Block(block) => {
-        let block: proc_macro2::TokenStream = block.parse().unwrap();
         quote! {
           #block
         }
         .to_tokens(tokens);
       }
-      AttributeValue::None => {}
-      AttributeValue::String(s) => quote!(#s).to_tokens(tokens),
+      AttributeValue::Lit(s) => quote!(#s).to_tokens(tokens),
     }
   }
 }
-#[derive(Debug, PartialEq)]
+
+impl Debug for AttributeValue {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    match self {
+      AttributeValue::Block(block) => {
+        let block = block.clone();
+        quote! {
+          #block
+        }
+        .fmt(f)
+      }
+      AttributeValue::Lit(s) => quote! {#s}.fmt(f),
+    }
+  }
+}
+
+impl Parse for AttributeValue {
+  fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+    if input.peek(syn::token::Brace) {
+      Ok(AttributeValue::Block(input.parse::<Block>()?))
+    } else {
+      Ok(AttributeValue::Lit(input.parse::<Lit>()?))
+    }
+  }
+}
+
 pub struct Attribute {
-  pub key: String,
+  pub key: Ident,
   pub value: AttributeValue,
+}
+
+impl Debug for Attribute {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(
+      f,
+      "Attribute {{ key: {:?}, value: {:?} }}",
+      self.key,
+      self.value.to_token_stream().to_string()
+    )
+  }
 }
 
 impl Default for Attribute {
   fn default() -> Self {
     Self {
-      key: String::new(),
-      value: AttributeValue::None,
+      key: Ident::new("", Span::call_site()),
+      value: AttributeValue::Lit(Lit::Str(LitStr::new("", Span::call_site()))),
     }
+  }
+}
+
+impl Parse for Attribute {
+  fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+    let key = input.parse()?;
+    let value = if input.peek(syn::Token![=]) {
+      input.parse::<syn::Token![=]>()?;
+      input.parse()?
+    } else {
+      AttributeValue::Lit(Lit::Bool(LitBool::new(true, Span::call_site())))
+    };
+
+    Ok(Attribute { key, value })
   }
 }
 
@@ -63,9 +113,23 @@ impl ToTokens for Attributes {
     let mut list = quote! { () };
 
     for Attribute { key, value } in self.attrs.iter().rev() {
+      let key = key.to_string();
       list = quote! { ((#key, #value), #list) }
     }
 
     list.to_tokens(tokens);
+  }
+}
+
+impl Parse for Attributes {
+  fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+    let mut attrs = vec![];
+
+    while input.peek(syn::Ident::peek_any) {
+      let attr = input.parse()?;
+      attrs.push(attr);
+    }
+
+    Ok(Attributes { attrs })
   }
 }

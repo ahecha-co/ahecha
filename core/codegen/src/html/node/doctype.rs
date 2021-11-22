@@ -1,10 +1,11 @@
 use quote::{quote, ToTokens};
+use syn::parse::Parse;
 
 use super::HtmlNode;
 
 #[derive(Debug)]
 pub enum HtmlDoctype {
-  Html5,
+  Html5(Box<HtmlNode>),
 }
 
 impl From<HtmlDoctype> for HtmlNode {
@@ -15,12 +16,42 @@ impl From<HtmlDoctype> for HtmlNode {
 
 impl ToTokens for HtmlDoctype {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-    quote!(ahecha::view::HtmlDoctype::Html5).to_tokens(tokens);
+    match self {
+      HtmlDoctype::Html5(element) => {
+        quote! {
+          ahecha::view::HtmlDoctype::Html5(#element)
+        }
+      }
+    }
+    .to_tokens(tokens);
   }
 }
 
 impl ToString for HtmlDoctype {
   fn to_string(&self) -> String {
-    "<!DOCTYPE html>".to_string()
+    match self {
+      HtmlDoctype::Html5(children) => {
+        format!("<!doctype html>{}", children.to_string())
+      }
+    }
+  }
+}
+
+impl Parse for HtmlDoctype {
+  fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+    if !input.peek(syn::Token![<]) || !input.peek2(syn::Token![!]) {
+      return Err(syn::Error::new(input.span(), "expected <!DOCTYPE html>"));
+    }
+
+    dbg!(input.to_string());
+    input.parse::<syn::Token![<]>()?;
+    input.parse::<syn::Token![!]>()?;
+    let _doctype = input.parse::<syn::Ident>()?;
+    let _html = input.parse::<Option<syn::Ident>>()?;
+    // TODO validate that the doctype is html5
+    input.parse::<syn::Token![>]>()?;
+    let children = input.parse()?;
+    dbg!(_doctype, _html);
+    Ok(HtmlDoctype::Html5(children))
   }
 }

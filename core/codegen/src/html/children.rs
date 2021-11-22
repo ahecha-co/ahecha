@@ -1,4 +1,5 @@
 use quote::{quote, ToTokens};
+use syn::parse::Parse;
 
 use super::node::HtmlNode;
 
@@ -20,5 +21,22 @@ impl ToTokens for Children {
 
       quote! { Some(#list) }.to_tokens(tokens);
     }
+  }
+}
+
+impl Parse for Children {
+  fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+    let mut nodes = Vec::new();
+
+    while !input.is_empty() {
+      match input.parse::<HtmlNode>() {
+        Ok(node) => nodes.push(node),
+        Err(_err) => {
+          break;
+        }
+      }
+    }
+
+    Ok(Children { nodes })
   }
 }

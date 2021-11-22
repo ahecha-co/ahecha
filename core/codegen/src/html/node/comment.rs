@@ -1,4 +1,5 @@
 use quote::{quote, ToTokens};
+use syn::parse::{Parse, ParseStream};
 
 use super::HtmlNode;
 
@@ -23,5 +24,24 @@ impl ToTokens for HtmlComment {
 impl ToString for HtmlComment {
   fn to_string(&self) -> String {
     format!("<!-- {} -->", &self.comment)
+  }
+}
+
+impl Parse for HtmlComment {
+  fn parse(input: ParseStream) -> syn::Result<Self> {
+    input.parse::<syn::Token![<]>()?;
+    input.parse::<syn::Token![!]>()?;
+    input.parse::<syn::Token![-]>()?;
+    input.parse::<syn::Token![-]>()?;
+
+    let comment = input.parse::<syn::LitStr>()?;
+
+    input.parse::<syn::Token![-]>()?;
+    input.parse::<syn::Token![-]>()?;
+    input.parse::<syn::Token![>]>()?;
+
+    Ok(HtmlComment {
+      comment: comment.value(),
+    })
   }
 }

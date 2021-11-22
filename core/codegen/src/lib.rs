@@ -2,13 +2,17 @@
 
 extern crate proc_macro;
 
+#[cfg(feature = "html-string-parser")]
 use core::panic;
 
+#[cfg(feature = "html-string-parser")]
 use nom::error::ErrorKind;
 use proc_macro::TokenStream;
 use proc_macro_error::proc_macro_error;
 use quote::quote;
 use syn::{parse_macro_input, ExprCall, ItemFn};
+
+use crate::html::node::HtmlNode;
 
 mod api;
 mod custom_element;
@@ -38,6 +42,17 @@ pub fn document(_metadata: TokenStream, input: TokenStream) -> TokenStream {
   document::create_document(f)
 }
 
+#[cfg(feature = "html-token-parser")]
+#[proc_macro]
+pub fn html(input: TokenStream) -> TokenStream {
+  let view = parse_macro_input!(input as HtmlNode);
+  quote! {
+    #view
+  }
+  .into()
+}
+
+#[cfg(feature = "html-string-parser")]
 #[proc_macro]
 pub fn html(input: TokenStream) -> TokenStream {
   // If there's a better way to stringify a TokenStream without losing the original format, please let me know.

@@ -63,22 +63,26 @@ impl ToString for HtmlNode {
 
 impl Parse for HtmlNode {
   fn parse(input: syn::parse::ParseStream) -> syn::parse::Result<Self> {
+    // dbg!(
+    //   "\n\n ======== \n\n HtmlNode::parse {:?} \n\n",
+    //   input.to_string()
+    // );
     if let Ok(block) = input.parse::<HtmlBlock>() {
       Ok(HtmlNode::Block(block))
     // } else if let Ok(comment) = input.parse::<HtmlComment>() {
     //   Ok(HtmlNode::Comment(comment))
-    // } else if let Ok(custom_element) = input.parse::<HtmlCustomElement>() {
-    //   Ok(HtmlNode::CustomElement(custom_element))
-    // } else if let Ok(doctype) = input.parse::<HtmlDoctype>() {
-    //   Ok(HtmlNode::Doctype(doctype))
-    // } else if let Ok(element) = input.parse::<HtmlElement>() {
-    //   Ok(HtmlNode::Element(element))
+    // // } else if let Ok(custom_element) = input.parse::<HtmlCustomElement>() {
+    // //   Ok(HtmlNode::CustomElement(custom_element))
+    } else if let Ok(doctype) = input.parse::<HtmlDoctype>() {
+      Ok(HtmlNode::Doctype(doctype))
+    } else if let Ok(element) = input.parse::<HtmlElement>() {
+      Ok(HtmlNode::Element(element))
     // } else if let Ok(fragment) = input.parse::<HtmlFragment>() {
     //   Ok(HtmlNode::Fragment(fragment))
     // } else if let Ok(partial) = input.parse::<HtmlPartial>() {
     //   Ok(HtmlNode::Partial(partial))
-    // } else if let Ok(text) = input.parse::<HtmlText>() {
-    //   Ok(HtmlNode::Text(text))
+    } else if let Ok(text) = input.parse::<HtmlText>() {
+      Ok(HtmlNode::Text(text))
     } else {
       Err(syn::parse::Error::new(input.span(), "expected html node"))
     }

@@ -10,20 +10,19 @@ use crate::html::{
 pub struct HtmlCustomElement {
   pub attributes: Attributes,
   pub children: Children,
-  pub name: String,
+  pub name: syn::Ident,
 }
 
 impl ToTokens for HtmlCustomElement {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-    let ident = syn::Ident::new(&self.name, proc_macro2::Span::call_site());
-    let name = &self.name.to_case(Case::Kebab);
+    let ident = &self.name;
+    let name = &self.name.to_string().to_case(Case::Kebab);
     let attributes = &self.attributes;
     let children = &self.children;
 
     let mut attrs = vec![];
 
     for Attribute { key, value } in attributes.attrs.iter() {
-      let key = syn::Ident::new(key, proc_macro2::Span::call_site());
       attrs.push(quote! {
         #key: #value
       });

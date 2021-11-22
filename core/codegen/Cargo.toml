@@ -5,21 +5,33 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
+default = ["html-token-parser"]
+
 backend = []
 frontend = []
+
+html-token-parser = []
 
 [lib]
 proc-macro=true
 
 [dependencies]
+ahecha_tuple_list={ path = "../tuple_list", version = "*" }
 convert_case="0.4.0"
 nom="7.1.0"
 proc-macro2="1.0.32"
 proc-macro-error="1.0.4"
 quote="1.0.9"
-syn={version="1.0.81",features=["full"]}
 regex="1.5.4"
-ahecha_tuple_list={ path = "../tuple_list", version = "*" }
+syn={version="1.0.81",features=["full"]}
+
+[depencencies.web-sys]
+version = "0.3.55"
+features = [
+  "Document",
+  "DocumentType",
+  "DomImplementation",
+]
 
 [dev-dependencies]
 ahecha_view={path="../view", version="*"}
