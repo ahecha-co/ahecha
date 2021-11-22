@@ -177,7 +177,7 @@ fn parse_block_node<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
   Ok((
     input,
     HtmlNode::Block(HtmlBlock {
-      block: block.to_string(),
+      block: block.parse().unwrap(),
     }),
   ))
 }
@@ -383,7 +383,7 @@ mod test {
     let (remainder, node) = parse_block_node::<(&str, ErrorKind)>(input).unwrap();
     assert_eq!(remainder, " Hello World</div>");
     match node {
-      HtmlNode::Block(block) => assert_eq!(block.block, " a block "),
+      HtmlNode::Block(block) => assert_eq!(block.to_string(), "a block"),
       _ => panic!("Expected block"),
     }
   }
