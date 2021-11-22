@@ -7,8 +7,8 @@ mod ahecha {
 
 #[test]
 fn test_html_tag() {
-  let res = html! { <div attr="value">Hello</div> };
-  assert_eq!(res.render(), "<div attr=\"value\">Hello</div>");
+  let res = html! { <div attr="value">Hello (world)</div> };
+  assert_eq!(res.render(), "<div attr=\"value\">Hello (world)</div>");
 }
 
 #[test]

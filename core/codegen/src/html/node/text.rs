@@ -41,8 +41,13 @@ impl Parse for HtmlText {
             text.push(punct.to_string())
           }
           proc_macro2::TokenTree::Literal(lit) => text.push(lit.to_string()),
-          proc_macro2::TokenTree::Group(_) => {
-            return Ok((text.join(" "), rest));
+          proc_macro2::TokenTree::Group(group) => {
+            if group.delimiter() == proc_macro2::Delimiter::Brace {
+              dbg!(group.to_string());
+              return Ok((text.join(" "), rest));
+            }
+
+            text.push(group.to_string());
           }
         }
 
