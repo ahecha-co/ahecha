@@ -27,7 +27,6 @@ impl Parse for HtmlText {
       return Err(syn::Error::new(input.span(), "Expected text"));
     }
 
-    // dbg!(input.to_string());
     let text = input.step(|cursor| {
       let mut rest = *cursor;
       let mut text = vec![];
@@ -43,7 +42,6 @@ impl Parse for HtmlText {
           proc_macro2::TokenTree::Literal(lit) => text.push(lit.to_string()),
           proc_macro2::TokenTree::Group(group) => {
             if group.delimiter() == proc_macro2::Delimiter::Brace {
-              // dbg!(group.to_string());
               return Ok((text.join(" "), rest));
             }
 
@@ -57,7 +55,6 @@ impl Parse for HtmlText {
       Ok((text.join(" "), rest))
     })?;
 
-    // dbg!("HtmlText {:?} => {:?}", &text, input.to_string());
     Ok(HtmlText { text })
   }
 }

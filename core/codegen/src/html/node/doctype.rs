@@ -43,7 +43,6 @@ impl Parse for HtmlDoctype {
       return Err(syn::Error::new(input.span(), "expected <!DOCTYPE html>"));
     }
 
-    dbg!(input.to_string());
     input.parse::<syn::Token![<]>()?;
     input.parse::<syn::Token![!]>()?;
     let _doctype = input.parse::<syn::Ident>()?;
@@ -51,7 +50,6 @@ impl Parse for HtmlDoctype {
     // TODO validate that the doctype is html5
     input.parse::<syn::Token![>]>()?;
     let children = input.parse()?;
-    // dbg!(_doctype, _html);
     Ok(HtmlDoctype::Html5(children))
   }
 }

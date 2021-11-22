@@ -34,12 +34,9 @@ impl ToString for HtmlBlock {
 impl Parse for HtmlBlock {
   fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
     match input.parse::<syn::Block>() {
-      Ok(block) => {
-        // dbg!(input.to_string());
-        Ok(HtmlBlock {
-          block: quote!(#block),
-        })
-      }
+      Ok(block) => Ok(HtmlBlock {
+        block: quote!(#block),
+      }),
       Err(err) => Err(err),
     }
   }

@@ -65,7 +65,6 @@ impl ToString for HtmlNode {
 
 impl Parse for HtmlNode {
   fn parse(input: syn::parse::ParseStream) -> syn::parse::Result<Self> {
-    dbg!(input.to_string());
     if let Ok(block) = input.parse::<HtmlBlock>() {
       Ok(HtmlNode::Block(block))
     // } else if let Ok(comment) = input.parse::<HtmlComment>() {
