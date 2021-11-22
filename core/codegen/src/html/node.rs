@@ -84,10 +84,6 @@ impl Parse for HtmlNode {
         || self_closing_tags.contains(&name.to_string().as_str());
 
       input.parse::<syn::Token![>]>()?;
-      if self_closing {
-        dbg!(&name.to_string(), self_closing);
-        dbg!(input.to_string());
-      }
 
       let children = if self_closing {
         Children::default()
