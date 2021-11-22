@@ -74,3 +74,16 @@ fn test_html_with_expression_block() {
   let res = html! { <div>{ 2 + 2u8 }</div> };
   assert_eq!(res.render(), "<div>4</div>");
 }
+
+#[test]
+fn test_children_iter() {
+  let data = vec!["hello", "world"];
+  let res = html! { <ul>{ data.iter().map(|i| html!(<li>{ i }</li>)).collect::<Vec<_>>() }</ul> };
+  assert_eq!(res.render(), "<ul><li>hello</li><li>world</li></ul>");
+}
+
+#[test]
+fn test_fragment() {
+  let res = html! { <div><><>{ 2 + 2u8 }</></></div> };
+  assert_eq!(res.render(), "<div>4</div>");
+}

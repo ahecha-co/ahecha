@@ -35,7 +35,7 @@ impl Parse for HtmlBlock {
   fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
     match input.parse::<syn::Block>() {
       Ok(block) => {
-        dbg!(input.to_string());
+        // dbg!(input.to_string());
         Ok(HtmlBlock {
           block: quote!(#block),
         })

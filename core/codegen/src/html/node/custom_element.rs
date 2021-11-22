@@ -1,5 +1,6 @@
 use convert_case::{Case, Casing};
 use quote::{quote, ToTokens};
+use syn::parse::Parse;
 
 use crate::html::{
   attributes::{Attribute, Attributes},
