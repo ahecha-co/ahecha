@@ -7,7 +7,7 @@ mod fragment;
 mod partial;
 mod text;
 
-use quote::{ToTokens, __private::parse};
+use quote::ToTokens;
 
 pub use block::HtmlBlock;
 pub use comment::HtmlComment;
@@ -76,9 +76,18 @@ impl Parse for HtmlNode {
       let name = input.parse::<syn::Ident>()?;
       let attributes = input.parse::<Attributes>()?;
 
-      let self_closing = input.parse::<syn::Token![/]>().is_ok();
+      let self_closing_tags = [
+        "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param",
+        "source", "track", "wbr",
+      ];
+      let self_closing = input.parse::<syn::Token![/]>().is_ok()
+        || self_closing_tags.contains(&name.to_string().as_str());
 
       input.parse::<syn::Token![>]>()?;
+      if self_closing {
+        dbg!(&name.to_string(), self_closing);
+        dbg!(input.to_string());
+      }
 
       let children = if self_closing {
         Children::default()

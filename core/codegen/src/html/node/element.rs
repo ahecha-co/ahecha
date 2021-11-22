@@ -1,5 +1,4 @@
 use quote::{quote, ToTokens};
-use syn::parse::{Parse, ParseStream};
 
 use crate::html::{attributes::Attributes, children::Children};
 
