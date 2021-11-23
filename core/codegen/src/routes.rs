@@ -225,6 +225,7 @@ pub fn generate_route_path(
   fields: &Punctuated<FnArg, Comma>,
 ) -> Route {
   let span = proc_macro::Span::call_site();
+  // Note: using source_file raises an error with rust analyzer. Ref: https://github.com/rust-analyzer/rust-analyzer/issues/10710#issuecomment-962559112
   let source = span.source_file();
   let path = source.path().to_str().unwrap().to_owned();
 
