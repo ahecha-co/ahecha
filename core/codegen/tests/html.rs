@@ -116,3 +116,18 @@ fn test_self_closing_tags() {
   };
   assert_eq!(res.render(), "<html><area alt=\"text\" class=\"\" coords=\"\" shape=\"\"/><base href=\"https://example.com\" target=\"_blank\"/><br/><col span=\"2\" class=\"batman\"/><embed Required=\"true\" attributes=\"true\"/><hr/><img src=\"images/stickman.gif\" width=\"24\" height=\"39\" alt=\"Stickman\"/><input type=\"text\" name=\"text\" value=\"\"/><link rel=\"stylesheet\" href=\"stylesheet.css\"/><meta name=\"description\" content=\"\"/><param name=\"movie\" value=\"movie.swf\"/><source src=\"movie.ogg\" type=\"video/ogg\"/><track src=\"movie.vtt\" kind=\"subtitles\" srclang=\"en\" label=\"English\"/><wbr/></html>");
 }
+
+#[test]
+fn test_attribute_data() {
+  let res = html! { <div data-tooltip="sum">Data attribute</div> };
+  assert_eq!(
+    res.render(),
+    "<div data-tooltip=\"sum\">Data attribute</div>"
+  );
+}
+
+#[test]
+fn test_attribute_aria() {
+  let res = html! { <div aria-label="sum">Aria attribute</div> };
+  assert_eq!(res.render(), "<div aria-label=\"sum\">Aria attribute</div>");
+}

@@ -49,6 +49,7 @@ impl Parse for AttributeValue {
 }
 
 pub struct Attribute {
+  pub extended: Vec<Ident>,
   pub key: Ident,
   pub value: AttributeValue,
 }
@@ -67,6 +68,7 @@ impl Debug for Attribute {
 impl Default for Attribute {
   fn default() -> Self {
     Self {
+      extended: vec![],
       key: Ident::new("", Span::call_site()),
       value: AttributeValue::Lit(Lit::Str(LitStr::new("", Span::call_site()))),
     }
@@ -75,12 +77,29 @@ impl Default for Attribute {
 
 impl Parse for Attribute {
   fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+    let mut extended = vec![];
     let key = if input.peek(syn::token::Type) {
       input.parse::<syn::token::Type>()?;
       Ident::new("type", Span::call_site())
     } else if input.peek(syn::token::For) {
       input.parse::<syn::token::For>()?;
       Ident::new("for", Span::call_site())
+    } else if input.peek(syn::Ident) && input.peek2(syn::Token![-]) {
+      let kind_ident = input.parse::<syn::Ident>()?;
+
+      while input.peek(syn::Token![-]) {
+        input.parse::<syn::Token![-]>()?;
+        extended.push(input.parse::<syn::Ident>()?);
+      }
+
+      if !["aria", "data"].contains(&kind_ident.to_string().as_str()) {
+        return Err(syn::Error::new(
+          Span::call_site(),
+          "Unsupported attribute kind",
+        ));
+      }
+
+      kind_ident
     } else {
       input.parse()?
     };
@@ -92,7 +111,11 @@ impl Parse for Attribute {
       AttributeValue::Lit(Lit::Bool(LitBool::new(true, Span::call_site())))
     };
 
-    Ok(Attribute { key, value })
+    Ok(Attribute {
+      extended,
+      key,
+      value,
+    })
   }
 }
 
@@ -121,8 +144,18 @@ impl ToTokens for Attributes {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
     let mut list = quote! { () };
 
-    for Attribute { key, value } in self.attrs.iter().rev() {
-      let key = key.to_string();
+    for Attribute {
+      extended,
+      key,
+      value,
+    } in self.attrs.iter().rev()
+    {
+      let key = vec![key.clone()]
+        .into_iter()
+        .chain(extended.clone())
+        .map(|i| i.to_string())
+        .collect::<Vec<_>>()
+        .join("-");
       list = quote! { ((#key, #value), #list) }
     }
 

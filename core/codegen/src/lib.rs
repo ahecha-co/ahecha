@@ -45,11 +45,27 @@ pub fn document(_metadata: TokenStream, input: TokenStream) -> TokenStream {
 #[cfg(feature = "html-token-parser")]
 #[proc_macro]
 pub fn html(input: TokenStream) -> TokenStream {
+  use std::time::Instant;
+
+  use proc_macro::Span;
+
+  let start = Instant::now();
   let view = parse_macro_input!(input as HtmlNode);
-  quote! {
+  let res = quote! {
     #view
   }
-  .into()
+  .into();
+
+  let elapsed = Instant::elapsed(&start);
+
+  println!(
+    "ahecha_codegen::html! | took {} µs | {}:{}",
+    elapsed.as_micros(),
+    Span::call_site().source_file().path().display(),
+    Span::call_site().start().line,
+  );
+
+  res
 }
 
 #[cfg(feature = "html-string-parser")]

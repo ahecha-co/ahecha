@@ -22,7 +22,12 @@ impl ToTokens for HtmlCustomElement {
 
     let mut attrs = vec![];
 
-    for Attribute { key, value } in attributes.attrs.iter() {
+    for Attribute {
+      extended: _,
+      key,
+      value,
+    } in attributes.attrs.iter()
+    {
       attrs.push(quote! {
         #key: #value
       });
