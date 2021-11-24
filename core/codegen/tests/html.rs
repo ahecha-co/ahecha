@@ -53,20 +53,20 @@ fn test_html_with_doctype() {
   };
   assert_eq!(
     res.render(),
-    "<!doctype html><html><head><title>Document title</title></head><body><header class=\"container\"><div class=\"row\"><div class=\"col-9\"/></div></header></body></html>"
+    "<!doctype html><html><head><title>Document title</title></head><body><header class=\"container\"><div class=\"row\"><div class=\"col-9\"></div></div></header></body></html>"
   );
 }
 
 #[test]
 fn test_use_block_in_attribute_value() {
   let res = html! { <div class={"container"}/> };
-  assert_eq!(res.render(), "<div class=\"container\"/>");
+  assert_eq!(res.render(), "<div class=\"container\"></div>");
 }
 
 #[test]
 fn test_use_expression_block_in_attribute_value() {
   let res = html! { <div class={ 2 + 2u8 }/> };
-  assert_eq!(res.render(), "<div class=\"4\"/>");
+  assert_eq!(res.render(), "<div class=\"4\"></div>");
 }
 
 #[test]

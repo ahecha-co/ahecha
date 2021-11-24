@@ -83,7 +83,7 @@ mod test {
       children: Option::<()>::None,
     };
 
-    assert_eq!(element.render(), "<div/>");
+    assert_eq!(element.render(), "<div></div>");
   }
 
   #[test]
@@ -96,7 +96,7 @@ mod test {
 
     assert_eq!(
       element.render(),
-      "<div class=\"test\" id=\"test\" style=\"color: red;\"/>"
+      "<div class=\"test\" id=\"test\" style=\"color: red;\"></div>"
     );
   }
 
