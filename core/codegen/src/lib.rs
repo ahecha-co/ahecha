@@ -2,13 +2,17 @@
 
 extern crate proc_macro;
 
+#[cfg(feature = "html-string-parser")]
 use core::panic;
 
+#[cfg(feature = "html-string-parser")]
 use nom::error::ErrorKind;
 use proc_macro::TokenStream;
 use proc_macro_error::proc_macro_error;
 use quote::quote;
 use syn::{parse_macro_input, ExprCall, ItemFn};
+
+use crate::html::node::HtmlNode;
 
 mod api;
 mod custom_element;
@@ -40,49 +44,27 @@ pub fn document(_metadata: TokenStream, input: TokenStream) -> TokenStream {
 
 #[proc_macro]
 pub fn html(input: TokenStream) -> TokenStream {
-  // If there's a better way to stringify a TokenStream without losing the original format, please let me know.
-  let input_html = input
-    .to_string()
-    .replace("\n", " ")
-    .replace("\r", " ")
-    .replace("\t", "")
-    .replace("<! ", "<!")
-    .replace("<!- -", "<!--")
-    .replace("} }", "}}")
-    .replace("{ {", "{{")
-    .replace("- ->", "-->")
-    .replace("< ", "<")
-    .replace(" >", ">")
-    .replace("< /", "</")
-    .replace(" / >", "/>")
-    .replace("> ", ">")
-    .replace(" <", "<")
-    .replace(" = ", "=")
-    .replace("= ", "=")
-    .replace(" =", "=")
-    .replace("/ ", "/");
+  use std::time::Instant;
 
-  match html::parse::<(&str, ErrorKind)>(&input_html) {
-    Ok((res, parsed_html)) => {
-      assert!(
-        res.is_empty(),
-        "Couldn't parse the following code:\n\n```\n{}\n```\n\nIf you think is a bug please report it in Github with a minimal reproducible example. https://github.com/ahecha-co/ahecha/issues",
-        res
-      );
+  use proc_macro::Span;
 
-      let mut tuple_list = quote! { () };
-
-      for node in parsed_html.iter().rev() {
-        tuple_list = quote! { (#node, #tuple_list) }
-      }
-
-      quote! {
-        (#tuple_list)
-      }
-      .into()
-    }
-    Err(e) => panic!("{}", e),
+  let start = Instant::now();
+  let view = parse_macro_input!(input as HtmlNode);
+  let res = quote! {
+    #view
   }
+  .into();
+
+  let elapsed = Instant::elapsed(&start);
+
+  println!(
+    "ahecha_codegen::html! | took {} µs | {}:{}",
+    elapsed.as_micros(),
+    Span::call_site().source_file().path().display(),
+    Span::call_site().start().line,
+  );
+
+  res
 }
 
 #[proc_macro_attribute]
@@ -104,7 +86,7 @@ pub fn page(metadata: TokenStream, input: TokenStream) -> TokenStream {
 pub fn uri(input: TokenStream) -> TokenStream {
   let f = parse_macro_input!(input as ExprCall);
   let name = f.func.clone();
-  let args = f.args.clone();
+  let args = f.args;
 
   quote! {
     #name ::uri(#args)

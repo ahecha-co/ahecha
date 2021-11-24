@@ -9,19 +9,23 @@ use crate::html::{
 pub struct HtmlPartial {
   pub attributes: Attributes,
   pub children: Children,
-  pub name: String,
+  pub name: syn::Ident,
 }
 
 impl ToTokens for HtmlPartial {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-    let ident = syn::Ident::new(&self.name, proc_macro2::Span::call_site());
+    let ident = &self.name;
     let attributes = &self.attributes;
     let children = &self.children;
 
     let mut attrs = vec![];
 
-    for Attribute { key, value } in attributes.attrs.iter() {
-      let key = syn::Ident::new(key, proc_macro2::Span::call_site());
+    for Attribute {
+      extended: _,
+      key,
+      value,
+    } in attributes.attrs.iter()
+    {
       attrs.push(quote! {
         #key: #value
       });

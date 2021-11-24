@@ -2,18 +2,29 @@ use std::fmt::{Result, Write};
 
 use crate::html::render::Render;
 
-pub enum HtmlDoctype {
-  Html5,
+pub enum HtmlDoctype<T> {
+  Html5(T),
 }
 
-impl Render for HtmlDoctype {
+impl<T> Render for HtmlDoctype<T>
+where
+  T: Render,
+{
   fn render_into<W: Write>(self, writer: &mut W) -> Result {
-    write!(writer, "<!doctype html>")
+    match self {
+      HtmlDoctype::Html5(children) => {
+        writer.write_str("<!doctype html>")?;
+        children.render_into(writer)
+      }
+    }
   }
 }
 
-impl From<HtmlDoctype> for String {
-  fn from(element: HtmlDoctype) -> Self {
+impl<T> From<HtmlDoctype<T>> for String
+where
+  T: Render,
+{
+  fn from(element: HtmlDoctype<T>) -> Self {
     element.render()
   }
 }

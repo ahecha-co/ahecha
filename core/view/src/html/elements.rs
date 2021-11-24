@@ -27,7 +27,16 @@ where
 
     match self.children {
       None => {
-        write!(writer, "/>")
+        let self_closing_tags = [
+          "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param",
+          "source", "track", "wbr",
+        ];
+
+        if self_closing_tags.contains(&self.name) {
+          write!(writer, "/>")
+        } else {
+          write!(writer, "></{}>", self.name)
+        }
       }
       Some(children) => {
         write!(writer, ">")?;
@@ -74,7 +83,7 @@ mod test {
       children: Option::<()>::None,
     };
 
-    assert_eq!(element.render(), "<div/>");
+    assert_eq!(element.render(), "<div></div>");
   }
 
   #[test]
@@ -87,7 +96,7 @@ mod test {
 
     assert_eq!(
       element.render(),
-      "<div class=\"test\" id=\"test\" style=\"color: red;\"/>"
+      "<div class=\"test\" id=\"test\" style=\"color: red;\"></div>"
     );
   }
 

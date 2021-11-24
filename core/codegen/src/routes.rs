@@ -3,7 +3,7 @@ use proc_macro_error::emit_error;
 use quote::{quote, ToTokens};
 use syn::{punctuated::Punctuated, spanned::Spanned, token::Comma, FnArg, Pat, PatIdent, PatType};
 
-use crate::utils::FnStruct;
+// use crate::utils::FnStruct;
 
 pub enum RouteType {
   Api,
@@ -204,19 +204,19 @@ impl Route {
     quote!( #(#types),* )
   }
 
-  pub fn params_types(&self) -> proc_macro2::TokenStream {
-    let types = self
-      .parts
-      .iter()
-      .filter_map(|part| match part {
-        RoutePart::Static(_) => None,
-        RoutePart::Dynamic(d) => Some(&d.ty),
-      })
-      .map(|ty| quote!( #ty ))
-      .collect::<Vec<_>>();
+  // pub fn params_types(&self) -> proc_macro2::TokenStream {
+  //   let types = self
+  //     .parts
+  //     .iter()
+  //     .filter_map(|part| match part {
+  //       RoutePart::Static(_) => None,
+  //       RoutePart::Dynamic(d) => Some(&d.ty),
+  //     })
+  //     .map(|ty| quote!( #ty ))
+  //     .collect::<Vec<_>>();
 
-    quote!( #(#types),* )
-  }
+  //   quote!( #(#types),* )
+  // }
 }
 
 pub fn generate_route_path(
@@ -225,6 +225,7 @@ pub fn generate_route_path(
   fields: &Punctuated<FnArg, Comma>,
 ) -> Route {
   let span = proc_macro::Span::call_site();
+  // Note: using source_file raises an error with rust analyzer. Ref: https://github.com/rust-analyzer/rust-analyzer/issues/10710#issuecomment-962559112
   let source = span.source_file();
   let path = source.path().to_str().unwrap().to_owned();
 
