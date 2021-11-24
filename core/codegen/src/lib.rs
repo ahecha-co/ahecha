@@ -42,7 +42,6 @@ pub fn document(_metadata: TokenStream, input: TokenStream) -> TokenStream {
   document::create_document(f)
 }
 
-#[cfg(feature = "html-token-parser")]
 #[proc_macro]
 pub fn html(input: TokenStream) -> TokenStream {
   use std::time::Instant;
@@ -66,54 +65,6 @@ pub fn html(input: TokenStream) -> TokenStream {
   );
 
   res
-}
-
-#[cfg(feature = "html-string-parser")]
-#[proc_macro]
-pub fn html(input: TokenStream) -> TokenStream {
-  // If there's a better way to stringify a TokenStream without losing the original format, please let me know.
-  let input_html = input
-    .to_string()
-    .replace("\n", " ")
-    .replace("\r", " ")
-    .replace("\t", "")
-    .replace("<! ", "<!")
-    .replace("<!- -", "<!--")
-    .replace("} }", "}}")
-    .replace("{ {", "{{")
-    .replace("- ->", "-->")
-    .replace("< ", "<")
-    .replace(" >", ">")
-    .replace("< /", "</")
-    .replace(" / >", "/>")
-    .replace("> ", ">")
-    .replace(" <", "<")
-    .replace(" = ", "=")
-    .replace("= ", "=")
-    .replace(" =", "=")
-    .replace("/ ", "/");
-
-  match html::parse::<(&str, ErrorKind)>(&input_html) {
-    Ok((res, parsed_html)) => {
-      assert!(
-        res.is_empty(),
-        "Couldn't parse the following code:\n\n```\n{}\n```\n\nIf you think is a bug please report it in Github with a minimal reproducible example. https://github.com/ahecha-co/ahecha/issues",
-        res
-      );
-
-      let mut tuple_list = quote! { () };
-
-      for node in parsed_html.iter().rev() {
-        tuple_list = quote! { (#node, #tuple_list) }
-      }
-
-      quote! {
-        (#tuple_list)
-      }
-      .into()
-    }
-    Err(e) => panic!("{}", e),
-  }
 }
 
 #[proc_macro_attribute]
