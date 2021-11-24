@@ -107,22 +107,22 @@ impl Parse for HtmlNode {
       if name.to_string().chars().next().unwrap().is_uppercase() {
         if name.to_string().ends_with("Partial") {
           Ok(HtmlNode::Partial(HtmlPartial {
-            attributes: attributes,
-            children: children,
+            attributes,
+            children,
             name,
           }))
         } else {
           Ok(HtmlNode::CustomElement(HtmlCustomElement {
             name,
-            attributes: attributes,
-            children: children,
+            attributes,
+            children,
           }))
         }
       } else {
         Ok(HtmlNode::Element(HtmlElement {
           name,
-          attributes: attributes,
-          children: children,
+          attributes,
+          children,
         }))
       }
     } else if let Ok(fragment) = input.parse::<HtmlFragment>() {

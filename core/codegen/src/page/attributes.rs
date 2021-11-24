@@ -8,30 +8,26 @@ pub struct PageAttributes {
 }
 
 impl PageAttributes {
-  pub fn from_meta(meta: &Vec<NestedMeta>) -> Self {
+  pub fn from_meta(meta: &[NestedMeta]) -> Self {
     let mut document = None;
     let mut layout = None;
     let mut title = None;
 
     for meta in meta {
-      match meta {
-        NestedMeta::Meta(meta) => match meta {
-          syn::Meta::NameValue(meta) => match meta.path.get_ident().unwrap().to_string().as_str() {
-            "document" => {
-              document = lit_to_path(&meta.lit);
-            }
-            "layout" => {
-              layout = lit_to_path(&meta.lit);
-            }
-            "title" => match &meta.lit {
-              syn::Lit::Str(lit) => title = Some(lit.value().to_string()),
-              _ => panic!("The title of the page must be a string literal"),
-            },
-            _ => {}
+      if let NestedMeta::Meta(syn::Meta::NameValue(meta)) = meta {
+        match meta.path.get_ident().unwrap().to_string().as_str() {
+          "document" => {
+            document = lit_to_path(&meta.lit);
+          }
+          "layout" => {
+            layout = lit_to_path(&meta.lit);
+          }
+          "title" => match &meta.lit {
+            syn::Lit::Str(lit) => title = Some(lit.value().to_string()),
+            _ => panic!("The title of the page must be a string literal"),
           },
           _ => {}
-        },
-        _ => {}
+        }
       }
     }
 

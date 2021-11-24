@@ -135,7 +135,7 @@ pub fn page(metadata: TokenStream, input: TokenStream) -> TokenStream {
 pub fn uri(input: TokenStream) -> TokenStream {
   let f = parse_macro_input!(input as ExprCall);
   let name = f.func.clone();
-  let args = f.args.clone();
+  let args = f.args;
 
   quote! {
     #name ::uri(#args)
