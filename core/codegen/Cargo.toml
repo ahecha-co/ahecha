@@ -12,12 +12,10 @@ frontend = []
 proc-macro=true
 
 [dependencies]
-ahecha_tuple_list={ path = "../tuple_list", version = "*" }
 convert_case="0.4.0"
 proc-macro2="1.0.32"
 proc-macro-error="1.0.4"
 quote="1.0.9"
-regex="1.5.4"
 syn={version="1.0.81",features=["full"]}
 
 [depencencies.web-sys]

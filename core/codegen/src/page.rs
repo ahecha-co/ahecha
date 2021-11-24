@@ -5,6 +5,7 @@ use syn::AttributeArgs;
 
 use crate::{
   page::attributes::PageAttributes,
+  partial::create_partial_internal,
   routes::{generate_route_path, RouteType},
   utils::FnStruct,
 };
@@ -14,12 +15,10 @@ mod attributes;
 pub fn create_page(f: syn::ItemFn, attrs: AttributeArgs) -> TokenStream {
   let fn_struct: FnStruct = f.into();
 
-  let vis = fn_struct.vis();
   let struct_name = fn_struct.name();
   let impl_generics = fn_struct.impl_generics();
   let ty_generics = fn_struct.type_generics();
   let where_clause = fn_struct.where_clause();
-  let input_blocks = fn_struct.input_blocks();
   let input_fields = fn_struct.input_fields();
   let block = fn_struct.block();
 
@@ -52,8 +51,10 @@ pub fn create_page(f: syn::ItemFn, attrs: AttributeArgs) -> TokenStream {
   let uri = route.build_uri();
   let uri_input_fields = route.params();
 
+  let partial = create_partial_internal(&fn_struct, false);
+
   quote! {
-    #vis struct #struct_name #impl_generics #input_blocks
+    #partial
 
     impl #ty_generics #struct_name #impl_generics #where_clause {
       pub fn uri(#uri_input_fields) -> String {

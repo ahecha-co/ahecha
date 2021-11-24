@@ -1,3 +1,4 @@
+use ahecha_codegen::html;
 use ahecha_view::Render;
 use app::page;
 
@@ -28,5 +29,21 @@ fn test_test_page_request() {
   assert_eq!(
     response,
     "<html><head><title>Document title</title></head><body><div>Test page<span>5</span></div></body></html>"
+  );
+}
+
+#[test]
+fn test_page_as_partial() {
+  use page::__count__::CountPage;
+
+  let res = html!(
+    <div>
+      <CountPage count=5 />
+    </div>
+  );
+
+  assert_eq!(
+    res.render(),
+    "<div><div>Test page<span>5</span></div></div>"
   );
 }
