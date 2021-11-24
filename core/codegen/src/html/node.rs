@@ -105,7 +105,7 @@ impl Parse for HtmlNode {
       };
 
       if name.to_string().chars().next().unwrap().is_uppercase() {
-        if name.to_string().ends_with("Partial") {
+        if name.to_string().ends_with("Partial") || name.to_string().ends_with("Page") {
           Ok(HtmlNode::Partial(HtmlPartial {
             attributes,
             children,
