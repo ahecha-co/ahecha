@@ -23,6 +23,7 @@ pub fn create_document(f: ItemFn) -> TokenStream {
   // TODO: destructure the page properties as the handler attributes, how? :shrug:
 
   quote! {
+    #[cfg(feature = "backend")]
     #[allow(non_snake_case)]
     #[allow(dead_code)]
     #f

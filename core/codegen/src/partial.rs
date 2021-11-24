@@ -40,8 +40,10 @@ pub(crate) fn create_partial_internal(
 
   quote! {
     #[derive(Debug)]
+    #[cfg(feature = "backend")]
     #vis struct #struct_name #impl_generics #input_blocks
 
+    #[cfg(feature = "backend")]
     impl #impl_generics ahecha::view::Render for #struct_name #ty_generics #where_clause {
       fn render_into<W: std::fmt::Write>(self, w: &mut W) -> ::std::fmt::Result {
         let result = {
@@ -53,6 +55,7 @@ pub(crate) fn create_partial_internal(
       }
     }
 
+    #[cfg(feature = "backend")]
     impl #impl_generics Into<String> for #struct_name #ty_generics #where_clause {
       fn into(self) -> String {
         use ahecha::view::Render;

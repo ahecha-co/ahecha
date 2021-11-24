@@ -38,6 +38,9 @@ pub fn create_custom_element(f: syn::ItemFn) -> TokenStream {
     #[derive(Debug)]
     #vis struct #struct_name #impl_generics #input_blocks
 
+    #[cfg(feature = "frontend")]
+
+    #[cfg(feature = "backend")]
     impl #impl_generics ahecha::view::Render for #struct_name #ty_generics #where_clause {
       fn render_into<W: std::fmt::Write>(self, w: &mut W) -> ::std::fmt::Result {
         let result = {
@@ -49,6 +52,7 @@ pub fn create_custom_element(f: syn::ItemFn) -> TokenStream {
       }
     }
 
+    #[cfg(feature = "backend")]
     impl #impl_generics Into<String> for #struct_name #ty_generics #where_clause {
       fn into(self) -> String {
         use ahecha::view::Render;
