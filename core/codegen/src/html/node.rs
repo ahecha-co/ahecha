@@ -104,7 +104,13 @@ impl Parse for HtmlNode {
         children
       };
 
-      if name.to_string().chars().next().unwrap().is_uppercase() {
+      let name_str = name.to_string();
+      if name_str
+        .chars()
+        .next()
+        .expect("Ident to have at least one letter")
+        .is_uppercase()
+      {
         if name.to_string().ends_with("Partial") || name.to_string().ends_with("Page") {
           Ok(HtmlNode::Partial(HtmlPartial {
             attributes,

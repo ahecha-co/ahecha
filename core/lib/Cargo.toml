@@ -11,3 +11,5 @@ frontend = ["ahecha_codegen/frontend"]
 [dependencies]
 ahecha_codegen={ path="../codegen", version="*" }
 ahecha_view={ path="../view", version="*" }
+serde = "1.0.130"
+serde_json = "1.0.72"

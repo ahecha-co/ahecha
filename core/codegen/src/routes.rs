@@ -230,8 +230,18 @@ pub fn generate_route_path(
   let path = source.path().to_str().unwrap().to_owned();
 
   let url_path = match route_type {
-    RouteType::Api => path.split("/api/"),
-    RouteType::Page => path.split("/page/"),
+    RouteType::Api => {
+      if !path.contains("/api/") {
+        emit_error!(span, "API endpoints must be in a folder called `api`");
+      }
+      path.split("/api/")
+    }
+    RouteType::Page => {
+      if !path.contains("/pages/") {
+        emit_error!(span, "Pages must be in a folder called `pages`");
+      }
+      path.split("/pages/")
+    }
   }
   .map(|s| s.to_string())
   .collect::<Vec<_>>()

@@ -2,7 +2,7 @@ use proc_macro2::{Ident, TokenStream};
 use proc_macro_error::emit_error;
 use quote::quote;
 use syn::{
-  punctuated::Punctuated, spanned::Spanned, token::Comma, Block, FnArg, ImplGenerics, ItemFn,
+  punctuated::Punctuated, spanned::Spanned, token::Comma, Block, FnArg, ImplGenerics, ItemFn, Pat,
   TypeGenerics, Visibility, WhereClause,
 };
 
@@ -33,6 +33,21 @@ impl FnStruct {
 
   pub fn inputs(&self) -> &Punctuated<FnArg, Comma> {
     &self.f.sig.inputs
+  }
+
+  pub fn input_names(&self) -> Vec<Pat> {
+    self
+      .inputs()
+      .iter()
+      .filter_map(|argument| match argument {
+        syn::FnArg::Typed(typed) => Some(typed),
+        syn::FnArg::Receiver(rec) => {
+          emit_error!(rec.span(), "Don't use `self` on components");
+          None
+        }
+      })
+      .map(|value| *value.pat.clone())
+      .collect()
   }
 
   pub fn block(&self) -> &Block {
@@ -70,21 +85,7 @@ impl FnStruct {
     let input_readings = if self.inputs().is_empty() {
       quote!()
     } else {
-      let input_names: Vec<_> = self
-        .inputs()
-        .iter()
-        .filter_map(|argument| match argument {
-          syn::FnArg::Typed(typed) => Some(typed),
-          syn::FnArg::Receiver(rec) => {
-            emit_error!(rec.span(), "Don't use `self` on components");
-            None
-          }
-        })
-        .map(|value| {
-          let pat = &value.pat;
-          quote!(#pat)
-        })
-        .collect();
+      let input_names: Vec<_> = self.input_names().iter().map(|pat| quote!(#pat)).collect();
 
       quote!(
         #(#input_names),*,

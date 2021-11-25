@@ -20,20 +20,15 @@ pub(crate) fn create_partial_internal(
 
   if is_partial {
     let struct_str_name = struct_name.to_string();
-    if struct_str_name.to_uppercase().chars().next().unwrap()
-      != struct_str_name.chars().next().unwrap()
+    if !struct_str_name
+      .chars()
+      .next()
+      .expect("Partial must have a name")
+      .is_uppercase()
     {
       emit_error!(
         struct_name.span(),
         "Partials must start with a upper letter"
-      );
-    }
-
-    if !struct_str_name.ends_with("Partial") {
-      emit_error!(
-        struct_name.span(),
-        "Partials must have the `Partial` suffix, example: `{}Partial`",
-        struct_str_name
       );
     }
   }

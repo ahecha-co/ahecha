@@ -1,6 +1,8 @@
 use proc_macro::TokenStream;
+use proc_macro2::Span;
 use proc_macro_error::emit_error;
 use quote::quote;
+use syn::Pat;
 
 use crate::utils::FnStruct;
 
@@ -14,28 +16,36 @@ pub fn create_custom_element(f: syn::ItemFn) -> TokenStream {
   let ty_generics = fn_struct.type_generics();
   let where_clause = fn_struct.where_clause();
   let input_blocks = fn_struct.input_blocks();
-  let input_fields = fn_struct.inputs();
   let mut observed_attributes = vec![];
   let mut update_attribute_values = vec![];
 
-  for attr in input_fields.iter() {
-    let attr_name = stringify!(#_f);
-
-    observed_attributes.push(quote!(#attr_name));
-    update_attribute_values.push(quote!(
-      #attr_name => self. #attr = if let Some(new_value) = new_value {
-        new_value.into()
-      } else {
-        Default::default()
-      },
-    ));
+  for attr in fn_struct.input_names().iter() {
+    match attr {
+      Pat::Ident(ident) => {
+        let attr_name = ident.ident.to_string();
+        observed_attributes.push(quote!(#attr_name));
+        update_attribute_values.push(quote!(
+          #attr_name => self. #attr = if let Some(new_value) = new_value {
+            ahecha::serde_json::from_str(new_value.as_str())
+            //.expect(format!("Could not deserialize the value `{}`", new_value))
+            .unwrap()
+          } else {
+            Default::default()
+          },
+        ));
+      }
+      _ => emit_error!(Span::call_site(), "Attribute names must be identifiers",),
+    };
   }
 
   let input_readings = fn_struct.input_readings();
 
   let struct_str_name = struct_name.to_string();
-  if struct_str_name.to_uppercase().chars().next().unwrap()
-    != struct_str_name.chars().next().unwrap()
+  if !struct_str_name
+    .chars()
+    .next()
+    .expect("Custom elements must have a name")
+    .is_uppercase()
   {
     emit_error!(
       struct_name.span(),
@@ -52,12 +62,12 @@ pub fn create_custom_element(f: syn::ItemFn) -> TokenStream {
 
   quote! {
     #[derive(Debug, Default)]
-    #[cfg(feature = "backend")]
+    // #[cfg(feature = "backend")]
     #vis struct #struct_name #impl_generics #input_blocks
 
-    #[derive(Debug, Default)]
-    #[cfg(feature = "frontend")]
-    #vis struct #struct_name #impl_generics {}
+    // #[derive(Debug, Default)]
+    // #[cfg(feature = "frontend")]
+    // #vis struct #struct_name #impl_generics {}
       // Implement some struct here to handle the component state maybe?
       // state: State, ??
       // event_listeners: Vec<EventListener>,??
@@ -121,7 +131,7 @@ pub fn create_custom_element(f: syn::ItemFn) -> TokenStream {
         _old_value: Option<String>,
         new_value: Option<String>,
       ) {
-        match name {
+        match name.as_str() {
           #(#update_attribute_values)*
           _ => {}
         }

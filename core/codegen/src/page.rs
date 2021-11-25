@@ -23,8 +23,11 @@ pub fn create_page(f: syn::ItemFn, attrs: AttributeArgs) -> TokenStream {
   let block = fn_struct.block();
 
   let struct_str_name = struct_name.to_string();
-  if struct_str_name.to_uppercase().chars().next().unwrap()
-    != struct_str_name.chars().next().unwrap()
+  if !struct_str_name
+    .chars()
+    .next()
+    .expect("Page must have a name")
+    .is_uppercase()
   {
     emit_error!(struct_name.span(), "Pages must start with a upper letter");
   }
