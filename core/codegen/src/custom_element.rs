@@ -11,11 +11,6 @@ pub fn create_custom_element(f: syn::ItemFn) -> TokenStream {
 
   let vis = fn_struct.vis();
   let struct_name = fn_struct.name();
-  let block = fn_struct.block();
-  let impl_generics = fn_struct.impl_generics();
-  let ty_generics = fn_struct.type_generics();
-  let where_clause = fn_struct.where_clause();
-  let input_blocks = fn_struct.input_blocks();
   let mut observed_attributes = vec![];
   let mut update_attribute_values = vec![];
 
@@ -38,8 +33,6 @@ pub fn create_custom_element(f: syn::ItemFn) -> TokenStream {
     };
   }
 
-  let input_readings = fn_struct.input_readings();
-
   let struct_str_name = struct_name.to_string();
   if !struct_str_name
     .chars()
@@ -60,115 +53,109 @@ pub fn create_custom_element(f: syn::ItemFn) -> TokenStream {
     );
   }
 
+  let view_fn = fn_struct.create_view();
+
   quote! {
-    #[derive(Debug, Default)]
-    // #[cfg(feature = "backend")]
-    #vis struct #struct_name #impl_generics #input_blocks
+    #[allow(non_snake_case)]
+    #vis mod #struct_name {
+      use super::*;
 
-    // #[derive(Debug, Default)]
-    // #[cfg(feature = "frontend")]
-    // #vis struct #struct_name #impl_generics {}
-      // Implement some struct here to handle the component state maybe?
-      // state: State, ??
-      // event_listeners: Vec<EventListener>,??
-      // el: HtmlElement,??
-    // }
-
-    #[cfg(feature = "frontend")]
-    impl #impl_generics #struct_name #ty_generics #where_clause {
-      // pub fn define() {
-      //   gloo_utils::window().custom_elements().define(
-      //     #struct_str_name,
-      //     #struct_name::new,
-      //   );
+      // #[derive(Debug, Default)]
+      // #[cfg(feature = "frontend")]
+      // #vis struct #struct_name #impl_generics {}
+        // Implement some struct here to handle the component state maybe?
+        // state: State, ??
+        // event_listeners: Vec<EventListener>,??
+        // el: HtmlElement,??
       // }
 
-      pub fn register() {
-        // use ahecha::view::CustomElement;
-        // Self::define(#struct_str_name);
-      }
-    }
+      // #[cfg(feature = "frontend")]
+      // impl #impl_generics #struct_name #ty_generics #where_clause {
+      //   // pub fn define() {
+      //   //   gloo_utils::window().custom_elements().define(
+      //   //     #struct_str_name,
+      //   //     #struct_name::new,
+      //   //   );
+      //   // }
 
-    // #[cfg(feature = "frontend")]
-    // impl #impl_generics ahecha::view::CustomElement for #struct_name #ty_generics #where_clause {
-    //   // #[wasm_bindgen(constructor)]
-    //   // fn constructor(&mut self) {
-    //   //   let (style, template) = self.get_template();
-    //   //   let document = gloo_utils::document();
-    //   //   // TODO: Eventually support and extract the style tag from the template
-    //   //   // let style_tag = document.create_element("style").unwrap_throw();
-    //   //   // style_tag.set_inner_html(style);
+      //   pub fn register() {
+      //     // use ahecha::view::CustomElement;
+      //     // Self::define(#struct_str_name);
+      //   }
+      // }
 
-    //   //   match el.shadow_root() {
-    //   //     Some(shadow_root) => {
-    //   //       // shadow_root.append_child(&style_tag).unwrap_throw()
-    //   //       shadow_root.append_child(&template).unwrap_throw()
-    //   //     }
-    //   //     None => {
-    //   //       // el.append_child(&style_tag).unwrap_throw();
-    //   //       el.append_child(&template).unwrap_throw()
-    //   //     }
-    //   //   }
-    //   // }
+      // #[cfg(feature = "frontend")]
+      // impl #impl_generics ahecha::view::CustomElement for #struct_name #ty_generics #where_clause {
+      //   // #[wasm_bindgen(constructor)]
+      //   // fn constructor(&mut self) {
+      //   //   let (style, template) = self.get_template();
+      //   //   let document = gloo_utils::document();
+      //   //   // TODO: Eventually support and extract the style tag from the template
+      //   //   // let style_tag = document.create_element("style").unwrap_throw();
+      //   //   // style_tag.set_inner_html(style);
 
-    //   // fn get_template(&self) -> (web_sys::HtmlStyleElement, web_sys::HtmlElement) {
-    //   //   (,)
-    //   // }
+      //   //   match el.shadow_root() {
+      //   //     Some(shadow_root) => {
+      //   //       // shadow_root.append_child(&style_tag).unwrap_throw()
+      //   //       shadow_root.append_child(&template).unwrap_throw()
+      //   //     }
+      //   //     None => {
+      //   //       // el.append_child(&style_tag).unwrap_throw();
+      //   //       el.append_child(&template).unwrap_throw()
+      //   //     }
+      //   //   }
+      //   // }
 
-    //   fn inject_children(&mut self, this: &web_sys::HtmlElement) {
-    //     // inject_style(&this, "p { color: green; }");
-    //     let node: String = self.render();
-    //     this.set_inner_text(&node.as_str());
-    //   }
+      //   // fn get_template(&self) -> (web_sys::HtmlStyleElement, web_sys::HtmlElement) {
+      //   //   (,)
+      //   // }
 
-    //   fn observed_attributes() -> &'static [&'static str] {
-    //     &[#(#observed_attributes),*]
-    //   }
-    //   fn attribute_changed_callback(
-    //     &mut self,
-    //     _this: &web_sys::HtmlElement,
-    //     name: String,
-    //     _old_value: Option<String>,
-    //     new_value: Option<String>,
-    //   ) {
-    //     match name.as_str() {
-    //       #(#update_attribute_values)*
-    //       _ => {}
-    //     }
-    //   }
+      //   fn inject_children(&mut self, this: &web_sys::HtmlElement) {
+      //     // inject_style(&this, "p { color: green; }");
+      //     let node: String = self.render();
+      //     this.set_inner_text(&node.as_str());
+      //   }
 
-    //   fn connected_callback(&mut self, _this: &web_sys::HtmlElement) {
-    //     // log("connected");
-    //   }
+      //   fn observed_attributes() -> &'static [&'static str] {
+      //     &[#(#observed_attributes),*]
+      //   }
+      //   fn attribute_changed_callback(
+      //     &mut self,
+      //     _this: &web_sys::HtmlElement,
+      //     name: String,
+      //     _old_value: Option<String>,
+      //     new_value: Option<String>,
+      //   ) {
+      //     match name.as_str() {
+      //       #(#update_attribute_values)*
+      //       _ => {}
+      //     }
+      //   }
 
-    //   fn disconnected_callback(&mut self, _this: &web_sys::HtmlElement) {
-    //     // log("disconnected");
-    //   }
+      //   fn connected_callback(&mut self, _this: &web_sys::HtmlElement) {
+      //     // log("connected");
+      //   }
 
-    //   fn adopted_callback(&mut self, _this: &web_sys::HtmlElement) {
-    //     // log("adopted");
-    //   }
-    // }
+      //   fn disconnected_callback(&mut self, _this: &web_sys::HtmlElement) {
+      //     // log("disconnected");
+      //   }
 
-    // #[cfg(feature = "frontend")]
-    // impl #impl_generics ahecha::view::RenderNode for #struct_name #ty_generics #where_clause {
-    //   fn render(&self) -> web_sys::Node {
-    //     return {
-    //       #input_readings
-    //       #block
-    //     }.render()
-    //   }
-    // }
+      //   fn adopted_callback(&mut self, _this: &web_sys::HtmlElement) {
+      //     // log("adopted");
+      //   }
+      // }
 
-    impl #impl_generics ahecha::view::RenderString for #struct_name #ty_generics #where_clause {
-      fn render_into<W: std::fmt::Write>(self, w: &mut W) -> ::std::fmt::Result {
-        let result = {
-          #input_readings
-          #block
-        }.render();
+      // #[cfg(feature = "frontend")]
+      // impl #impl_generics ahecha::view::RenderNode for #struct_name #ty_generics #where_clause {
+      //   fn render(&self) -> web_sys::Node {
+      //     return {
+      //       #input_readings
+      //       #block
+      //     }.render()
+      //   }
+      // }
 
-        write!(w, "{}", result)
-      }
+      #view_fn
     }
   }
   .into()

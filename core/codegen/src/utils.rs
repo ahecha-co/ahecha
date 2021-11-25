@@ -2,8 +2,8 @@ use proc_macro2::{Ident, TokenStream};
 use proc_macro_error::emit_error;
 use quote::quote;
 use syn::{
-  punctuated::Punctuated, spanned::Spanned, token::Comma, Block, FnArg, ImplGenerics, ItemFn, Pat,
-  TypeGenerics, Visibility, WhereClause,
+  punctuated::Punctuated, spanned::Spanned, token::Comma, Block, FnArg, ImplGenerics, ItemFn,
+  Lifetime, Pat, TypeGenerics, Visibility, WhereClause,
 };
 
 pub struct FnStruct {
@@ -103,6 +103,58 @@ impl FnStruct {
   pub fn return_type(&self) -> TokenStream {
     let return_type = &self.f.sig.output;
     quote!(#return_type)
+  }
+
+  pub fn create_view(&self) -> proc_macro2::TokenStream {
+    let lifetimes = self
+      .f
+      .sig
+      .generics
+      .lifetimes()
+      .map(|l| {
+        let lifetime = l.lifetime.clone();
+        quote!(#lifetime)
+      })
+      .collect::<Vec<_>>();
+    let impl_generics = self.impl_generics();
+    let ty_generics = self.type_generics();
+    let where_clause = self.where_clause();
+    let block = self.block();
+    let input_fields = self.input_fields();
+    let input_names = self
+      .input_names()
+      .iter()
+      .map(|n| quote! {#n})
+      .collect::<Vec<_>>();
+    let (params_struct_definition, params_destructured) = if input_names.is_empty() {
+      (quote!(), quote!())
+    } else {
+      (
+        quote! {
+          pub struct Params #impl_generics {
+            pub #input_fields
+          }
+        },
+        quote!( Params { #(#input_names),* }: Params #ty_generics ),
+      )
+    };
+
+    let lifetimes = if lifetimes.is_empty() {
+      quote!()
+    } else {
+      quote!( + #(#lifetimes)+* )
+    };
+
+    quote!(
+      #params_struct_definition
+
+      pub fn view #impl_generics
+      (
+        #params_destructured
+      ) -> impl ahecha::view::RenderString #lifetimes #where_clause {
+        #block
+      }
+    )
   }
 }
 

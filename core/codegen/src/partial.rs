@@ -10,13 +10,6 @@ pub(crate) fn create_partial_internal(
 ) -> proc_macro2::TokenStream {
   let vis = fn_struct.vis();
   let struct_name = fn_struct.name();
-  let block = fn_struct.block();
-  let impl_generics = fn_struct.impl_generics();
-  let ty_generics = fn_struct.type_generics();
-  let where_clause = fn_struct.where_clause();
-  let input_blocks = fn_struct.input_blocks();
-
-  let input_readings = fn_struct.input_readings();
 
   if is_partial {
     let struct_str_name = struct_name.to_string();
@@ -33,29 +26,14 @@ pub(crate) fn create_partial_internal(
     }
   }
 
+  let view_fn = fn_struct.create_view();
+
   quote! {
-    #[derive(Debug)]
-    #vis struct #struct_name #impl_generics #input_blocks
+    #[allow(non_snake_case)]
+    #vis mod #struct_name {
+      use super::*;
 
-    // #[cfg(feature = "frontend")]
-    // impl #impl_generics ahecha::view::RenderNode for #struct_name #ty_generics #where_clause {
-    //   fn render(&self) -> web_sys::Node {
-    //     return {
-    //       #input_readings
-    //       #block
-    //     }.render()
-    //   }
-    // }
-
-    impl #impl_generics ahecha::view::RenderString for #struct_name #ty_generics #where_clause {
-      fn render_into<W: std::fmt::Write>(self, w: &mut W) -> ::std::fmt::Result {
-        let result = {
-          #input_readings
-          #block
-        }.render();
-
-        write!(w, "{}", result)
-      }
+      #view_fn
     }
   }
 }

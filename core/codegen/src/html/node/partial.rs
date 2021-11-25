@@ -35,12 +35,20 @@ impl ToTokens for HtmlPartial {
       attrs.push(quote!( children: #children ))
     }
 
+    let param = if attrs.is_empty() {
+      quote!()
+    } else {
+      quote!(
+        #ident ::Params{
+          #(#attrs,)*
+        }
+      )
+    };
+
     let element = quote!(
       ahecha::view::HtmlFragment {
         children: Some((
-          #ident {
-            #(#attrs,)*
-          },
+          #ident ::view( #param ),
           ()
         )),
       }

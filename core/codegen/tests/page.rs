@@ -34,13 +34,14 @@ mod frontend {
 
   #[test]
   fn test_index_page_partial() {
-    let response: String = pages::index::IndexPage {}.render();
+    let response: String = pages::index::IndexPage::view().render();
     assert_eq!(response, "<div>Index page</div>");
   }
 
   #[test]
   fn test_test_page_partial() {
-    let response = pages::__count__::CountPage { count: 5 }.render();
+    let response =
+      pages::__count__::CountPage::view(pages::__count__::CountPage::Params { count: 5 }).render();
     assert_eq!(response, "<div>Test page<span>5</span></div>");
   }
 }
@@ -60,7 +61,9 @@ mod backend {
 
   #[test]
   fn test_test_page_request() {
-    let response = pages::__count__::CountPage::handler(5).render();
+    let response =
+      pages::__count__::CountPage::handler(pages::__count__::CountPage::Params { count: 5 })
+        .render();
     assert_eq!(
       response,
       "<html><head><title>Document title</title></head><body><div>Test page<span>5</span></div></body></html>"

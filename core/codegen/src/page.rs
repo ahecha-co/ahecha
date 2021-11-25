@@ -5,7 +5,6 @@ use syn::AttributeArgs;
 
 use crate::{
   page::attributes::PageAttributes,
-  partial::create_partial_internal,
   routes::{generate_route_path, RouteType},
   utils::FnStruct,
 };
@@ -16,11 +15,6 @@ pub fn create_page(f: syn::ItemFn, attrs: AttributeArgs) -> TokenStream {
   let fn_struct: FnStruct = f.into();
 
   let struct_name = fn_struct.name();
-  let impl_generics = fn_struct.impl_generics();
-  let ty_generics = fn_struct.type_generics();
-  let where_clause = fn_struct.where_clause();
-  let input_fields = fn_struct.input_fields();
-  let block = fn_struct.block();
 
   let struct_str_name = struct_name.to_string();
   if !struct_str_name
@@ -50,24 +44,40 @@ pub fn create_page(f: syn::ItemFn, attrs: AttributeArgs) -> TokenStream {
     }
   };
 
+  let input_names = fn_struct
+    .input_names()
+    .iter()
+    .map(|n| quote! {#n})
+    .collect::<Vec<_>>();
+  let (params, params_ref) = if input_names.is_empty() {
+    (quote!(), quote!())
+  } else {
+    (quote!(params: Params,), quote!(params))
+  };
+
+  let view_fn = fn_struct.create_view();
+
+  let vis = fn_struct.vis();
+
   let route = generate_route_path(RouteType::Page, struct_str_name, fn_struct.inputs());
   let uri = route.build_uri();
   let uri_input_fields = route.params();
 
-  let partial = create_partial_internal(&fn_struct, false);
-
   quote! {
-    #partial
+    #[allow(non_snake_case)]
+    #vis mod #struct_name {
+      use super::*;
 
-    impl #ty_generics #struct_name #impl_generics #where_clause {
-      pub fn uri(#uri_input_fields) -> String {
+      #[cfg(feature = "backend")]
+      pub fn handler( #params ) -> impl ahecha::view::RenderString {
+        #document ( #maybe_title , (), view( #params_ref ))
+      }
+
+      pub fn uri( #uri_input_fields ) -> String {
         #uri
       }
 
-      #[cfg(feature = "backend")]
-      pub fn handler(#input_fields) -> impl ahecha::view::RenderString {
-        #document (#maybe_title, (), #block)
-      }
+      #view_fn
     }
   }
   .into()
