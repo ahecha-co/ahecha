@@ -9,11 +9,11 @@ where
   A: RenderAttributes,
   C: RenderString,
 {
-  fn render_into<W: Write>(&self, writer: &mut W) -> Result {
+  fn render_into<W: Write>(self, writer: &mut W) -> Result {
     write!(writer, "<{}", self.name)?;
     self.attributes.render_attributes_into(writer)?;
 
-    match &self.children {
+    match self.children {
       None => {
         let self_closing_tags = [
           "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param",
@@ -32,16 +32,6 @@ where
         write!(writer, "</{}>", self.name)
       }
     }
-  }
-}
-
-impl<A, C> ToString for HtmlElement<A, C>
-where
-  A: RenderAttributes,
-  C: RenderString,
-{
-  fn to_string(&self) -> String {
-    self.render()
   }
 }
 

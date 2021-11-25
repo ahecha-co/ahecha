@@ -29,11 +29,11 @@ macro_rules! impl_attribute_value {
 impl_attribute_value!(&str, String, bool, u8, u16, u32, u64, i8, i16, i32, i64, f32, f64);
 
 pub trait RenderAttributes: Sized {
-  fn render_attributes_into<W: Write>(&self, writer: &mut W) -> Result;
+  fn render_attributes_into<W: Write>(self, writer: &mut W) -> Result;
 }
 
 impl RenderAttributes for () {
-  fn render_attributes_into<W: Write>(&self, _writer: &mut W) -> Result {
+  fn render_attributes_into<W: Write>(self, _writer: &mut W) -> Result {
     Ok(())
   }
 }
@@ -42,7 +42,7 @@ impl<A> RenderAttributes for (&str, A)
 where
   A: RenderAttributeValue,
 {
-  fn render_attributes_into<W: Write>(&self, writer: &mut W) -> Result {
+  fn render_attributes_into<W: Write>(self, writer: &mut W) -> Result {
     write!(writer, " {}=\"", self.0)?;
     escape_html(&self.1.to_attribute_value(), writer)?;
     write!(writer, "\"")
@@ -54,7 +54,7 @@ where
   A: RenderAttributeValue,
   Tail: RenderAttributes + TupleList,
 {
-  fn render_attributes_into<W: Write>(&self, writer: &mut W) -> Result {
+  fn render_attributes_into<W: Write>(self, writer: &mut W) -> Result {
     self.0.render_attributes_into(writer)?;
     self.1.render_attributes_into(writer)
   }

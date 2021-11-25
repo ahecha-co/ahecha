@@ -20,7 +20,7 @@ mod backend {
     }
 
     impl RenderString for TestCustomElement {
-      fn render_into<W: std::fmt::Write>(&self, writer: &mut W) -> std::fmt::Result {
+      fn render_into<W: std::fmt::Write>(self, writer: &mut W) -> std::fmt::Result {
         write!(writer, "{}", self.view())
       }
     }

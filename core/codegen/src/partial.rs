@@ -53,7 +53,7 @@ pub(crate) fn create_partial_internal(
     // }
 
     impl #impl_generics ahecha::view::RenderString for #struct_name #ty_generics #where_clause {
-      fn render_into<W: std::fmt::Write>(&self, w: &mut W) -> ::std::fmt::Result {
+      fn render_into<W: std::fmt::Write>(self, w: &mut W) -> ::std::fmt::Result {
         let result = {
           #input_readings
           #block

@@ -9,7 +9,7 @@ where
   Head: RenderString,
   Tail: RenderString + TupleList,
 {
-  fn render_into<W: Write>(&self, writer: &mut W) -> Result {
+  fn render_into<W: Write>(self, writer: &mut W) -> Result {
     self.0.render_into(writer)?;
     self.1.render_into(writer)
   }
