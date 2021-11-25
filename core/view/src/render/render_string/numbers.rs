@@ -2,8 +2,15 @@ use std::fmt::{Result, Write};
 
 macro_rules! impl_renderable {
   ($($t:ty),*) => {
-    $(impl crate::render::RenderString for $t {
-        fn render_into<W: Write>(self, writer: &mut W) -> Result {
+    $(
+      impl crate::render::RenderString for $t {
+        fn render_into<W: Write>(&self, writer: &mut W) -> Result {
+          write!(writer, "{}", self)
+        }
+      }
+
+      impl crate::render::RenderString for & $t {
+        fn render_into<W: Write>(&self, writer: &mut W) -> Result {
           write!(writer, "{}", self)
         }
       }

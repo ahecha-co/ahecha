@@ -8,7 +8,7 @@ impl<T> RenderString for HtmlDoctype<T>
 where
   T: RenderString,
 {
-  fn render_into<W: Write>(self, writer: &mut W) -> Result {
+  fn render_into<W: Write>(&self, writer: &mut W) -> Result {
     match self {
       HtmlDoctype::Html5(children) => {
         writer.write_str("<!doctype html>")?;
@@ -18,11 +18,11 @@ where
   }
 }
 
-impl<T> From<HtmlDoctype<T>> for String
+impl<T> ToString for HtmlDoctype<T>
 where
   T: RenderString,
 {
-  fn from(element: HtmlDoctype<T>) -> Self {
-    element.render()
+  fn to_string(&self) -> String {
+    self.render()
   }
 }

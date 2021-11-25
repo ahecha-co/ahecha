@@ -8,12 +8,21 @@ impl<C> RenderString for HtmlFragment<C>
 where
   C: RenderString,
 {
-  fn render_into<W: Write>(self, writer: &mut W) -> Result {
-    if let Some(children) = self.children {
+  fn render_into<W: Write>(&self, writer: &mut W) -> Result {
+    if let Some(children) = &self.children {
       children.render_into(writer)
     } else {
       Ok(())
     }
+  }
+}
+
+impl<C> ToString for HtmlFragment<C>
+where
+  C: RenderString,
+{
+  fn to_string(&self) -> String {
+    self.render()
   }
 }
 

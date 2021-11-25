@@ -5,4 +5,4 @@ mod html_escaping;
 mod render;
 
 pub use html::{doctype::HtmlDoctype, elements::HtmlElement, fragment::HtmlFragment};
-pub use render::{RenderNode, RenderString};
+pub use render::RenderString;

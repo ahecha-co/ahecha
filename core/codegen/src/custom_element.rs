@@ -140,33 +140,24 @@ pub fn create_custom_element(f: syn::ItemFn) -> TokenStream {
       }
     }
 
-    #[cfg(feature = "frontend")]
-    impl #impl_generics ahecha::view::RenderNode for #struct_name #ty_generics #where_clause {
-      fn render(&self) -> web_sys::Node {
-        return {
-          #input_readings
-          #block
-        }.render()
-      }
-    }
+    // #[cfg(feature = "frontend")]
+    // impl #impl_generics ahecha::view::RenderNode for #struct_name #ty_generics #where_clause {
+    //   fn render(&self) -> web_sys::Node {
+    //     return {
+    //       #input_readings
+    //       #block
+    //     }.render()
+    //   }
+    // }
 
     impl #impl_generics ahecha::view::RenderString for #struct_name #ty_generics #where_clause {
-      fn render_into<W: std::fmt::Write>(self, w: &mut W) -> ::std::fmt::Result {
+      fn render_into<W: std::fmt::Write>(&self, w: &mut W) -> ::std::fmt::Result {
         let result = {
           #input_readings
           #block
         }.render();
 
         write!(w, "{}", result)
-      }
-    }
-
-    impl #impl_generics Into<String> for #struct_name #ty_generics #where_clause {
-      fn into(self) -> String {
-        use ahecha::view::RenderString;
-        let mut result = String::new();
-        self.render_into(&mut result).unwrap();
-        result
       }
     }
   }

@@ -1,6 +1,14 @@
 macro_rules! impl_renderable {
   ($($t:ty),*) => {
-    $(impl crate::render::RenderNode for $t {
+    $(
+      impl crate::render::RenderNode for $t {
+        fn render(&self) -> web_sys::Node {
+          let text = gloo_utils::document().create_text_node(self.to_string().as_str());
+          text.into()
+        }
+      }
+
+      impl crate::render::RenderNode for & $t {
         fn render(&self) -> web_sys::Node {
           let text = gloo_utils::document().create_text_node(self.to_string().as_str());
           text.into()

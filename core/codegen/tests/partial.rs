@@ -14,9 +14,9 @@ fn test_partial() {
     }
   }
 
-  let res = html! { <html><HeadPartial /><body></body></html> };
+  let res = html! { <html><HeadPartial /><body></body></html> }.render();
   assert_eq!(
-    res.render(),
+    res,
     "<html><head><title>I am a partial</title></head><body></body></html>"
   );
 }
@@ -30,9 +30,9 @@ fn test_partial_with_block() {
     }
   }
 
-  let res = html! { <html><HeadPartial title="I'm a partial" /><body></body></html> };
+  let res = html! { <html><HeadPartial title="I'm a partial" /><body></body></html> }.render();
   assert_eq!(
-    res.render(),
+    res,
     "<html><head><title>I&apos;m a partial</title></head><body></body></html>"
   );
 }

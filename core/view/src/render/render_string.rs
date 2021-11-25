@@ -11,26 +11,26 @@ mod tuples;
 pub trait RenderString: Sized {
   /// Render the component to a writer.
   /// Make sure you escape html correctly using the `render::html_escaping` module
-  fn render_into<W: Write>(self, writer: &mut W) -> Result;
+  fn render_into<W: Write>(&self, writer: &mut W) -> Result;
 
   /// Render the component to string
-  fn render(self) -> String {
+  fn render(&self) -> String {
     let mut buf = String::new();
     self.render_into(&mut buf).unwrap();
     buf
   }
 }
 
-/// Renders `()` or nothing
+// Renders `()` or nothing
 impl RenderString for () {
-  fn render_into<W: Write>(self, _writer: &mut W) -> Result {
+  fn render_into<W: Write>(&self, _writer: &mut W) -> Result {
     Ok(())
   }
 }
 
 /// Renders `T` or nothing
 impl<T: RenderString> RenderString for Option<T> {
-  fn render_into<W: Write>(self, writer: &mut W) -> Result {
+  fn render_into<W: Write>(&self, writer: &mut W) -> Result {
     match self {
       None => Ok(()),
       Some(x) => x.render_into(writer),
@@ -40,7 +40,7 @@ impl<T: RenderString> RenderString for Option<T> {
 
 /// Renders a list of `T`
 impl<T: RenderString> RenderString for Vec<T> {
-  fn render_into<W: Write>(self, writer: &mut W) -> Result {
+  fn render_into<W: Write>(&self, writer: &mut W) -> Result {
     for elem in self {
       elem.render_into(writer)?;
     }
@@ -50,7 +50,7 @@ impl<T: RenderString> RenderString for Vec<T> {
 
 /// Renders `O` or `E`
 impl<O: RenderString, E: RenderString> RenderString for std::result::Result<O, E> {
-  fn render_into<W: Write>(self, writer: &mut W) -> Result {
+  fn render_into<W: Write>(&self, writer: &mut W) -> Result {
     match self {
       Ok(o) => o.render_into(writer),
       Err(e) => e.render_into(writer),
@@ -60,8 +60,8 @@ impl<O: RenderString, E: RenderString> RenderString for std::result::Result<O, E
 
 /// Renders `bool`
 impl RenderString for bool {
-  fn render_into<W: Write>(self, writer: &mut W) -> Result {
-    if self {
+  fn render_into<W: Write>(&self, writer: &mut W) -> Result {
+    if *self {
       write!(writer, "true")?;
     } else {
       write!(writer, "false")?;

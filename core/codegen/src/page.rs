@@ -15,7 +15,6 @@ mod attributes;
 pub fn create_page(f: syn::ItemFn, attrs: AttributeArgs) -> TokenStream {
   let fn_struct: FnStruct = f.into();
 
-  let vis = fn_struct.vis();
   let struct_name = fn_struct.name();
   let impl_generics = fn_struct.impl_generics();
   let ty_generics = fn_struct.type_generics();
@@ -56,12 +55,6 @@ pub fn create_page(f: syn::ItemFn, attrs: AttributeArgs) -> TokenStream {
 
   quote! {
     #partial
-
-    // When compiling all targets we get the partial struct definition, so we can skip this.
-    // This is intended to use only for testing where all the features are enabled.
-    #[derive(Debug)]
-    #[cfg(feature = "frontend")]
-    #vis struct #struct_name #impl_generics {}
 
     impl #ty_generics #struct_name #impl_generics #where_clause {
       pub fn uri(#uri_input_fields) -> String {
