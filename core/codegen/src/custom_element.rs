@@ -84,8 +84,8 @@ pub fn create_custom_element(f: syn::ItemFn) -> TokenStream {
       // }
 
       pub fn register() {
-        use ahecha::view::CustomElement;
-        Self::define(#struct_str_name);
+        // use ahecha::view::CustomElement;
+        // Self::define(#struct_str_name);
       }
     }
 
