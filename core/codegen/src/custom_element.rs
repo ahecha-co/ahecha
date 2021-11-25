@@ -89,66 +89,66 @@ pub fn create_custom_element(f: syn::ItemFn) -> TokenStream {
       }
     }
 
-    #[cfg(feature = "frontend")]
-    impl #impl_generics ahecha::view::CustomElement for #struct_name #ty_generics #where_clause {
-      // #[wasm_bindgen(constructor)]
-      // fn constructor(&mut self) {
-      //   let (style, template) = self.get_template();
-      //   let document = gloo_utils::document();
-      //   // TODO: Eventually support and extract the style tag from the template
-      //   // let style_tag = document.create_element("style").unwrap_throw();
-      //   // style_tag.set_inner_html(style);
+    // #[cfg(feature = "frontend")]
+    // impl #impl_generics ahecha::view::CustomElement for #struct_name #ty_generics #where_clause {
+    //   // #[wasm_bindgen(constructor)]
+    //   // fn constructor(&mut self) {
+    //   //   let (style, template) = self.get_template();
+    //   //   let document = gloo_utils::document();
+    //   //   // TODO: Eventually support and extract the style tag from the template
+    //   //   // let style_tag = document.create_element("style").unwrap_throw();
+    //   //   // style_tag.set_inner_html(style);
 
-      //   match el.shadow_root() {
-      //     Some(shadow_root) => {
-      //       // shadow_root.append_child(&style_tag).unwrap_throw()
-      //       shadow_root.append_child(&template).unwrap_throw()
-      //     }
-      //     None => {
-      //       // el.append_child(&style_tag).unwrap_throw();
-      //       el.append_child(&template).unwrap_throw()
-      //     }
-      //   }
-      // }
+    //   //   match el.shadow_root() {
+    //   //     Some(shadow_root) => {
+    //   //       // shadow_root.append_child(&style_tag).unwrap_throw()
+    //   //       shadow_root.append_child(&template).unwrap_throw()
+    //   //     }
+    //   //     None => {
+    //   //       // el.append_child(&style_tag).unwrap_throw();
+    //   //       el.append_child(&template).unwrap_throw()
+    //   //     }
+    //   //   }
+    //   // }
 
-      // fn get_template(&self) -> (web_sys::HtmlStyleElement, web_sys::HtmlElement) {
-      //   (,)
-      // }
+    //   // fn get_template(&self) -> (web_sys::HtmlStyleElement, web_sys::HtmlElement) {
+    //   //   (,)
+    //   // }
 
-      fn inject_children(&mut self, this: &web_sys::HtmlElement) {
-        // inject_style(&this, "p { color: green; }");
-        let node: String = self.render();
-        this.set_inner_text(&node.as_str());
-      }
+    //   fn inject_children(&mut self, this: &web_sys::HtmlElement) {
+    //     // inject_style(&this, "p { color: green; }");
+    //     let node: String = self.render();
+    //     this.set_inner_text(&node.as_str());
+    //   }
 
-      fn observed_attributes() -> &'static [&'static str] {
-        &[#(#observed_attributes),*]
-      }
-      fn attribute_changed_callback(
-        &mut self,
-        _this: &web_sys::HtmlElement,
-        name: String,
-        _old_value: Option<String>,
-        new_value: Option<String>,
-      ) {
-        match name.as_str() {
-          #(#update_attribute_values)*
-          _ => {}
-        }
-      }
+    //   fn observed_attributes() -> &'static [&'static str] {
+    //     &[#(#observed_attributes),*]
+    //   }
+    //   fn attribute_changed_callback(
+    //     &mut self,
+    //     _this: &web_sys::HtmlElement,
+    //     name: String,
+    //     _old_value: Option<String>,
+    //     new_value: Option<String>,
+    //   ) {
+    //     match name.as_str() {
+    //       #(#update_attribute_values)*
+    //       _ => {}
+    //     }
+    //   }
 
-      fn connected_callback(&mut self, _this: &web_sys::HtmlElement) {
-        // log("connected");
-      }
+    //   fn connected_callback(&mut self, _this: &web_sys::HtmlElement) {
+    //     // log("connected");
+    //   }
 
-      fn disconnected_callback(&mut self, _this: &web_sys::HtmlElement) {
-        // log("disconnected");
-      }
+    //   fn disconnected_callback(&mut self, _this: &web_sys::HtmlElement) {
+    //     // log("disconnected");
+    //   }
 
-      fn adopted_callback(&mut self, _this: &web_sys::HtmlElement) {
-        // log("adopted");
-      }
-    }
+    //   fn adopted_callback(&mut self, _this: &web_sys::HtmlElement) {
+    //     // log("adopted");
+    //   }
+    // }
 
     // #[cfg(feature = "frontend")]
     // impl #impl_generics ahecha::view::RenderNode for #struct_name #ty_generics #where_clause {
