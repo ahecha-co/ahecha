@@ -51,12 +51,12 @@ pub fn create_custom_element(f: syn::ItemFn) -> TokenStream {
   }
 
   quote! {
-    #[cfg(feature = "backend")]
     #[derive(Debug, Default)]
+    #[cfg(feature = "backend")]
     #vis struct #struct_name #impl_generics #input_blocks
 
-    #[cfg(feature = "frontend")]
     #[derive(Debug, Default)]
+    #[cfg(feature = "frontend")]
     #vis struct #struct_name #impl_generics {}
       // Implement some struct here to handle the component state maybe?
       // state: State, ??
@@ -74,13 +74,13 @@ pub fn create_custom_element(f: syn::ItemFn) -> TokenStream {
       // }
 
       pub fn register() {
-        use custom_elements::CustomElement;
+        use ahecha::view::CustomElement;
         Self::define(#struct_str_name);
       }
     }
 
     #[cfg(feature = "frontend")]
-    impl #impl_generics custom_elements::CustomElement for #struct_name #ty_generics #where_clause {
+    impl #impl_generics ahecha::view::CustomElement for #struct_name #ty_generics #where_clause {
       // #[wasm_bindgen(constructor)]
       // fn constructor(&mut self) {
       //   let (style, template) = self.get_template();
