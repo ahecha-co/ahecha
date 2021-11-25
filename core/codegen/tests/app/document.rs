@@ -9,10 +9,10 @@ pub fn Document<Head, Body>(
   title: Option<&'static str>,
   head: Head,
   body: Body,
-) -> impl ahecha_view::Render + '_
+) -> impl ahecha_view::RenderString + '_
 where
-  Head: ahecha_view::Render + 'static,
-  Body: ahecha_view::Render + 'static,
+  Head: ahecha_view::RenderString + 'static,
+  Body: ahecha_view::RenderString + 'static,
 {
   html! {
     <html>

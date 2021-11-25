@@ -60,7 +60,7 @@ pub fn create_page(f: syn::ItemFn, attrs: AttributeArgs) -> TokenStream {
     // When compiling all targets we get the partial struct definition, so we can skip this.
     // This is intended to use only for testing where all the features are enabled.
     #[derive(Debug)]
-    #[cfg(all(feature = "frontend", not(feature = "backend")))]
+    #[cfg(feature = "frontend")]
     #vis struct #struct_name #impl_generics {}
 
     impl #ty_generics #struct_name #impl_generics #where_clause {
@@ -69,7 +69,7 @@ pub fn create_page(f: syn::ItemFn, attrs: AttributeArgs) -> TokenStream {
       }
 
       #[cfg(feature = "backend")]
-      pub fn handler(#input_fields) -> impl ahecha::view::Render {
+      pub fn handler(#input_fields) -> impl ahecha::view::RenderString {
         #document (#maybe_title, (), #block)
       }
     }

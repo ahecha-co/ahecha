@@ -1,25 +1,25 @@
-use crate::{html::render::Render, html_escaping::escape_html};
+use crate::{html_escaping::escape_html, render::RenderString};
 use std::fmt::{Result, Write};
 
-impl Render for String {
+impl RenderString for String {
   fn render_into<W: Write>(self, writer: &mut W) -> Result {
     escape_html(&self, writer)
   }
 }
 
-impl Render for &str {
+impl RenderString for &str {
   fn render_into<W: Write>(self, writer: &mut W) -> Result {
     escape_html(self, writer)
   }
 }
 
-impl Render for &&str {
+impl RenderString for &&str {
   fn render_into<W: Write>(self, writer: &mut W) -> Result {
     escape_html(self, writer)
   }
 }
 
-impl Render for std::borrow::Cow<'_, str> {
+impl RenderString for std::borrow::Cow<'_, str> {
   fn render_into<W: Write>(self, writer: &mut W) -> Result {
     escape_html(&self, writer)
   }
@@ -36,7 +36,7 @@ impl<'s> From<&'s str> for Raw<'s> {
 }
 
 /// A raw (unencoded) html string
-impl<'s> Render for Raw<'s> {
+impl<'s> RenderString for Raw<'s> {
   fn render_into<W: Write>(self, writer: &mut W) -> Result {
     write!(writer, "{}", self.0)
   }

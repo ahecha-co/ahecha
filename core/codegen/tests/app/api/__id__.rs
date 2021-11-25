@@ -8,6 +8,6 @@ pub fn get(id: u32) -> String {
 }
 
 #[api]
-pub fn post(user: SuperUser, id: u32) -> u32 {
+pub fn post(_user: SuperUser, id: u32) -> u32 {
   id
 }

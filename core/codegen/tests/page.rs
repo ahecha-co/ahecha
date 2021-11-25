@@ -1,5 +1,5 @@
 use ahecha_codegen::html;
-use ahecha_view::Render;
+use ahecha_view::RenderString;
 use app::page;
 
 mod app;
@@ -16,7 +16,7 @@ fn test_generate_route() {
 
 #[test]
 fn test_index_page_request() {
-  let response = page::index::IndexPage::handler().render();
+  let response: String = page::index::IndexPage::handler().render();
   assert_eq!(
     response,
     "<html><head><title>Index</title></head><body><div>Index page</div></body></html>"
@@ -36,14 +36,12 @@ fn test_test_page_request() {
 fn test_page_as_partial() {
   use page::__count__::CountPage;
 
-  let res = html!(
+  let res: String = html!(
     <div>
       <CountPage count=5 />
     </div>
-  );
+  )
+  .render();
 
-  assert_eq!(
-    res.render(),
-    "<div><div>Test page<span>5</span></div></div>"
-  );
+  assert_eq!(res, "<div><div>Test page<span>5</span></div></div>");
 }

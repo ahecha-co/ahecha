@@ -1,6 +1,14 @@
 use std::fmt::{Result, Write};
 
-pub trait Render: Sized {
+mod attributes;
+mod doctype;
+mod elements;
+mod fragment;
+mod numbers;
+mod text;
+mod tuples;
+
+pub trait RenderString: Sized {
   /// Render the component to a writer.
   /// Make sure you escape html correctly using the `render::html_escaping` module
   fn render_into<W: Write>(self, writer: &mut W) -> Result;
@@ -14,14 +22,14 @@ pub trait Render: Sized {
 }
 
 /// Renders `()` or nothing
-impl Render for () {
+impl RenderString for () {
   fn render_into<W: Write>(self, _writer: &mut W) -> Result {
     Ok(())
   }
 }
 
 /// Renders `T` or nothing
-impl<T: Render> Render for Option<T> {
+impl<T: RenderString> RenderString for Option<T> {
   fn render_into<W: Write>(self, writer: &mut W) -> Result {
     match self {
       None => Ok(()),
@@ -31,7 +39,7 @@ impl<T: Render> Render for Option<T> {
 }
 
 /// Renders a list of `T`
-impl<T: Render> Render for Vec<T> {
+impl<T: RenderString> RenderString for Vec<T> {
   fn render_into<W: Write>(self, writer: &mut W) -> Result {
     for elem in self {
       elem.render_into(writer)?;
@@ -41,7 +49,7 @@ impl<T: Render> Render for Vec<T> {
 }
 
 /// Renders `O` or `E`
-impl<O: Render, E: Render> Render for std::result::Result<O, E> {
+impl<O: RenderString, E: RenderString> RenderString for std::result::Result<O, E> {
   fn render_into<W: Write>(self, writer: &mut W) -> Result {
     match self {
       Ok(o) => o.render_into(writer),
@@ -51,7 +59,7 @@ impl<O: Render, E: Render> Render for std::result::Result<O, E> {
 }
 
 /// Renders `bool`
-impl Render for bool {
+impl RenderString for bool {
   fn render_into<W: Write>(self, writer: &mut W) -> Result {
     if self {
       write!(writer, "true")?;

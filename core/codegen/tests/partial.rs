@@ -1,4 +1,4 @@
-use ahecha::view::Render;
+use ahecha::view::RenderString;
 use ahecha_codegen::*;
 
 mod ahecha {

@@ -2,7 +2,7 @@ use std::fmt::{Result, Write};
 
 macro_rules! impl_renderable {
   ($($t:ty),*) => {
-    $(impl crate::html::render::Render for $t {
+    $(impl crate::render::RenderString for $t {
         fn render_into<W: Write>(self, writer: &mut W) -> Result {
           write!(writer, "{}", self)
         }
@@ -17,7 +17,7 @@ impl_renderable!(u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize,
 mod test {
   use ahecha_tuple_list::tuple_list;
 
-  use crate::{HtmlElement, Render};
+  use crate::{render::RenderString, HtmlElement};
 
   #[test]
   fn test_render_into() {

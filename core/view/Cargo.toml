@@ -8,4 +8,12 @@ edition = "2021"
 
 [dependencies]
 ahecha_tuple_list={ path = "../tuple_list", version = "*" }
-# web-sys={version="0.3.55",features=["Document", "DomParser", "HtmlCollection", "HtmlElement", "HtmlDivElement", "SupportedType"]}
+gloo-utils = "0.1.0"
+
+[dependencies.web-sys]
+version="0.3.55"
+features=[
+  "Document",
+  "Element",
+  "Text",
+]

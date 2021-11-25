@@ -3,11 +3,11 @@ use std::fmt::{Result, Write};
 
 use crate::escape_html;
 
-pub trait ToAttributeValue {
+pub trait RenderAttributeValue {
   fn to_attribute_value(&self) -> String;
 }
 
-impl ToAttributeValue for Option<&str> {
+impl RenderAttributeValue for Option<&str> {
   fn to_attribute_value(&self) -> String {
     match self {
       Some(s) => s.to_string(),
@@ -18,7 +18,7 @@ impl ToAttributeValue for Option<&str> {
 
 macro_rules! impl_attribute_value {
   ($($t:ty),*) => {
-    $(impl ToAttributeValue for $t {
+    $(impl RenderAttributeValue for $t {
       fn to_attribute_value(&self) -> String {
         self.to_string()
       }
@@ -40,7 +40,7 @@ impl RenderAttributes for () {
 
 impl<A> RenderAttributes for (&str, A)
 where
-  A: ToAttributeValue,
+  A: RenderAttributeValue,
 {
   fn render_attributes_into<W: Write>(&self, writer: &mut W) -> Result {
     write!(writer, " {}=\"", self.0)?;
@@ -51,7 +51,7 @@ where
 
 impl<A, Tail> RenderAttributes for ((&str, A), Tail)
 where
-  A: ToAttributeValue,
+  A: RenderAttributeValue,
   Tail: RenderAttributes + TupleList,
 {
   fn render_attributes_into<W: Write>(&self, writer: &mut W) -> Result {

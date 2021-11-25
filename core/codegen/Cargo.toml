@@ -28,3 +28,6 @@ features = [
 
 [dev-dependencies]
 ahecha_view={path="../view", version="*"}
+custom-elements = "0.2.0"
+wasm-bindgen = "0.2.78"
+web-sys = {version="0.3.55", features=["HtmlElement"]}

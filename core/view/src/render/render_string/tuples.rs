@@ -2,12 +2,12 @@ use std::fmt::{Result, Write};
 
 use ahecha_tuple_list::TupleList;
 
-use crate::html::render::Render;
+use crate::render::RenderString;
 
-impl<Head, Tail> Render for (Head, Tail)
+impl<Head, Tail> RenderString for (Head, Tail)
 where
-  Head: Render,
-  Tail: Render + TupleList,
+  Head: RenderString,
+  Tail: RenderString + TupleList,
 {
   fn render_into<W: Write>(self, writer: &mut W) -> Result {
     self.0.render_into(writer)?;
