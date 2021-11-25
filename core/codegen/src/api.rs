@@ -13,12 +13,6 @@ pub fn create_api(f: syn::ItemFn) -> TokenStream {
   let vis = fn_struct.vis();
   let struct_name = fn_struct.name();
   let return_type = fn_struct.return_type();
-  let impl_generics = fn_struct.impl_generics();
-  let ty_generics = fn_struct.type_generics();
-  let where_clause = fn_struct.where_clause();
-  let input_blocks = fn_struct.input_blocks();
-  let input_fields = fn_struct.input_fields();
-  let block = fn_struct.block();
 
   let struct_str_name = struct_name.to_string();
   if struct_str_name.to_lowercase().chars().next().unwrap()
@@ -31,19 +25,63 @@ pub fn create_api(f: syn::ItemFn) -> TokenStream {
   let uri = route.build_uri();
   let uri_input_fields = route.params();
 
-  quote! {
+  let lifetimes = fn_struct
+    ._f
+    .sig
+    .generics
+    .lifetimes()
+    .map(|l| {
+      let lifetime = l.lifetime.clone();
+      quote!(#lifetime)
+    })
+    .collect::<Vec<_>>();
+  let impl_generics = fn_struct.impl_generics();
+  let ty_generics = fn_struct.type_generics();
+  let where_clause = fn_struct.where_clause();
+  let block = fn_struct.block();
+  let input_fields = fn_struct.input_fields(quote!(pub));
+  let input_names = fn_struct
+    .input_names()
+    .iter()
+    .map(|n| quote! {#n})
+    .collect::<Vec<_>>();
+  let (params_struct_definition, params_destructured) = if input_names.is_empty() {
+    (quote!(), quote!())
+  } else {
+    (
+      quote! {
+        pub struct Params #impl_generics {
+          #input_fields
+        }
+      },
+      quote!( Params { #(#input_names),* }: Params #ty_generics ),
+    )
+  };
+
+  let lifetimes = if lifetimes.is_empty() {
+    quote!()
+  } else {
+    quote!( + #(#lifetimes)+* )
+  };
+
+  quote!(
     #[allow(non_camel_case_types)]
-    #vis struct #struct_name #impl_generics #input_blocks
+    #vis mod #struct_name {
+      use super::*;
 
-    impl #ty_generics #struct_name #impl_generics #where_clause {
-      pub fn uri(#uri_input_fields) -> String {
-        #uri
-      }
+      #params_struct_definition
 
-      pub fn handler(#input_fields) #return_type {
+      pub fn handler #impl_generics
+      (
+        #params_destructured
+      ) #return_type #lifetimes #where_clause {
         #block
       }
+
+      pub fn uri( #uri_input_fields ) -> String {
+        #uri
+      }
     }
-  }
+  )
   .into()
 }

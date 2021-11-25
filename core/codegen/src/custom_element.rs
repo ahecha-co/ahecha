@@ -1,8 +1,8 @@
 use proc_macro::TokenStream;
-use proc_macro2::Span;
+// use proc_macro2::Span;
 use proc_macro_error::emit_error;
 use quote::quote;
-use syn::Pat;
+// use syn::Pat;
 
 use crate::utils::FnStruct;
 
@@ -11,27 +11,27 @@ pub fn create_custom_element(f: syn::ItemFn) -> TokenStream {
 
   let vis = fn_struct.vis();
   let struct_name = fn_struct.name();
-  let mut observed_attributes = vec![];
-  let mut update_attribute_values = vec![];
+  // let mut observed_attributes = vec![];
+  // let mut update_attribute_values = vec![];
 
-  for attr in fn_struct.input_names().iter() {
-    match attr {
-      Pat::Ident(ident) => {
-        let attr_name = ident.ident.to_string();
-        observed_attributes.push(quote!(#attr_name));
-        update_attribute_values.push(quote!(
-          #attr_name => self. #attr = if let Some(new_value) = new_value {
-            ahecha::serde_json::from_str(new_value.as_str())
-            //.expect(format!("Could not deserialize the value `{}`", new_value))
-            .unwrap()
-          } else {
-            Default::default()
-          },
-        ));
-      }
-      _ => emit_error!(Span::call_site(), "Attribute names must be identifiers",),
-    };
-  }
+  // for attr in fn_struct.input_names().iter() {
+  //   match attr {
+  //     Pat::Ident(ident) => {
+  //       let attr_name = ident.ident.to_string();
+  //       observed_attributes.push(quote!(#attr_name));
+  //       update_attribute_values.push(quote!(
+  //         #attr_name => self. #attr = if let Some(new_value) = new_value {
+  //           ahecha::serde_json::from_str(new_value.as_str())
+  //           //.expect(format!("Could not deserialize the value `{}`", new_value))
+  //           .unwrap()
+  //         } else {
+  //           Default::default()
+  //         },
+  //       ));
+  //     }
+  //     _ => emit_error!(Span::call_site(), "Attribute names must be identifiers",),
+  //   };
+  // }
 
   let struct_str_name = struct_name.to_string();
   if !struct_str_name

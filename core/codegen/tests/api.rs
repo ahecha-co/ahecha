@@ -19,7 +19,7 @@ fn test_index_api_request() {
 
 #[test]
 fn test_get_id_api_request() {
-  let response = api::__id__::get::handler(5);
+  let response = api::__id__::get::handler(api::__id__::get::Params { id: 5 });
   assert_eq!(response, "{\"title\": \"Hello get 5 route\"}");
 }
 
@@ -28,6 +28,6 @@ fn test_post_id_api_request() {
   let user = SuperUser {
     name: "root".into(),
   };
-  let response = api::__id__::post::handler(user, 200);
+  let response = api::__id__::post::handler(api::__id__::post::Params { id: 200, user });
   assert_eq!(response, 200);
 }
