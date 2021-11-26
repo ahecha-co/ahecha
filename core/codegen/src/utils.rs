@@ -6,6 +6,8 @@ use syn::{
   TypeGenerics, Visibility, WhereClause,
 };
 
+use crate::routes::{generate_route_path, RouteType};
+
 pub struct FnStruct {
   pub _f: ItemFn,
 }
@@ -84,6 +86,18 @@ impl FnStruct {
   pub fn return_type(&self) -> TokenStream {
     let return_type = &self._f.sig.output;
     quote!(#return_type)
+  }
+
+  pub fn create_route(&self, route_type: RouteType) -> TokenStream {
+    let route = generate_route_path(route_type, self.name().to_string(), self.inputs());
+    let uri = route.build_uri();
+    let uri_input_fields = route.params();
+
+    quote!(
+      pub fn uri( #uri_input_fields ) -> String {
+        #uri
+      }
+    )
   }
 
   pub fn create_view(&self) -> proc_macro2::TokenStream {

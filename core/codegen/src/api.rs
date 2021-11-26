@@ -2,10 +2,7 @@ use proc_macro::TokenStream;
 use proc_macro_error::emit_error;
 use quote::quote;
 
-use crate::{
-  routes::{generate_route_path, RouteType},
-  utils::FnStruct,
-};
+use crate::{routes::RouteType, utils::FnStruct};
 
 pub fn create_api(f: syn::ItemFn) -> TokenStream {
   let fn_struct: FnStruct = f.into();
@@ -20,10 +17,6 @@ pub fn create_api(f: syn::ItemFn) -> TokenStream {
   {
     emit_error!(struct_name.span(), "Rest API functions must lower case");
   }
-
-  let route = generate_route_path(RouteType::Api, struct_str_name, fn_struct.inputs());
-  let uri = route.build_uri();
-  let uri_input_fields = route.params();
 
   let lifetimes = fn_struct
     ._f
@@ -64,6 +57,8 @@ pub fn create_api(f: syn::ItemFn) -> TokenStream {
     quote!( + #(#lifetimes)+* )
   };
 
+  let route_fn = fn_struct.create_route(RouteType::Api);
+
   quote!(
     #[allow(non_camel_case_types)]
     #vis mod #struct_name {
@@ -78,9 +73,7 @@ pub fn create_api(f: syn::ItemFn) -> TokenStream {
         #block
       }
 
-      pub fn uri( #uri_input_fields ) -> String {
-        #uri
-      }
+      #route_fn
     }
   )
   .into()

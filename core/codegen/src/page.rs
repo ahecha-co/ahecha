@@ -3,11 +3,7 @@ use proc_macro_error::emit_error;
 use quote::quote;
 use syn::AttributeArgs;
 
-use crate::{
-  page::attributes::PageAttributes,
-  routes::{generate_route_path, RouteType},
-  utils::FnStruct,
-};
+use crate::{page::attributes::PageAttributes, routes::RouteType, utils::FnStruct};
 
 mod attributes;
 
@@ -55,13 +51,9 @@ pub fn create_page(f: syn::ItemFn, attrs: AttributeArgs) -> TokenStream {
     (quote!(params: Params,), quote!(params))
   };
 
-  let view_fn = fn_struct.create_view();
-
   let vis = fn_struct.vis();
-
-  let route = generate_route_path(RouteType::Page, struct_str_name, fn_struct.inputs());
-  let uri = route.build_uri();
-  let uri_input_fields = route.params();
+  let route_fn = fn_struct.create_route(RouteType::Page);
+  let view_fn = fn_struct.create_view();
 
   quote! {
     #[allow(non_snake_case)]
@@ -73,9 +65,7 @@ pub fn create_page(f: syn::ItemFn, attrs: AttributeArgs) -> TokenStream {
         #document ( #maybe_title , (), view( #params_ref ))
       }
 
-      pub fn uri( #uri_input_fields ) -> String {
-        #uri
-      }
+      #route_fn
 
       #view_fn
     }
