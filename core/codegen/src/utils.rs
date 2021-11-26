@@ -17,6 +17,16 @@ impl FnStruct {
     &self._f.vis
   }
 
+  pub fn has_camel_case_name(&self, err_message: &str) -> bool {
+    self
+      .name()
+      .to_string()
+      .chars()
+      .next()
+      .expect(err_message)
+      .is_uppercase()
+  }
+
   pub fn name(&self) -> &Ident {
     &self._f.sig.ident
   }
@@ -54,22 +64,6 @@ impl FnStruct {
 
   pub fn block(&self) -> &Block {
     &self._f.block
-  }
-
-  pub fn input_blocks(&self) -> TokenStream {
-    let input_blocks = if !self.inputs().is_empty() {
-      let input_names: Vec<_> = self.inputs().iter().collect();
-      let vis = &self.vis();
-      quote!(#(#vis #input_names),*,)
-    } else {
-      quote!()
-    };
-
-    quote!(
-      {
-        #input_blocks
-      }
-    )
   }
 
   pub fn input_fields(&self, vis: TokenStream) -> TokenStream {

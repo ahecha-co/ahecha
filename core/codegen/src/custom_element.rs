@@ -34,12 +34,7 @@ pub fn create_custom_element(f: syn::ItemFn) -> TokenStream {
   // }
 
   let struct_str_name = struct_name.to_string();
-  if !struct_str_name
-    .chars()
-    .next()
-    .expect("Custom elements must have a name")
-    .is_uppercase()
-  {
+  if !fn_struct.has_camel_case_name("Custom elements must have a name") {
     emit_error!(
       struct_name.span(),
       "Custom elements must start with a upper letter"
