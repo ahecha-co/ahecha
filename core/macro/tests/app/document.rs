@@ -1,7 +1,7 @@
-use ahecha_codegen::{document, html};
+use ahecha_macro::{document, html};
 
 mod ahecha {
-  pub use ahecha_view as view;
+  pub use ahecha_html as view;
 }
 
 #[document]
@@ -9,10 +9,10 @@ pub fn Document<Head, Body>(
   title: Option<&'static str>,
   head: Head,
   body: Body,
-) -> impl ahecha_view::RenderString + '_
+) -> impl ahecha_html::RenderString + '_
 where
-  Head: ahecha_view::RenderString + 'static,
-  Body: ahecha_view::RenderString + 'static,
+  Head: ahecha_html::RenderString + 'static,
+  Body: ahecha_html::RenderString + 'static,
 {
   html! {
     <html>

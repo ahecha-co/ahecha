@@ -1,7 +1,13 @@
 [package]
-name = "ahecha_codegen"
+name = "ahecha_macro"
 version = "0.0.1"
 edition = "2021"
+license = "MIT"
+description = "Ahecha macro crate"
+homepage = "https://github.com/ahecha-co/ahecha"
+documentation = "https://docs.rs/ahecha"
+repository = "https://github.com/ahecha-co/ahecha"
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
@@ -27,6 +33,6 @@ features = [
 ]
 
 [dev-dependencies]
-ahecha_view={path="../view", version="*"}
+ahecha_html={path="../html", version="*"}
 wasm-bindgen = "0.2.78"
 web-sys = {version="0.3.55", features=["HtmlElement"]}

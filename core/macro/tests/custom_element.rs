@@ -1,9 +1,9 @@
 #[cfg(feature = "backend")]
 mod backend {
   use ahecha::view::RenderString;
-  use ahecha_codegen::*;
+  use ahecha_macro::*;
   mod ahecha {
-    pub use ahecha_view as view;
+    pub use ahecha_html as view;
   }
 
   #[test]

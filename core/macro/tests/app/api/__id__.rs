@@ -1,4 +1,4 @@
-use ahecha_codegen::*;
+use ahecha_macro::*;
 
 use crate::app::SuperUser;
 

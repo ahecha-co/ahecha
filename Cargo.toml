@@ -1,6 +1,6 @@
 [workspace]
 members = [
-  "core/codegen",
+  "core/macro",
   "core/lib",
-  "core/view",
+  "core/html",
 ]

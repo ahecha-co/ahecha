@@ -1,4 +1,4 @@
-use ahecha_codegen::*;
+use ahecha_macro::*;
 
 #[api]
 pub fn get() -> &'static str {

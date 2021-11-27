@@ -58,7 +58,7 @@ pub fn html(input: TokenStream) -> TokenStream {
   let elapsed = Instant::elapsed(&start);
 
   println!(
-    "ahecha_codegen::html! | took {} µs | {}:{}",
+    "ahecha_macro::html! | took {} µs | {}:{}",
     elapsed.as_micros(),
     Span::call_site().source_file().path().display(),
     Span::call_site().start().line,
