@@ -1,8 +1,8 @@
-use ahecha::view::RenderString;
+use ahecha::html::RenderString;
 use ahecha_macro::*;
 
 mod ahecha {
-  pub use ahecha_html as view;
+  pub use ahecha_html as html;
 }
 
 #[test]

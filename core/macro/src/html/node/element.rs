@@ -47,7 +47,7 @@ impl ToTokens for HtmlElement {
     let name = &self.name;
 
     let element = quote!(
-      ahecha::view::HtmlElement {
+      ahecha::html::HtmlElement {
         attributes: #attributes,
         children: #children,
         name: stringify!(#name),

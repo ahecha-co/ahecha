@@ -1,10 +1,10 @@
 #[cfg(feature = "backend")]
 mod backend {
-  use ahecha::view::RenderString;
+  use ahecha::html::RenderString;
   use ahecha_macro::*;
 
   mod ahecha {
-    pub use ahecha_html as view;
+    pub use ahecha_html as html;
   }
   #[test]
   fn test_html_tag() {

@@ -1,7 +1,7 @@
 use ahecha_macro::{document, html};
 
 mod ahecha {
-  pub use ahecha_html as view;
+  pub use ahecha_html as html;
 }
 
 #[document]

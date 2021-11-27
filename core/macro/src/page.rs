@@ -56,7 +56,7 @@ pub fn create_page(f: syn::ItemFn, attrs: AttributeArgs) -> TokenStream {
       use super::*;
 
       #[cfg(feature = "backend")]
-      pub fn handler( #params ) -> impl ahecha::view::RenderString {
+      pub fn handler( #params ) -> impl ahecha::html::RenderString {
         #document ( #maybe_title , (), view( #params_ref ))
       }
 

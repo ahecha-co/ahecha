@@ -19,7 +19,7 @@ impl ToTokens for HtmlDoctype {
     match self {
       HtmlDoctype::Html5(element) => {
         quote! {
-          ahecha::view::HtmlDoctype::Html5(#element)
+          ahecha::html::HtmlDoctype::Html5(#element)
         }
       }
     }

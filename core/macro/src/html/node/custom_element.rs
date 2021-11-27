@@ -48,7 +48,7 @@ impl ToTokens for HtmlCustomElement {
     };
 
     let element = quote!(
-      ahecha::view::HtmlElement {
+      ahecha::html::HtmlElement {
         attributes: #attributes,
         children: Some((
           #ident ::view( #param ),

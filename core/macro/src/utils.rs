@@ -140,7 +140,7 @@ impl FnStruct {
       pub fn view #impl_generics
       (
         #params_destructured
-      ) -> impl ahecha::view::RenderString #lifetimes #where_clause {
+      ) -> impl ahecha::html::RenderString #lifetimes #where_clause {
         #block
       }
     )

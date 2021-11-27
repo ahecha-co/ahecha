@@ -20,7 +20,7 @@ impl ToTokens for HtmlFragment {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
     let children = &self.children;
     let element = quote!(
-      ahecha::view::HtmlFragment {
+      ahecha::html::HtmlFragment {
         children: #children,
       }
     );

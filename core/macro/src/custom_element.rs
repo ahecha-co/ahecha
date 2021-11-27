@@ -74,13 +74,13 @@ pub fn create_custom_element(f: syn::ItemFn) -> TokenStream {
       //   // }
 
       //   pub fn register() {
-      //     // use ahecha::view::CustomElement;
+      //     // use ahecha::html::CustomElement;
       //     // Self::define(#struct_str_name);
       //   }
       // }
 
       // #[cfg(feature = "frontend")]
-      // impl #impl_generics ahecha::view::CustomElement for #struct_name #ty_generics #where_clause {
+      // impl #impl_generics ahecha::html::CustomElement for #struct_name #ty_generics #where_clause {
       //   // #[wasm_bindgen(constructor)]
       //   // fn constructor(&mut self) {
       //   //   let (style, template) = self.get_template();

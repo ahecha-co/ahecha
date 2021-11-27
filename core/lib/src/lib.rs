@@ -1,4 +1,4 @@
-pub use ahecha_html as view;
+pub use ahecha_html as html;
 pub use ahecha_macro;
 
 pub mod prelude {

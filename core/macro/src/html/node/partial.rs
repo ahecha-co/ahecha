@@ -46,7 +46,7 @@ impl ToTokens for HtmlPartial {
     };
 
     let element = quote!(
-      ahecha::view::HtmlFragment {
+      ahecha::html::HtmlFragment {
         children: Some((
           #ident ::view( #param ),
           ()
