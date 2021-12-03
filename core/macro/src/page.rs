@@ -7,7 +7,7 @@ use crate::{page::attributes::PageAttributes, routes::RouteType, utils::FnStruct
 
 mod attributes;
 
-pub fn create_page(f: syn::ItemFn, attrs: AttributeArgs) -> TokenStream {
+pub fn create_page(attrs: AttributeArgs, f: syn::ItemFn) -> TokenStream {
   let fn_struct: FnStruct = f.into();
 
   let struct_name = fn_struct.name();

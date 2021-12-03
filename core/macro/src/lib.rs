@@ -2,11 +2,6 @@
 
 extern crate proc_macro;
 
-#[cfg(feature = "html-string-parser")]
-use core::panic;
-
-#[cfg(feature = "html-string-parser")]
-use nom::error::ErrorKind;
 use proc_macro::TokenStream;
 use proc_macro_error::proc_macro_error;
 use quote::quote;
@@ -18,6 +13,7 @@ mod api;
 mod custom_element;
 mod document;
 mod html;
+mod model;
 mod page;
 mod partial;
 mod routes;
@@ -26,8 +22,14 @@ mod utils;
 #[proc_macro_attribute]
 #[proc_macro_error]
 pub fn api(_metadata: TokenStream, input: TokenStream) -> TokenStream {
-  let f = parse_macro_input!(input as ItemFn);
-  api::create_api(f)
+  let handler: proc_macro2::TokenStream = input.clone().into();
+  let handler_metadata = api::create_api(parse_macro_input!(input as ItemFn));
+
+  quote!(
+    #handler
+    #handler_metadata
+  )
+  .into()
 }
 
 #[proc_macro_attribute]
@@ -88,9 +90,10 @@ pub fn partial(_metadata: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 #[proc_macro_error]
 pub fn page(metadata: TokenStream, input: TokenStream) -> TokenStream {
-  let attributes = parse_macro_input!(metadata as syn::AttributeArgs);
-  let f = parse_macro_input!(input as ItemFn);
-  page::create_page(f, attributes)
+  page::create_page(
+    parse_macro_input!(metadata as syn::AttributeArgs),
+    parse_macro_input!(input as ItemFn),
+  )
 }
 
 #[proc_macro]
