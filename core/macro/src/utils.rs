@@ -17,81 +17,8 @@ impl FnStruct {
     &self._f.vis
   }
 
-  pub fn has_camel_case_name(&self, err_message: &str) -> bool {
-    self
-      .name()
-      .to_string()
-      .chars()
-      .next()
-      .expect(err_message)
-      .is_uppercase()
-  }
-
-  pub fn name(&self) -> &Ident {
-    &self._f.sig.ident
-  }
-
-  pub fn impl_generics(&self) -> ImplGenerics {
-    self._f.sig.generics.split_for_impl().0
-  }
-
-  pub fn type_generics(&self) -> TypeGenerics {
-    self._f.sig.generics.split_for_impl().1
-  }
-
-  pub fn where_clause(&self) -> Option<&WhereClause> {
-    self._f.sig.generics.split_for_impl().2
-  }
-
-  pub fn inputs(&self) -> &Punctuated<FnArg, Comma> {
-    &self._f.sig.inputs
-  }
-
-  pub fn input_names(&self) -> Vec<Pat> {
-    self
-      .inputs()
-      .iter()
-      .filter_map(|argument| match argument {
-        syn::FnArg::Typed(typed) => Some(typed),
-        syn::FnArg::Receiver(rec) => {
-          emit_error!(rec.span(), "Don't use `self` on components");
-          None
-        }
-      })
-      .map(|value| *value.pat.clone())
-      .collect()
-  }
-
   pub fn block(&self) -> &Block {
     &self._f.block
-  }
-
-  pub fn input_fields(&self, vis: TokenStream) -> TokenStream {
-    let input_fields = if !self.inputs().is_empty() {
-      let input_names: Vec<_> = self.inputs().iter().map(|i| quote!(#vis #i)).collect();
-      quote!(#(#input_names),*,)
-    } else {
-      quote!()
-    };
-
-    quote!(#input_fields)
-  }
-
-  pub fn return_type(&self) -> TokenStream {
-    let return_type = &self._f.sig.output;
-    quote!(#return_type)
-  }
-
-  pub fn create_route(&self, route_type: RouteType) -> TokenStream {
-    let route = generate_route_path(route_type, self.name().to_string(), self.inputs());
-    let uri = route.build_uri();
-    let uri_input_fields = route.params();
-
-    quote!(
-      pub fn uri( #uri_input_fields ) -> String {
-        #uri
-      }
-    )
   }
 
   pub fn create_view(&self) -> proc_macro2::TokenStream {
@@ -144,6 +71,83 @@ impl FnStruct {
         #block
       }
     )
+  }
+
+  pub fn create_route(&self, route_type: RouteType) -> TokenStream {
+    let route = generate_route_path(route_type, self.name().to_string(), self.inputs());
+    let uri = route.build_uri();
+    let uri_input_fields = route.params();
+
+    quote!(
+      pub fn uri( #uri_input_fields ) -> String {
+        #uri
+      }
+    )
+  }
+
+  pub fn has_camel_case_name(&self, err_message: &str) -> bool {
+    self
+      .name()
+      .to_string()
+      .chars()
+      .next()
+      .expect(err_message)
+      .is_uppercase()
+  }
+
+  pub fn impl_generics(&self) -> ImplGenerics {
+    self._f.sig.generics.split_for_impl().0
+  }
+
+  pub fn inputs(&self) -> &Punctuated<FnArg, Comma> {
+    &self._f.sig.inputs
+  }
+
+  pub fn input_fields(&self, vis: TokenStream) -> TokenStream {
+    let input_fields = if !self.inputs().is_empty() {
+      let input_names: Vec<_> = self.inputs().iter().map(|i| quote!(#vis #i)).collect();
+      quote!(#(#input_names),*,)
+    } else {
+      quote!()
+    };
+
+    quote!(#input_fields)
+  }
+
+  pub fn input_names(&self) -> Vec<Pat> {
+    self
+      .inputs()
+      .iter()
+      .filter_map(|argument| match argument {
+        syn::FnArg::Typed(typed) => Some(typed),
+        syn::FnArg::Receiver(rec) => {
+          emit_error!(rec.span(), "Don't use `self` on components");
+          None
+        }
+      })
+      .map(|value| *value.pat.clone())
+      .collect()
+  }
+
+  pub fn is_async(&self) -> bool {
+    self._f.sig.asyncness.is_some()
+  }
+
+  pub fn name(&self) -> &Ident {
+    &self._f.sig.ident
+  }
+
+  pub fn return_type(&self) -> TokenStream {
+    let return_type = &self._f.sig.output;
+    quote!(#return_type)
+  }
+
+  pub fn type_generics(&self) -> TypeGenerics {
+    self._f.sig.generics.split_for_impl().1
+  }
+
+  pub fn where_clause(&self) -> Option<&WhereClause> {
+    self._f.sig.generics.split_for_impl().2
   }
 }
 

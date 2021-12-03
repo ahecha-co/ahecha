@@ -20,7 +20,7 @@ where
 #[cfg(test)]
 mod test {
   use super::*;
-  use crate::HtmlElement;
+  use crate::{html::elements::HtmlElementType, HtmlElement};
 
   #[test]
   fn test_fragment() {
@@ -45,6 +45,7 @@ mod test {
     let element = HtmlFragment {
       children: Some(HtmlElement {
         name: "div",
+        kind: HtmlElementType::Tag,
         attributes: (),
         children: Some(HtmlFragment {
           children: "I'm a fragment".into(),

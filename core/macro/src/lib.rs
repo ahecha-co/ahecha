@@ -50,8 +50,19 @@ pub fn html(input: TokenStream) -> TokenStream {
 
   let start = Instant::now();
   let view = parse_macro_input!(input as HtmlNode);
+  let source_file = Span::call_site().source_file().path().display().to_string();
+  let line = Span::call_site().start().line;
   let res = quote! {
-    #view
+    {
+      let res = #view;
+      println!(
+        "{}:{} | size {} Kilobytes",
+        #source_file,
+        #line,
+        std::mem::size_of_val(&res) as f32 / 1000.0
+      );
+      res
+    }
   }
   .into();
 
@@ -60,8 +71,8 @@ pub fn html(input: TokenStream) -> TokenStream {
   println!(
     "ahecha_macro::html! | took {} µs | {}:{}",
     elapsed.as_micros(),
-    Span::call_site().source_file().path().display(),
-    Span::call_site().start().line,
+    source_file,
+    line,
   );
 
   res

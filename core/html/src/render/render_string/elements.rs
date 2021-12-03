@@ -39,12 +39,15 @@ where
 mod test {
   use ahecha_tuple_list::tuple_list;
 
+  use crate::html::elements::HtmlElementType;
+
   use super::*;
 
   #[test]
   fn test_tag_element() {
     let element = HtmlElement {
       name: "div",
+      kind: HtmlElementType::Tag,
       attributes: (),
       children: Option::<()>::None,
     };
@@ -56,6 +59,7 @@ mod test {
   fn test_tag_element_with_attributes() {
     let element = HtmlElement {
       name: "div",
+      kind: HtmlElementType::Tag,
       attributes: tuple_list!(("class", "test"), ("id", "test"), ("style", "color: red;"),),
       children: Option::<()>::None,
     };
@@ -70,9 +74,11 @@ mod test {
   fn test_tag_element_with_one_child() {
     let element = HtmlElement {
       name: "div",
+      kind: HtmlElementType::Tag,
       attributes: (("class", "test"), ()),
       children: Some(HtmlElement {
         name: "h1",
+        kind: HtmlElementType::Tag,
         attributes: (),
         children: Some("Hello World"),
       }),
@@ -88,15 +94,18 @@ mod test {
   fn test_ag_element_with_children() {
     let element = HtmlElement {
       name: "div",
+      kind: HtmlElementType::Tag,
       attributes: (("class", "test"), ()),
       children: Some(tuple_list!(
         HtmlElement {
           name: "h1",
+          kind: HtmlElementType::Tag,
           attributes: (),
           children: Some(tuple_list!(
             "Hello ",
             HtmlElement {
               name: "span",
+              kind: HtmlElementType::Tag,
               attributes: (),
               children: Some("World"),
             },
@@ -104,6 +113,7 @@ mod test {
         },
         HtmlElement {
           name: "p",
+          kind: HtmlElementType::Tag,
           attributes: (),
           children: Some("This is a paragraph"),
         },
@@ -120,18 +130,22 @@ mod test {
   fn test_tag_element_with_children_list() {
     let element = HtmlElement {
       name: "div",
+      kind: HtmlElementType::Tag,
       attributes: (("class", "test"), ()),
       children: Some(HtmlElement {
         name: "ul",
+        kind: HtmlElementType::Tag,
         attributes: (),
         children: Some(vec![
           HtmlElement {
             name: "li",
+            kind: HtmlElementType::Tag,
             attributes: (),
             children: Some("Hello"),
           },
           HtmlElement {
             name: "li",
+            kind: HtmlElementType::Tag,
             attributes: (),
             children: Some("World"),
           },

@@ -50,6 +50,7 @@ impl ToTokens for HtmlElement {
       ahecha::html::HtmlElement {
         attributes: #attributes,
         children: #children,
+        kind: ahecha::html::HtmlElementType::Tag,
         name: stringify!(#name),
       }
     );

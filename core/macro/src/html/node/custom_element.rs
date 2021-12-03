@@ -54,6 +54,7 @@ impl ToTokens for HtmlCustomElement {
           #ident ::view( #param ),
           ()
         )),
+        kind: ahecha::html::HtmlElementType::CustomElement,
         name: #name,
       }
     );

@@ -7,6 +7,15 @@ pub trait RenderAttributeValue {
   fn to_attribute_value(&self) -> String;
 }
 
+impl RenderAttributeValue for Option<String> {
+  fn to_attribute_value(&self) -> String {
+    match self {
+      Some(s) => s.to_owned(),
+      None => "".to_string(),
+    }
+  }
+}
+
 impl RenderAttributeValue for Option<&str> {
   fn to_attribute_value(&self) -> String {
     match self {

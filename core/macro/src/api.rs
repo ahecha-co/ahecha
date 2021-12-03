@@ -18,21 +18,11 @@ pub fn create_api(f: syn::ItemFn) -> TokenStream {
     emit_error!(struct_name.span(), "Rest API functions must lower case");
   }
 
-  let lifetimes = fn_struct
-    ._f
-    .sig
-    .generics
-    .lifetimes()
-    .map(|l| {
-      let lifetime = l.lifetime.clone();
-      quote!(#lifetime)
-    })
-    .collect::<Vec<_>>();
   let impl_generics = fn_struct.impl_generics();
   let ty_generics = fn_struct.type_generics();
   let where_clause = fn_struct.where_clause();
   let block = fn_struct.block();
-  let input_fields = fn_struct.input_fields(quote!(pub));
+  let input_fields = fn_struct.input_fields(quote!());
   let input_names = fn_struct
     .input_names()
     .iter()
@@ -51,13 +41,12 @@ pub fn create_api(f: syn::ItemFn) -> TokenStream {
     )
   };
 
-  let lifetimes = if lifetimes.is_empty() {
-    quote!()
-  } else {
-    quote!( + #(#lifetimes)+* )
-  };
-
   let route_fn = fn_struct.create_route(RouteType::Api);
+  let maybe_async = if fn_struct.is_async() {
+    quote!(async)
+  } else {
+    quote!()
+  };
 
   quote!(
     #[allow(non_camel_case_types)]
@@ -66,12 +55,12 @@ pub fn create_api(f: syn::ItemFn) -> TokenStream {
 
       #params_struct_definition
 
-      pub fn handler #impl_generics
+      pub #maybe_async fn handler #impl_generics
       (
-        #params_destructured
-      ) #return_type #lifetimes #where_clause {
+        #input_fields
+      ) #return_type
+      #where_clause
         #block
-      }
 
       #route_fn
     }

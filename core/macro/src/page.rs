@@ -49,6 +49,11 @@ pub fn create_page(f: syn::ItemFn, attrs: AttributeArgs) -> TokenStream {
   let vis = fn_struct.vis();
   let route_fn = fn_struct.create_route(RouteType::Page);
   let view_fn = fn_struct.create_view();
+  let maybe_async = if fn_struct.is_async() {
+    quote!(async)
+  } else {
+    quote!()
+  };
 
   quote! {
     #[allow(non_snake_case)]
@@ -56,7 +61,7 @@ pub fn create_page(f: syn::ItemFn, attrs: AttributeArgs) -> TokenStream {
       use super::*;
 
       #[cfg(feature = "backend")]
-      pub fn handler( #params ) -> impl ahecha::html::RenderString {
+      pub #maybe_async fn handler( #params ) -> impl ahecha::html::RenderString {
         #document ( #maybe_title , (), view( #params_ref ))
       }
 
