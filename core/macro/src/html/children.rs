@@ -15,7 +15,7 @@ impl ToTokens for Children {
     } else {
       let mut list = vec![];
 
-      for node in self.nodes.iter().rev() {
+      for node in self.nodes.iter() {
         list.push(quote!( #node ));
       }
 
