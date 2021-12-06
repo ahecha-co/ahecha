@@ -3,16 +3,16 @@ use syn::parse::Parse;
 
 use crate::html::children::Children;
 
-use super::HtmlNode;
+use super::Node;
 
 #[derive(Debug)]
 pub struct HtmlFragment {
   pub children: Children,
 }
 
-impl From<HtmlFragment> for HtmlNode {
+impl From<HtmlFragment> for Node {
   fn from(fragment: HtmlFragment) -> Self {
-    HtmlNode::Fragment(fragment)
+    Node::Fragment(fragment)
   }
 }
 
@@ -20,9 +20,9 @@ impl ToTokens for HtmlFragment {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
     let children = &self.children;
     let element = quote!(
-      ahecha::html::HtmlFragment {
-        children: #children,
-      }
+      ahecha::html::Node::Fragment(
+        #children,
+      )
     );
     element.to_tokens(tokens);
   }

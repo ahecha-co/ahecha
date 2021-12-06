@@ -1,3 +1,3 @@
-pub enum HtmlDoctype<T> {
-  Html5(T),
+pub enum Doctype {
+  Html5,
 }

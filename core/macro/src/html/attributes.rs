@@ -142,24 +142,29 @@ impl From<Option<Vec<Attribute>>> for Attributes {
 
 impl ToTokens for Attributes {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-    let mut list = quote! { () };
+    if self.attrs.is_empty() {
+      quote!(vec![])
+    } else {
+      let mut list = vec![];
 
-    for Attribute {
-      extended,
-      key,
-      value,
-    } in self.attrs.iter().rev()
-    {
-      let key = vec![key.clone()]
-        .into_iter()
-        .chain(extended.clone())
-        .map(|i| i.to_string())
-        .collect::<Vec<_>>()
-        .join("-");
-      list = quote! { ((#key, #value), #list) }
+      for Attribute {
+        extended,
+        key,
+        value,
+      } in self.attrs.iter().rev()
+      {
+        let key = vec![key.clone()]
+          .into_iter()
+          .chain(extended.clone())
+          .map(|i| i.to_string())
+          .collect::<Vec<_>>()
+          .join("-");
+        list.push(quote! { (#key.to_owned(), #value) })
+      }
+
+      quote!(vec![ #(#list),* ])
     }
-
-    list.to_tokens(tokens);
+    .to_tokens(tokens);
   }
 }
 

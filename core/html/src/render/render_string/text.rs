@@ -7,6 +7,12 @@ impl RenderString for String {
   }
 }
 
+impl RenderString for &String {
+  fn render_into<W: Write>(self, writer: &mut W) -> Result {
+    escape_html(&self, writer)
+  }
+}
+
 impl RenderString for &str {
   fn render_into<W: Write>(self, writer: &mut W) -> Result {
     escape_html(self, writer)

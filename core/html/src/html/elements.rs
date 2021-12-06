@@ -1,13 +1,12 @@
-pub enum HtmlElementType {
-  CustomElement,
-  Doctype,
-  Page,
-  Tag,
+use super::node::Node;
+
+pub enum AttributeValue {
+  String(String),
+  Bool(bool),
 }
 
-pub struct HtmlElement<A, C> {
-  pub attributes: A,
-  pub children: Option<C>,
-  pub kind: HtmlElementType,
+pub struct Element {
+  pub attributes: Vec<(String, AttributeValue)>,
+  pub children: Vec<Node>,
   pub name: &'static str,
 }

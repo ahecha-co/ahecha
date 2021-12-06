@@ -2,7 +2,7 @@ use quote::{quote, ToTokens};
 
 use crate::html::{attributes::Attributes, children::Children};
 
-use super::{HtmlCustomElement, HtmlNode, HtmlPartial};
+use super::{HtmlCustomElement, HtmlPartial, Node};
 
 #[derive(Debug)]
 pub struct HtmlElement {
@@ -11,7 +11,7 @@ pub struct HtmlElement {
   pub name: syn::Ident,
 }
 
-impl From<HtmlElement> for HtmlNode {
+impl From<HtmlElement> for Node {
   fn from(element: HtmlElement) -> Self {
     if element
       .name
@@ -22,20 +22,20 @@ impl From<HtmlElement> for HtmlNode {
       .is_uppercase()
     {
       if element.name.to_string().ends_with("Partial") {
-        HtmlNode::Partial(HtmlPartial {
+        Node::Partial(HtmlPartial {
           attributes: element.attributes,
           children: element.children,
           name: element.name,
         })
       } else {
-        HtmlNode::CustomElement(HtmlCustomElement {
+        Node::CustomElement(HtmlCustomElement {
           attributes: element.attributes,
           children: element.children,
           name: element.name,
         })
       }
     } else {
-      HtmlNode::Element(element)
+      Node::Element(element)
     }
   }
 }
@@ -47,12 +47,11 @@ impl ToTokens for HtmlElement {
     let name = &self.name;
 
     let element = quote!(
-      ahecha::html::HtmlElement {
+      ahecha::html::Node::Element(ahecha::html::Element {
         attributes: #attributes,
         children: #children,
-        kind: ahecha::html::HtmlElementType::Tag,
         name: stringify!(#name),
-      }
+      })
     );
     element.to_tokens(tokens);
   }

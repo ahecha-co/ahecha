@@ -31,7 +31,7 @@ mod test {
   fn test_tag_element() {
     let element = HtmlElement {
       name: "div",
-      attributes: (),
+      attributes: HashMap::new(),
       children: Option::<()>::None,
     }
     .render();
@@ -61,7 +61,7 @@ mod test {
       attributes: (("class", "test"), ()),
       children: Some(HtmlElement {
         name: "h1",
-        attributes: (),
+        attributes: HashMap::new(),
         children: Some("Hello World"),
       }),
     }
@@ -81,19 +81,19 @@ mod test {
       children: Some(tuple_list!(
         HtmlElement {
           name: "h1",
-          attributes: (),
+          attributes: HashMap::new(),
           children: Some(tuple_list!(
             "Hello ",
             HtmlElement {
               name: "span",
-              attributes: (),
+              attributes: HashMap::new(),
               children: Some("World"),
             },
           )),
         },
         HtmlElement {
           name: "p",
-          attributes: (),
+          attributes: HashMap::new(),
           children: Some("This is a paragraph"),
         },
       )),
@@ -113,16 +113,16 @@ mod test {
       attributes: (("class", "test"), ()),
       children: Some(HtmlElement {
         name: "ul",
-        attributes: (),
+        attributes: HashMap::new(),
         children: Some(vec![
           HtmlElement {
             name: "li",
-            attributes: (),
+            attributes: HashMap::new(),
             children: Some("Hello"),
           },
           HtmlElement {
             name: "li",
-            attributes: (),
+            attributes: HashMap::new(),
             children: Some("World"),
           },
         ]),

@@ -1,27 +1,36 @@
 use proc_macro::TokenStream;
 use proc_macro_error::emit_error;
 use quote::quote;
-use syn::AttributeArgs;
+use syn::{parse_macro_input, AttributeArgs, ItemFn};
 
-use crate::{page::attributes::PageAttributes, routes::RouteType, utils::FnStruct};
+use crate::{page::attributes::PageAttributes, routes::RouteType, utils::FnInfo};
 
 mod attributes;
 
-pub fn create_page(attrs: AttributeArgs, f: syn::ItemFn) -> TokenStream {
-  let fn_struct: FnStruct = f.into();
+pub fn create_page(attrs: AttributeArgs, input: TokenStream) -> TokenStream {
+  let fn_info = FnInfo::new(input.clone(), parse_macro_input!(input as ItemFn));
+  let uri_fn = fn_info.uri(RouteType::Page);
+  let FnInfo {
+    ident,
+    inputs,
+    input_names,
+    is_async,
+    is_ident_capitalized,
+    original_input,
+    metadata_ident,
+    vis,
+    ..
+  } = fn_info;
 
-  let struct_name = fn_struct.name();
-
-  let struct_str_name = struct_name.to_string();
-  if !fn_struct.has_camel_case_name("Page must have a name") {
-    emit_error!(struct_name.span(), "Pages must start with a upper letter");
+  if !is_ident_capitalized {
+    emit_error!(ident.span(), "Pages must start with a upper letter");
   }
 
-  if !struct_str_name.ends_with("Page") {
+  if !ident.to_string().ends_with("Page") {
     emit_error!(
-      struct_name.span(),
+      ident.span(),
       "Pages must have the `Page` suffix, example: `{}Page`",
-      struct_str_name
+      ident.to_string()
     );
   }
 
@@ -35,39 +44,21 @@ pub fn create_page(attrs: AttributeArgs, f: syn::ItemFn) -> TokenStream {
     }
   };
 
-  let input_names = fn_struct
-    .input_names()
-    .iter()
-    .map(|n| quote! {#n})
-    .collect::<Vec<_>>();
-  let (params, params_ref) = if input_names.is_empty() {
-    (quote!(), quote!())
-  } else {
-    (quote!(params: Params,), quote!(params))
-  };
-
-  let vis = fn_struct.vis();
-  let route_fn = fn_struct.create_route(RouteType::Page);
-  let view_fn = fn_struct.create_view();
-  let maybe_async = if fn_struct.is_async() {
-    quote!(async)
-  } else {
-    quote!()
-  };
+  let maybe_async = if is_async { quote!(async) } else { quote!() };
 
   quote! {
+    #original_input
+
     #[allow(non_snake_case)]
-    #vis mod #struct_name {
+    #vis mod #metadata_ident {
       use super::*;
 
       #[cfg(feature = "backend")]
-      pub #maybe_async fn handler( #params ) -> impl ahecha::html::RenderString {
-        #document ( #maybe_title , (), view( #params_ref ))
+      pub #maybe_async fn handler( #inputs ) -> impl ahecha::html::RenderString {
+        #document ( #maybe_title , (), #ident ( #(#input_names),* ))
       }
 
-      #route_fn
-
-      #view_fn
+      #uri_fn
     }
   }
   .into()

@@ -22,28 +22,28 @@ impl_renderable!(u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize,
 
 #[cfg(test)]
 mod test {
-  use ahecha_tuple_list::tuple_list;
-
-  use crate::{html::elements::HtmlElementType, render::RenderString, HtmlElement};
+  use crate::{
+    html::{Element, Node},
+    render::RenderString,
+  };
 
   #[test]
   fn test_render_into() {
-    let element = HtmlElement {
+    let element = Element {
       name: "div",
-      kind: HtmlElementType::Tag,
-      attributes: (),
-      children: Some(tuple_list!(
-        HtmlElement {
+      attributes: vec![],
+      children: vec![
+        Node::Element(Element {
           name: "span",
-          kind: HtmlElementType::Tag,
-          attributes: (),
-          children: Some(tuple_list!("Hello", " ", 1u8)),
-        },
-        ", ",
-        "World",
-        " ",
-        2u8,
-      )),
+          attributes: vec![],
+          children: vec![
+            Node::Text("Hello".to_owned()),
+            Node::Text(" ".to_owned()),
+            Node::Text("1".to_owned()),
+          ],
+        }),
+        Node::Text(", World 2".to_owned()),
+      ],
     };
 
     assert_eq!(element.render(), "<div><span>Hello 1</span>, World 2</div>");

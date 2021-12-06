@@ -1,16 +1,16 @@
 use quote::{quote, ToTokens};
 use syn::parse::Parse;
 
-use super::HtmlNode;
+use super::Node;
 
 #[derive(Debug)]
 pub enum HtmlDoctype {
-  Html5(Box<HtmlNode>),
+  Html5(Box<Node>),
 }
 
-impl From<HtmlDoctype> for HtmlNode {
+impl From<HtmlDoctype> for Node {
   fn from(element: HtmlDoctype) -> Self {
-    HtmlNode::Doctype(element)
+    Node::Doctype(element)
   }
 }
 
@@ -19,7 +19,7 @@ impl ToTokens for HtmlDoctype {
     match self {
       HtmlDoctype::Html5(element) => {
         quote! {
-          ahecha::html::HtmlDoctype::Html5(#element)
+          ahecha::html::Node::Document(ahecha::html::Doctype::Html5(#element), vec![])
         }
       }
     }

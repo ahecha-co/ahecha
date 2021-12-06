@@ -1,21 +1,20 @@
 use proc_macro::TokenStream;
 use proc_macro_error::emit_error;
 use quote::quote;
-use syn::ItemFn;
+use syn::{parse_macro_input, ItemFn};
 
-use crate::utils::FnStruct;
+use crate::utils::FnInfo;
 
-pub fn create_document(f: ItemFn) -> TokenStream {
-  let fn_struct: FnStruct = f.clone().into();
+pub fn create_document(input: TokenStream) -> TokenStream {
+  let fn_info = FnInfo::new(input.clone(), parse_macro_input!(input as ItemFn));
+  let FnInfo {
+    ident,
+    original_input,
+    ..
+  } = fn_info;
 
-  let struct_name = fn_struct.name();
-  let struct_str_name = struct_name.to_string();
-
-  if struct_str_name != "Document" {
-    emit_error!(
-      struct_name.span(),
-      "The name of the document must be `Document`"
-    );
+  if ident.to_string().as_str() != "Document" {
+    emit_error!(ident.span(), "The name of the document must be `Document`");
   }
 
   // TODO: validate that a doctype is provided
@@ -24,9 +23,7 @@ pub fn create_document(f: ItemFn) -> TokenStream {
 
   quote! {
     #[cfg(feature = "backend")]
-    #[allow(non_snake_case)]
-    #[allow(dead_code)]
-    #f
+    #original_input
   }
   .into()
 }

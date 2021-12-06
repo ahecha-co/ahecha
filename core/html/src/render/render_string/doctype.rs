@@ -1,19 +1,17 @@
 use std::fmt::{Result, Write};
 
-use crate::HtmlDoctype;
+use crate::html::Doctype;
 
 use super::RenderString;
 
-impl<T> RenderString for HtmlDoctype<T>
-where
-  T: RenderString,
-{
+impl RenderString for Doctype {
   fn render_into<W: Write>(self, writer: &mut W) -> Result {
     match self {
-      HtmlDoctype::Html5(children) => {
+      Doctype::Html5 => {
         writer.write_str("<!doctype html>")?;
-        children.render_into(writer)
       }
     }
+
+    Ok(())
   }
 }

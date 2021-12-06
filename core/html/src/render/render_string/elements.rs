@@ -1,55 +1,43 @@
 use std::fmt::{Result, Write};
 
-use crate::HtmlElement;
+use super::RenderString;
+use crate::{html::Element, render::render_string::attributes::RenderAttributes};
 
-use super::{attributes::RenderAttributes, RenderString};
-
-impl<A, C> RenderString for HtmlElement<A, C>
-where
-  A: RenderAttributes,
-  C: RenderString,
-{
+impl RenderString for Element {
   fn render_into<W: Write>(self, writer: &mut W) -> Result {
     write!(writer, "<{}", self.name)?;
     self.attributes.render_attributes_into(writer)?;
+    if self.children.is_empty() {
+      let self_closing_tags = [
+        "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param",
+        "source", "track", "wbr",
+      ];
 
-    match self.children {
-      None => {
-        let self_closing_tags = [
-          "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param",
-          "source", "track", "wbr",
-        ];
-
-        if self_closing_tags.contains(&self.name) {
-          write!(writer, "/>")
-        } else {
-          write!(writer, "></{}>", self.name)
-        }
+      if self_closing_tags.contains(&self.name) {
+        write!(writer, "/>")
+      } else {
+        write!(writer, "></{}>", self.name)
       }
-      Some(children) => {
-        write!(writer, ">")?;
-        children.render_into(writer)?;
-        write!(writer, "</{}>", self.name)
-      }
+    } else {
+      write!(writer, ">")?;
+      self.children.render_into(writer)?;
+      write!(writer, "</{}>", self.name)
     }
   }
 }
 
 #[cfg(test)]
 mod test {
-  use ahecha_tuple_list::tuple_list;
-
-  use crate::html::elements::HtmlElementType;
+  use crate::html::{AttributeValue, Node};
 
   use super::*;
 
   #[test]
   fn test_tag_element() {
-    let element = HtmlElement {
+    let element = Element {
       name: "div",
-      kind: HtmlElementType::Tag,
-      attributes: (),
-      children: Option::<()>::None,
+      attributes: vec![],
+      children: vec![],
     };
 
     assert_eq!(element.render(), "<div></div>");
@@ -57,11 +45,20 @@ mod test {
 
   #[test]
   fn test_tag_element_with_attributes() {
-    let element = HtmlElement {
+    let element = Element {
       name: "div",
-      kind: HtmlElementType::Tag,
-      attributes: tuple_list!(("class", "test"), ("id", "test"), ("style", "color: red;"),),
-      children: Option::<()>::None,
+      attributes: vec![
+        (
+          "class".to_owned(),
+          AttributeValue::String("test".to_owned()),
+        ),
+        ("id".to_owned(), AttributeValue::String("test".to_owned())),
+        (
+          "style".to_owned(),
+          AttributeValue::String("color: red;".to_owned()),
+        ),
+      ],
+      children: vec![],
     };
 
     assert_eq!(
@@ -72,16 +69,17 @@ mod test {
 
   #[test]
   fn test_tag_element_with_one_child() {
-    let element = HtmlElement {
+    let element = Element {
       name: "div",
-      kind: HtmlElementType::Tag,
-      attributes: (("class", "test"), ()),
-      children: Some(HtmlElement {
+      attributes: vec![(
+        "class".to_owned(),
+        AttributeValue::String("test".to_owned()),
+      )],
+      children: vec![Node::Element(Element {
         name: "h1",
-        kind: HtmlElementType::Tag,
-        attributes: (),
-        children: Some("Hello World"),
-      }),
+        attributes: vec![],
+        children: vec![Node::Text("Hello World".to_owned())],
+      })],
     };
 
     assert_eq!(
@@ -92,32 +90,31 @@ mod test {
 
   #[test]
   fn test_ag_element_with_children() {
-    let element = HtmlElement {
+    let element = Element {
       name: "div",
-      kind: HtmlElementType::Tag,
-      attributes: (("class", "test"), ()),
-      children: Some(tuple_list!(
-        HtmlElement {
+      attributes: vec![(
+        "class".to_owned(),
+        AttributeValue::String("test".to_owned()),
+      )],
+      children: vec![
+        Node::Element(Element {
           name: "h1",
-          kind: HtmlElementType::Tag,
-          attributes: (),
-          children: Some(tuple_list!(
-            "Hello ",
-            HtmlElement {
+          attributes: vec![],
+          children: vec![
+            Node::Text("Hello ".to_owned()),
+            Node::Element(Element {
               name: "span",
-              kind: HtmlElementType::Tag,
-              attributes: (),
-              children: Some("World"),
-            },
-          )),
-        },
-        HtmlElement {
+              attributes: vec![],
+              children: vec![Node::Text("World".to_owned())],
+            }),
+          ],
+        }),
+        Node::Element(Element {
           name: "p",
-          kind: HtmlElementType::Tag,
-          attributes: (),
-          children: Some("This is a paragraph"),
-        },
-      )),
+          attributes: vec![],
+          children: vec![Node::Text("This is a paragraph".to_owned())],
+        }),
+      ],
     };
 
     assert_eq!(
@@ -128,29 +125,28 @@ mod test {
 
   #[test]
   fn test_tag_element_with_children_list() {
-    let element = HtmlElement {
+    let element = Element {
       name: "div",
-      kind: HtmlElementType::Tag,
-      attributes: (("class", "test"), ()),
-      children: Some(HtmlElement {
+      attributes: vec![(
+        "class".to_owned(),
+        AttributeValue::String("test".to_owned()),
+      )],
+      children: vec![Node::Element(Element {
         name: "ul",
-        kind: HtmlElementType::Tag,
-        attributes: (),
-        children: Some(vec![
-          HtmlElement {
+        attributes: vec![],
+        children: vec![
+          Node::Element(Element {
             name: "li",
-            kind: HtmlElementType::Tag,
-            attributes: (),
-            children: Some("Hello"),
-          },
-          HtmlElement {
+            attributes: vec![],
+            children: vec![Node::Text("Hello".to_owned())],
+          }),
+          Node::Element(Element {
             name: "li",
-            kind: HtmlElementType::Tag,
-            attributes: (),
-            children: Some("World"),
-          },
-        ]),
-      }),
+            attributes: vec![],
+            children: vec![Node::Text("World".to_owned())],
+          }),
+        ],
+      })],
     };
 
     assert_eq!(

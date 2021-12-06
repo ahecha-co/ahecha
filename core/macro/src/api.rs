@@ -1,35 +1,35 @@
-use proc_macro2::TokenStream;
-use proc_macro2::Ident;
+use proc_macro::TokenStream;
 use proc_macro_error::emit_error;
 use quote::quote;
+use syn::{parse_macro_input, ItemFn};
 
-use crate::{routes::RouteType, utils::FnStruct};
+use crate::{routes::RouteType, utils::FnInfo};
 
-pub fn create_api(f: syn::ItemFn) -> TokenStream {
-  let fn_struct: FnStruct = f.into();
+pub fn create_api(input: TokenStream) -> TokenStream {
+  let fn_info = FnInfo::new(input.clone(), parse_macro_input!(input as ItemFn));
+  let route_fn = fn_info.uri(RouteType::Api);
+  let FnInfo {
+    ident,
+    original_input,
+    metadata_ident,
+    vis,
+    ..
+  } = fn_info;
 
-  let vis = fn_struct.vis();
-  let struct_name = fn_struct.name();
-  let mod_name = Ident::new(
-    format!("__{}_metadata", &struct_name).as_str(),
-    struct_name.span(),
-  );
-
-  let struct_str_name = struct_name.to_string();
-  if struct_str_name.to_lowercase().chars().next().unwrap()
-    != struct_str_name.chars().next().unwrap()
-  {
-    emit_error!(struct_name.span(), "Rest API functions must lower case");
+  let name = ident.to_string();
+  if name.to_lowercase().chars().next().unwrap() != name.chars().next().unwrap() {
+    emit_error!(ident.span(), "Rest API functions must lower case");
   }
 
-  let route_fn = fn_struct.create_route(RouteType::Api);
-
   quote!(
+    #original_input
+
     #[allow(non_camel_case_types)]
-    #vis mod #mod_name {
+    #vis mod #metadata_ident {
       use super::*;
 
       #route_fn
     }
   )
+  .into()
 }

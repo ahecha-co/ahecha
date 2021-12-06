@@ -11,10 +11,7 @@ pub struct HtmlBlock {
 impl ToTokens for HtmlBlock {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
     let block = self.block.clone();
-    quote! {
-      #block
-    }
-    .to_tokens(tokens);
+    quote! ( #block .into() ).to_tokens(tokens);
   }
 }
 

@@ -22,7 +22,7 @@ pub use text::HtmlText;
 use crate::html::{attributes::Attributes, children::Children};
 
 #[derive(Debug)]
-pub enum HtmlNode {
+pub enum Node {
   Block(HtmlBlock),
   Comment(HtmlComment),
   CustomElement(HtmlCustomElement),
@@ -33,44 +33,44 @@ pub enum HtmlNode {
   Text(HtmlText),
 }
 
-impl ToTokens for HtmlNode {
+impl ToTokens for Node {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
     match self {
-      HtmlNode::Block(block) => block.to_tokens(tokens),
-      HtmlNode::Comment(comment) => comment.to_tokens(tokens),
-      HtmlNode::CustomElement(custom_element) => custom_element.to_tokens(tokens),
-      HtmlNode::Doctype(doctype) => doctype.to_tokens(tokens),
-      HtmlNode::Element(element) => element.to_tokens(tokens),
-      HtmlNode::Fragment(fragment) => fragment.to_tokens(tokens),
-      HtmlNode::Partial(partial) => partial.to_tokens(tokens),
-      HtmlNode::Text(text) => text.to_tokens(tokens),
+      Node::Block(block) => block.to_tokens(tokens),
+      Node::Comment(comment) => comment.to_tokens(tokens),
+      Node::CustomElement(custom_element) => custom_element.to_tokens(tokens),
+      Node::Doctype(doctype) => doctype.to_tokens(tokens),
+      Node::Element(element) => element.to_tokens(tokens),
+      Node::Fragment(fragment) => fragment.to_tokens(tokens),
+      Node::Partial(partial) => partial.to_tokens(tokens),
+      Node::Text(text) => text.to_tokens(tokens),
     }
   }
 }
 
-impl ToString for HtmlNode {
+impl ToString for Node {
   fn to_string(&self) -> String {
     match self {
-      HtmlNode::Block(block) => block.to_string(),
-      HtmlNode::Comment(comment) => comment.to_string(),
-      HtmlNode::CustomElement(custom_element) => custom_element.to_string(),
-      HtmlNode::Doctype(doctype) => doctype.to_string(),
-      HtmlNode::Element(element) => element.to_string(),
-      HtmlNode::Fragment(fragment) => fragment.to_string(),
-      HtmlNode::Partial(partial) => partial.to_string(),
-      HtmlNode::Text(text) => text.to_string(),
+      Node::Block(block) => block.to_string(),
+      Node::Comment(comment) => comment.to_string(),
+      Node::CustomElement(custom_element) => custom_element.to_string(),
+      Node::Doctype(doctype) => doctype.to_string(),
+      Node::Element(element) => element.to_string(),
+      Node::Fragment(fragment) => fragment.to_string(),
+      Node::Partial(partial) => partial.to_string(),
+      Node::Text(text) => text.to_string(),
     }
   }
 }
 
-impl Parse for HtmlNode {
+impl Parse for Node {
   fn parse(input: syn::parse::ParseStream) -> syn::parse::Result<Self> {
     if let Ok(block) = input.parse::<HtmlBlock>() {
-      Ok(HtmlNode::Block(block))
+      Ok(Node::Block(block))
     } else if let Ok(comment) = input.parse::<HtmlComment>() {
-      Ok(HtmlNode::Comment(comment))
+      Ok(Node::Comment(comment))
     } else if let Ok(doctype) = input.parse::<HtmlDoctype>() {
-      Ok(HtmlNode::Doctype(doctype))
+      Ok(Node::Doctype(doctype))
     } else if input.peek(syn::Token![<]) && input.peek2(syn::Ident) {
       input.parse::<syn::Token![<]>()?;
       let name = input.parse::<syn::Ident>()?;
@@ -112,29 +112,29 @@ impl Parse for HtmlNode {
         .is_uppercase()
       {
         if name.to_string().ends_with("Partial") || name.to_string().ends_with("Page") {
-          Ok(HtmlNode::Partial(HtmlPartial {
+          Ok(Node::Partial(HtmlPartial {
             attributes,
             children,
             name,
           }))
         } else {
-          Ok(HtmlNode::CustomElement(HtmlCustomElement {
+          Ok(Node::CustomElement(HtmlCustomElement {
             name,
             attributes,
             children,
           }))
         }
       } else {
-        Ok(HtmlNode::Element(HtmlElement {
+        Ok(Node::Element(HtmlElement {
           name,
           attributes,
           children,
         }))
       }
     } else if let Ok(fragment) = input.parse::<HtmlFragment>() {
-      Ok(HtmlNode::Fragment(fragment))
+      Ok(Node::Fragment(fragment))
     } else if let Ok(text) = input.parse::<HtmlText>() {
-      Ok(HtmlNode::Text(text))
+      Ok(Node::Text(text))
     } else {
       Err(syn::parse::Error::new(input.span(), "expected html node"))
     }

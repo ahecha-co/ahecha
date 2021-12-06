@@ -5,7 +5,7 @@ mod ahecha {
 }
 
 #[page(document = "crate::app::document::Document", title = "Index")]
-pub fn IndexPage() {
+pub fn IndexPage() -> ahecha::html::Node {
   html! {
     <div>Index page</div>
   }

@@ -10,7 +10,7 @@ impl ToTokens for HtmlText {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
     let text = &self.text;
     tokens.extend(quote! {
-      #text
+      ahecha::html::Node::Text(#text .to_owned())
     });
   }
 }

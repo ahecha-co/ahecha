@@ -21,38 +21,18 @@ impl ToTokens for HtmlPartial {
     let mut attrs = vec![];
 
     for Attribute {
-      extended: _,
-      key,
-      value,
+      extended: _, value, ..
     } in attributes.attrs.iter()
     {
-      attrs.push(quote! {
-        #key: #value
-      });
+      attrs.push(quote!( #value ));
     }
 
     if !children.nodes.is_empty() {
-      attrs.push(quote!( children: #children ))
+      attrs.push(quote!( #children ))
     }
 
-    let param = if attrs.is_empty() {
-      quote!()
-    } else {
-      quote!(
-        #ident ::Params{
-          #(#attrs,)*
-        }
-      )
-    };
+    let element = quote!(ahecha::html::Node::Fragment(vec![#ident( #(#attrs,)* )]));
 
-    let element = quote!(
-      ahecha::html::HtmlFragment {
-        children: Some((
-          #ident ::view( #param ),
-          ()
-        )),
-      }
-    );
     element.to_tokens(tokens);
   }
 }

@@ -3,10 +3,10 @@ use std::fmt::{Result, Write};
 mod attributes;
 mod doctype;
 mod elements;
-mod fragment;
+mod node;
 mod numbers;
 mod text;
-mod tuples;
+// mod tuples;
 
 pub trait RenderString: Sized {
   /// Render the component to a writer.

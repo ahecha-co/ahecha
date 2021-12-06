@@ -5,9 +5,5 @@ mod html_escaping;
 mod render;
 
 pub use custom_elements::CustomElement;
-pub use html::{
-  doctype::HtmlDoctype,
-  elements::{HtmlElement, HtmlElementType},
-  fragment::HtmlFragment,
-};
+pub use html::*;
 pub use render::RenderString;

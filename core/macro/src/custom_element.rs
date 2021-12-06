@@ -1,16 +1,21 @@
 use proc_macro::TokenStream;
-// use proc_macro2::Span;
 use proc_macro_error::emit_error;
 use quote::quote;
-// use syn::Pat;
+use syn::{parse_macro_input, ItemFn};
 
-use crate::utils::FnStruct;
+use crate::utils::FnInfo;
 
-pub fn create_custom_element(f: syn::ItemFn) -> TokenStream {
-  let fn_struct: FnStruct = f.into();
+pub fn create_custom_element(input: TokenStream) -> TokenStream {
+  let fn_info = FnInfo::new(input.clone(), parse_macro_input!(input as ItemFn));
+  let FnInfo {
+    ident,
+    is_ident_capitalized,
+    metadata_ident,
+    original_input,
+    vis,
+    ..
+  } = fn_info;
 
-  let vis = fn_struct.vis();
-  let struct_name = fn_struct.name();
   // let mut observed_attributes = vec![];
   // let mut update_attribute_values = vec![];
 
@@ -33,26 +38,26 @@ pub fn create_custom_element(f: syn::ItemFn) -> TokenStream {
   //   };
   // }
 
-  let struct_str_name = struct_name.to_string();
-  if !fn_struct.has_camel_case_name("Custom elements must have a name") {
+  let name = ident.to_string();
+  if !is_ident_capitalized {
     emit_error!(
-      struct_name.span(),
+      ident.span(),
       "Custom elements must start with a upper letter"
     );
   }
 
-  if struct_str_name.ends_with("Partial") || struct_str_name.ends_with("Page") {
+  if name.ends_with("Partial") || name.ends_with("Page") {
     emit_error!(
-      struct_name.span(),
+      ident.span(),
       "Custom elements cannot end with `Partial` or `Page` suffix.",
     );
   }
 
-  let view_fn = fn_struct.create_view();
-
   quote! {
+    #original_input
+
     #[allow(non_snake_case)]
-    #vis mod #struct_name {
+    #vis mod #metadata_ident {
       use super::*;
 
       // #[derive(Debug, Default)]
@@ -149,8 +154,6 @@ pub fn create_custom_element(f: syn::ItemFn) -> TokenStream {
       //     }.render()
       //   }
       // }
-
-      #view_fn
     }
   }
   .into()

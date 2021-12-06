@@ -1,4 +1,4 @@
-use ahecha::html::RenderString;
+use ahecha::html::*;
 use ahecha_macro::*;
 
 mod ahecha {
@@ -8,7 +8,7 @@ mod ahecha {
 #[test]
 fn test_partial() {
   #[partial]
-  fn HeadPartial() {
+  fn HeadPartial() -> ahecha::html::Node {
     html! {
       <head><title>I am a partial</title></head>
     }
@@ -24,7 +24,7 @@ fn test_partial() {
 #[test]
 fn test_partial_with_block() {
   #[partial]
-  fn HeadPartial<'a>(title: &'a str) {
+  fn HeadPartial<'a>(title: &'a str) -> ahecha::html::Node {
     html! {
       <head><title> { title } </title></head>
     }

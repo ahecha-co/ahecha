@@ -46,7 +46,7 @@ mod test {
     let element = HtmlFragment {
       children: Some(HtmlElement {
         name: "div",
-        attributes: (),
+        attributes: HashMap::new(),
         children: Some(HtmlFragment {
           children: "I'm a fragment".into(),
         }),

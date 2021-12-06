@@ -1,25 +1,25 @@
 use quote::{quote, ToTokens};
 use syn::parse::Parse;
 
-use super::node::HtmlNode;
+use super::node::Node;
 
 #[derive(Debug, Default)]
 pub struct Children {
-  pub nodes: Vec<HtmlNode>,
+  pub nodes: Vec<Node>,
 }
 
 impl ToTokens for Children {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
     if self.nodes.is_empty() {
-      quote! { Option::<()>::None }.to_tokens(tokens);
+      quote! { vec![] }.to_tokens(tokens);
     } else {
-      let mut list = quote! { () };
+      let mut list = vec![];
 
       for node in self.nodes.iter().rev() {
-        list = quote! { (#node, #list) }
+        list.push(quote!( #node ));
       }
 
-      quote! { Some(#list) }.to_tokens(tokens);
+      quote! { vec![ #(#list),* ] }.to_tokens(tokens);
     }
   }
 }
@@ -29,7 +29,7 @@ impl Parse for Children {
     let mut nodes = Vec::new();
 
     while !input.is_empty() {
-      match input.parse::<HtmlNode>() {
+      match input.parse::<Node>() {
         Ok(node) => nodes.push(node),
         Err(_err) => {
           break;

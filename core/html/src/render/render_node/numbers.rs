@@ -30,11 +30,11 @@ mod test {
   fn test_render_into() {
     let element = HtmlElement {
       name: "div",
-      attributes: (),
+      attributes: HashMap::new(),
       children: Some(tuple_list!(
         HtmlElement {
           name: "span",
-          attributes: (),
+          attributes: HashMap::new(),
           children: Some(tuple_list!("Hello", " ", 1u8)),
         },
         ", ",

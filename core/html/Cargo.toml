@@ -13,7 +13,7 @@ readme = "README.md"
 [lib]
 
 [dependencies]
-ahecha_tuple_list={ path = "../tuple_list", version = "*" }
+# ahecha_tuple_list={ path = "../tuple_list", version = "*" }
 custom-elements = "0.2.0"
 gloo-utils = "0.1.0"
 proc-macro2="1.0.32"
@@ -21,10 +21,10 @@ proc-macro-error="1.0.4"
 quote="1.0.9"
 syn={version="1.0.81",features=["full"]}
 
-[dependencies.web-sys]
-version="0.3.55"
-features=[
-  "Document",
-  "Element",
-  "Text",
-]
+# [dependencies.web-sys]
+# version="0.3.55"
+# features=[
+#   "Document",
+#   "Element",
+#   "Text",
+# ]

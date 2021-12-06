@@ -1,16 +1,16 @@
 use quote::{quote, ToTokens};
 use syn::parse::{Parse, ParseStream};
 
-use super::HtmlNode;
+use super::Node;
 
 #[derive(Debug)]
 pub struct HtmlComment {
-  pub comment: Box<HtmlNode>,
+  pub comment: Box<Node>,
 }
 
-impl From<HtmlComment> for HtmlNode {
+impl From<HtmlComment> for Node {
   fn from(comment: HtmlComment) -> Self {
-    HtmlNode::Comment(comment)
+    Node::Comment(comment)
   }
 }
 
@@ -34,7 +34,7 @@ impl Parse for HtmlComment {
       input.parse::<syn::Token![!]>()?;
       input.parse::<syn::Token![-]>()?;
       input.parse::<syn::Token![-]>()?;
-      let comment = input.parse::<HtmlNode>()?;
+      let comment = input.parse::<Node>()?;
       input.parse::<syn::Token![-]>()?;
       input.parse::<syn::Token![-]>()?;
       input.parse::<syn::Token![>]>()?;
