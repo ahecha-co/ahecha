@@ -9,7 +9,7 @@ mod backend {
   #[test]
   fn test_custom_element_with_macro_attr() {
     #[custom_element]
-    fn FnCustomElement() {
+    fn FnCustomElement() -> ahecha::html::Node {
       html!(
         <div class="main">I am a custom element</div>
       )

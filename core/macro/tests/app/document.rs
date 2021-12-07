@@ -5,15 +5,11 @@ mod ahecha {
 }
 
 #[document]
-pub fn Document<Head, Body>(
+pub fn Document(
   title: Option<&'static str>,
-  head: Head,
-  body: Body,
-) -> impl ahecha_html::RenderString + '_
-where
-  Head: ahecha_html::RenderString + 'static,
-  Body: ahecha_html::RenderString + 'static,
-{
+  head: ahecha::html::Node,
+  body: ahecha::html::Node,
+) -> ahecha::html::Node {
   html! {
     <html>
       <head>

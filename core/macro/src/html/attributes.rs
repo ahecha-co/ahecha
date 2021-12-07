@@ -14,11 +14,13 @@ impl ToTokens for AttributeValue {
     match self {
       AttributeValue::Block(block) => {
         quote! {
-          #block
+          #block .into()
         }
         .to_tokens(tokens);
       }
-      AttributeValue::Lit(s) => quote!(#s).to_tokens(tokens),
+      AttributeValue::Lit(s) => {
+        quote!(ahecha::html::AttributeValue::String(#s .to_string())).to_tokens(tokens)
+      }
     }
   }
 }
@@ -151,7 +153,7 @@ impl ToTokens for Attributes {
         extended,
         key,
         value,
-      } in self.attrs.iter().rev()
+      } in self.attrs.iter()
       {
         let key = vec![key.clone()]
           .into_iter()

@@ -37,24 +37,10 @@ impl ToTokens for HtmlCustomElement {
       attrs.push(quote!( children: #children ))
     }
 
-    let param = if attrs.is_empty() {
-      quote!()
-    } else {
-      quote!(
-        #ident ::Params{
-          #(#attrs,)*
-        }
-      )
-    };
-
     let element = quote!(
-      ahecha::html::HtmlElement {
+      ahecha::html::Element {
         attributes: #attributes,
-        children: Some((
-          #ident ::view( #param ),
-          ()
-        )),
-        kind: ahecha::html::HtmlElementType::CustomElement,
+        children: vec![ #ident ::view( #ident ::ViewParams { #(#attrs,)* } ) ],
         name: #name,
       }
     );

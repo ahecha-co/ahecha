@@ -35,6 +35,37 @@ macro_rules! impl_attribute_value {
         self.to_string()
       }
     })*
+
+    $(impl From<$t> for AttributeValue {
+      fn from(item: $t) -> AttributeValue {
+        AttributeValue::String(item.to_string())
+      }
+    })*
+  };
+}
+
+macro_rules! impl_attribute_value_numeric {
+  ($($t:ty),*) => {
+    $(impl RenderAttributeValue for $t {
+      fn to_attribute_value(&self) -> String {
+        self.to_string()
+      }
+    })*
+
+    $(impl From<$t> for AttributeValue {
+      fn from(item: $t) -> AttributeValue {
+        AttributeValue::String(item.to_string())
+      }
+    })*
+
+    $(impl From<AttributeValue> for $t {
+      fn from(item: AttributeValue) -> $t {
+        match item {
+          AttributeValue::String(s) => s.parse().unwrap(),
+          _ => unimplemented!(),
+        }
+      }
+    })*
   };
 }
 
@@ -47,7 +78,8 @@ impl RenderAttributeValue for AttributeValue {
   }
 }
 
-impl_attribute_value!(&str, &String, String, bool, u8, u16, u32, u64, i8, i16, i32, i64, f32, f64);
+impl_attribute_value!(&&str, &str, &String, String, bool);
+impl_attribute_value_numeric!(u8, u16, u32, u64, i8, i16, i32, i64, f32, f64);
 
 impl RenderAttributes for HashMap<String, AttributeValue> {
   fn render_attributes_into<W: Write>(self, writer: &mut W) -> Result {

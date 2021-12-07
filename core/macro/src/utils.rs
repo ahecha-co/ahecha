@@ -1,20 +1,26 @@
-use proc_macro2::Ident;
+use proc_macro2::{Ident, TokenStream};
 use proc_macro_error::emit_error;
 use quote::quote;
-use syn::{punctuated::Punctuated, spanned::Spanned, token::Comma, FnArg, ItemFn, Pat, Visibility};
+use syn::{
+  punctuated::Punctuated, spanned::Spanned, token::Comma, Block, FnArg, Generics, ImplGenerics,
+  ItemFn, Lifetime, Pat, ReturnType, Visibility,
+};
 
 use crate::routes::{generate_route_path, RouteType};
 
 pub struct FnInfo {
+  pub block: Box<Block>,
+  pub generics: Generics,
   pub ident: Ident,
-  // pub impl_generics: ImplGenerics<'a>,
-  pub inputs: Punctuated<FnArg, Comma>,
-  // pub input_fields: TokenStream,
+  pub input_fields: TokenStream,
   pub input_names: Vec<Pat>,
+  pub inputs: Punctuated<FnArg, Comma>,
   pub is_async: bool,
   pub is_ident_capitalized: bool,
+  pub lifetimes: Vec<Lifetime>,
   pub metadata_ident: Ident,
   pub original_input: proc_macro2::TokenStream,
+  pub output: ReturnType,
   pub vis: Visibility,
 }
 
@@ -22,6 +28,7 @@ impl FnInfo {
   pub fn new(input: proc_macro::TokenStream, item_fn: ItemFn) -> Self {
     let original_input = input.clone().into();
 
+    let vis = &item_fn.vis;
     let is_ident_capitalized = item_fn
       .sig
       .ident
@@ -30,6 +37,15 @@ impl FnInfo {
       .next()
       .expect("fn name")
       .is_uppercase();
+
+    let lifetimes = item_fn
+      .sig
+      .generics
+      .lifetimes()
+      .map(|l| l.lifetime.clone())
+      .collect::<Vec<_>>();
+
+    let generics = item_fn.sig.generics.clone();
 
     let input_names = item_fn
       .sig
@@ -45,22 +61,37 @@ impl FnInfo {
       .map(|value| *value.pat.clone())
       .collect();
 
+    let input_fields = if !item_fn.sig.inputs.is_empty() {
+      let input_names: Vec<_> = item_fn
+        .sig
+        .inputs
+        .iter()
+        .map(|field| quote!(pub #field))
+        .collect();
+      quote!(#(#input_names),*,)
+    } else {
+      quote!()
+    };
+
     let metadata_ident = Ident::new(
       format!("__{}_metadata", item_fn.sig.ident.to_string()).as_str(),
       item_fn.span(),
     );
 
     Self {
+      block: item_fn.block,
+      generics,
       ident: item_fn.sig.ident,
-      // impl_generics: item_fn.sig.generics.split_for_impl().0,
-      inputs: item_fn.sig.inputs,
-      // input_fields,
+      input_fields,
       input_names,
+      inputs: item_fn.sig.inputs,
       is_async: item_fn.sig.asyncness.is_some(),
       is_ident_capitalized,
+      lifetimes,
       metadata_ident,
       original_input,
-      vis: item_fn.vis,
+      output: item_fn.sig.output,
+      vis: vis.clone(),
     }
   }
 
@@ -76,16 +107,7 @@ impl FnInfo {
     )
   }
 }
-
-// pub struct FnStruct {
-//   pub _f: ItemFn,
-// }
-
 // impl FnStruct {
-//   pub fn block(&self) -> &Block {
-//     &self._f.block
-//   }
-
 //   pub fn create_view(&self) -> proc_macro2::TokenStream {
 //     let lifetimes = self
 //       ._f
@@ -149,37 +171,6 @@ impl FnInfo {
 //       }
 //     )
 //   }
-
-//   pub fn input_fields(&self, vis: TokenStream) -> TokenStream {
-//     let input_fields = if !self.inputs().is_empty() {
-//       let input_names: Vec<_> = self.inputs().iter().map(|i| quote!(#vis #i)).collect();
-//       quote!(#(#input_names),*,)
-//     } else {
-//       quote!()
-//     };
-
-//     quote!(#input_fields)
-//   }
-
-//   pub fn input_names(&self) -> Vec<Pat> {
-//     self
-//       .inputs()
-//       .iter()
-//       .filter_map(|argument| match argument {
-//         syn::FnArg::Typed(typed) => Some(typed),
-//         syn::FnArg::Receiver(rec) => {
-//           emit_error!(rec.span(), "Don't use `self` on components");
-//           None
-//         }
-//       })
-//       .map(|value| *value.pat.clone())
-//       .collect()
-//   }
-
-//   // pub fn return_type(&self) -> TokenStream {
-//   //   let return_type = &self._f.sig.output;
-//   //   quote!(#return_type)
-//   // }
 
 //   pub fn type_generics(&self) -> TypeGenerics {
 //     self._f.sig.generics.split_for_impl().1

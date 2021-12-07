@@ -1,7 +1,7 @@
 use quote::{quote, ToTokens};
 
 use crate::html::{
-  attributes::{Attribute, Attributes},
+  attributes::{Attribute, AttributeValue, Attributes},
   children::Children,
 };
 
@@ -20,18 +20,18 @@ impl ToTokens for HtmlPartial {
 
     let mut attrs = vec![];
 
-    for Attribute {
-      extended: _, value, ..
-    } in attributes.attrs.iter()
-    {
-      attrs.push(quote!( #value ));
+    for Attribute { key, value, .. } in attributes.attrs.iter() {
+      match value {
+        AttributeValue::Block(block) => attrs.push(quote!( #key: #block )),
+        AttributeValue::Lit(lit) => attrs.push(quote!( #key: #lit )),
+      }
     }
 
     if !children.nodes.is_empty() {
       attrs.push(quote!( #children ))
     }
 
-    let element = quote!(ahecha::html::Node::Fragment(vec![#ident( #(#attrs,)* )]));
+    let element = quote!(#ident ::view(#ident ::ViewParams { #(#attrs,)* }));
 
     element.to_tokens(tokens);
   }

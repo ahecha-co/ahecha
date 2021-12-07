@@ -11,13 +11,14 @@ pub fn create_page(attrs: AttributeArgs, input: TokenStream) -> TokenStream {
   let fn_info = FnInfo::new(input.clone(), parse_macro_input!(input as ItemFn));
   let uri_fn = fn_info.uri(RouteType::Page);
   let FnInfo {
+    block,
     ident,
     inputs,
+    input_fields,
     input_names,
     is_async,
     is_ident_capitalized,
-    original_input,
-    metadata_ident,
+    output,
     vis,
     ..
   } = fn_info;
@@ -47,15 +48,21 @@ pub fn create_page(attrs: AttributeArgs, input: TokenStream) -> TokenStream {
   let maybe_async = if is_async { quote!(async) } else { quote!() };
 
   quote! {
-    #original_input
-
     #[allow(non_snake_case)]
-    #vis mod #metadata_ident {
+    #vis mod #ident {
       use super::*;
 
       #[cfg(feature = "backend")]
       pub #maybe_async fn handler( #inputs ) -> impl ahecha::html::RenderString {
-        #document ( #maybe_title , (), #ident ( #(#input_names),* ))
+        #document ( #maybe_title , ahecha::html::Node::Fragment(vec![]), #block)
+      }
+
+      pub struct ViewParams {
+        #input_fields
+      }
+
+      pub fn view(ViewParams { #(#input_names),* }: ViewParams) #output {
+        #block
       }
 
       #uri_fn

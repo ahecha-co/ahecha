@@ -16,29 +16,3 @@ impl RenderString for Node {
     Ok(())
   }
 }
-
-macro_rules! impl_renderable {
-  ($($t:ty),*) => {
-    $(
-      impl From<$t> for Node {
-        fn from(item: $t) -> Node {
-          Node::Text(item.to_string())
-        }
-      }
-
-      impl From<& $t> for Node {
-        fn from(item: & $t) -> Node {
-          Node::Text(item.to_string())
-        }
-      }
-    )*
-  };
-}
-
-impl_renderable!(u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize, f32, f64);
-
-impl From<&str> for Node {
-  fn from(item: &str) -> Node {
-    Node::Text(item.to_owned())
-  }
-}
