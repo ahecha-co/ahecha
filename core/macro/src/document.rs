@@ -23,6 +23,7 @@ pub fn create_document(input: TokenStream) -> TokenStream {
 
   quote! {
     #[cfg(feature = "backend")]
+    #[allow(non_snake_case)]
     #original_input
   }
   .into()

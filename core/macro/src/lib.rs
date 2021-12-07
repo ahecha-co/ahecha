@@ -48,12 +48,12 @@ pub fn html(input: TokenStream) -> TokenStream {
   let res = quote! {
     {
       let res = #view;
-      // println!(
-      //   "{}:{} | size {} Kilobytes",
-      //   #source_file,
-      //   #line,
-      //   std::mem::size_of_val(&res) as f32 / 1000.0
-      // );
+      println!(
+        "{}:{} | size {} Kilobytes",
+        #source_file,
+        #line,
+        std::mem::size_of_val(&res) as f32 / 1000.0
+      );
       res
     }
   }
@@ -62,7 +62,7 @@ pub fn html(input: TokenStream) -> TokenStream {
   let elapsed = Instant::elapsed(&start);
 
   println!(
-    "ahecha_macro::html! | took {} µs | {}:{}",
+    "ahecha_macro::html! | compiled in {} µs | {}:{}",
     elapsed.as_micros(),
     source_file,
     line,
