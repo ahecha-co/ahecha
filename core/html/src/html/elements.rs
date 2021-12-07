@@ -1,8 +1,9 @@
 use super::node::Node;
 
 pub enum AttributeValue {
-  String(String),
   Bool(bool),
+  None,
+  String(String),
 }
 
 pub struct Element {

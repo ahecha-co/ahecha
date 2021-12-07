@@ -58,16 +58,27 @@ pub fn create_custom_element(input: TokenStream) -> TokenStream {
     );
   }
 
+  let (struct_params, args_params) = if input_names.is_empty() {
+    (quote!(), quote!())
+  } else {
+    (
+      quote!(
+        pub struct ViewParams #impl_generics {
+          #input_fields
+        }
+      ),
+      quote!( ViewParams { #(#input_names),* }: ViewParams ),
+    )
+  };
+
   quote! {
     #[allow(non_snake_case)]
     #vis mod #ident {
       use super::*;
 
-      pub struct ViewParams #impl_generics {
-        #input_fields
-      }
+      #struct_params
 
-      pub fn view #impl_generics (ViewParams { #(#input_names),* }: ViewParams #impl_generics) #output {
+      pub fn view #impl_generics ( #args_params ) #output {
         #block
       }
 

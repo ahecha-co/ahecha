@@ -2,8 +2,8 @@ use proc_macro2::{Ident, TokenStream};
 use proc_macro_error::emit_error;
 use quote::quote;
 use syn::{
-  punctuated::Punctuated, spanned::Spanned, token::Comma, Block, FnArg, Generics, ImplGenerics,
-  ItemFn, Lifetime, Pat, ReturnType, Visibility,
+  punctuated::Punctuated, spanned::Spanned, token::Comma, Block, FnArg, Generics, ItemFn, Lifetime,
+  Pat, ReturnType, Visibility,
 };
 
 use crate::routes::{generate_route_path, RouteType};

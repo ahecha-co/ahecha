@@ -35,7 +35,7 @@ mod frontend {
   #[test]
   fn test_index_page_partial() {
     let response: String =
-      pages::index::IndexPage::view(pages::index::IndexPage::ViewParams {}).render();
+      pages::index::IndexPage::view().render();
     assert_eq!(response, "<div>Index page</div>");
   }
 

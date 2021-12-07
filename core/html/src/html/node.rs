@@ -5,12 +5,31 @@ pub enum Node {
   Document(Doctype, Vec<Node>),
   Element(Element),
   Fragment(Vec<Node>),
+  None,
   Text(String),
 }
 
 impl From<Vec<Node>> for Node {
   fn from(item: Vec<Node>) -> Node {
     Node::Fragment(item)
+  }
+}
+
+impl From<Option<Node>> for Node {
+  fn from(item: Option<Node>) -> Node {
+    match item {
+      Some(node) => node,
+      None => Node::None,
+    }
+  }
+}
+
+impl From<Option<Vec<Node>>> for Node {
+  fn from(item: Option<Vec<Node>>) -> Node {
+    match item {
+      Some(node) => Node::Fragment(node),
+      None => Node::None,
+    }
   }
 }
 
@@ -32,4 +51,6 @@ macro_rules! impl_renderable {
   };
 }
 
-impl_renderable!(&str, u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize, f32, f64);
+impl_renderable!(
+  String, &str, u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize, f32, f64
+);
