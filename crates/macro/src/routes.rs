@@ -3,8 +3,6 @@ use proc_macro_error::emit_error;
 use quote::{quote, ToTokens};
 use syn::{punctuated::Punctuated, spanned::Spanned, token::Comma, FnArg, Pat, PatIdent, PatType};
 
-// use crate::utils::FnStruct;
-
 pub enum RouteType {
   Api,
   Page,

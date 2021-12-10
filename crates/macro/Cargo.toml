@@ -22,17 +22,8 @@ convert_case="0.4.0"
 proc-macro2="1.0.32"
 proc-macro-error="1.0.4"
 quote="1.0.9"
-syn={version="1.0.81",features=["full"]}
+syn={ version="1.0.81", features=["full"] }
 
-# [depencencies.web-sys]
-# version = "0.3.55"
-# features = [
-#   "Document",
-#   "DocumentType",
-#   "DomImplementation",
-# ]
 
 [dev-dependencies]
 ahecha_html={path="../html", version="*"}
-# wasm-bindgen = "0.2.78"
-# web-sys = {version="0.3.55", features=["HtmlElement"]}
