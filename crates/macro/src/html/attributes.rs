@@ -94,12 +94,12 @@ impl Parse for Attribute {
         extended.push(input.parse::<syn::Ident>()?);
       }
 
-      if !["aria", "data"].contains(&kind_ident.to_string().as_str()) {
-        return Err(syn::Error::new(
-          Span::call_site(),
-          "Unsupported attribute kind",
-        ));
-      }
+      // if !["aria", "data"].contains(&kind_ident.to_string().as_str()) {
+      //   return Err(syn::Error::new(
+      //     Span::call_site(),
+      //     "Unsupported attribute kind",
+      //   ));
+      // }
 
       kind_ident
     } else {

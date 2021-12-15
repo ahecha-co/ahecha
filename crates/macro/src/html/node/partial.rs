@@ -31,7 +31,13 @@ impl ToTokens for HtmlPartial {
       attrs.push(quote!( #children ))
     }
 
-    let element = quote!(#ident ::view(#ident ::ViewParams { #(#attrs,)* }));
+    let params = if attrs.is_empty() {
+      quote!()
+    } else {
+      quote!(#ident ::ViewParams { #(#attrs,)* })
+    };
+
+    let element = quote!(#ident ::view( #params ));
 
     element.to_tokens(tokens);
   }

@@ -37,38 +37,8 @@ pub fn document(_metadata: TokenStream, input: TokenStream) -> TokenStream {
 
 #[proc_macro]
 pub fn html(input: TokenStream) -> TokenStream {
-  use std::time::Instant;
-
-  use proc_macro::Span;
-
-  let start = Instant::now();
   let view = parse_macro_input!(input as Node);
-  let source_file = Span::call_site().source_file().path().display().to_string();
-  let line = Span::call_site().start().line;
-  let res = quote! {
-    {
-      let res = #view;
-      println!(
-        "{}:{} | size {} Kilobytes",
-        #source_file,
-        #line,
-        std::mem::size_of_val(&res) as f32 / 1000.0
-      );
-      res
-    }
-  }
-  .into();
-
-  let elapsed = Instant::elapsed(&start);
-
-  println!(
-    "ahecha_macro::html! | compiled in {} µs | {}:{}",
-    elapsed.as_micros(),
-    source_file,
-    line,
-  );
-
-  res
+  quote!(#view).into()
 }
 
 #[proc_macro_derive(

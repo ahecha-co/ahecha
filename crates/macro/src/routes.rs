@@ -8,6 +8,15 @@ pub enum RouteType {
   Page,
 }
 
+impl ToString for RouteType {
+  fn to_string(&self) -> String {
+    match self {
+      RouteType::Api => "api/".to_owned(),
+      RouteType::Page => "".to_owned(),
+    }
+  }
+}
+
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum HttpMethod {
   Get,
@@ -232,7 +241,12 @@ pub fn generate_route_path(
       if !path.contains("/api/") {
         emit_error!(span, "API endpoints must be in a folder called `api`");
       }
-      path.split("/api/")
+
+      path.split(if path.contains("/src/api/") {
+        "/src/api/"
+      } else {
+        "/api/"
+      })
     }
     RouteType::Page => {
       if !path.contains("/pages/") {
@@ -252,5 +266,9 @@ pub fn generate_route_path(
     RouteType::Page => HttpMethod::Get,
   };
 
-  Route::new(method, format!("/{}", url_path), fields)
+  Route::new(
+    method,
+    format!("/{}{}", route_type.to_string(), url_path),
+    fields,
+  )
 }

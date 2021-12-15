@@ -34,7 +34,7 @@ impl ToTokens for HtmlCustomElement {
     }
 
     if !children.nodes.is_empty() {
-      attrs.push(quote!( children: #children ))
+      attrs.push(quote!( children: ahecha::html::Node::Fragment( #children ) ))
     }
 
     let args = if attrs.is_empty() {

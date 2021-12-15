@@ -7,7 +7,7 @@ use crate::{routes::RouteType, utils::FnInfo};
 
 pub fn create_api(input: TokenStream) -> TokenStream {
   let fn_info = FnInfo::new(input.clone(), parse_macro_input!(input as ItemFn));
-  let route_fn = fn_info.uri(RouteType::Api);
+  let uri_fn = fn_info.uri(RouteType::Api);
   let FnInfo {
     ident,
     original_input,
@@ -28,7 +28,7 @@ pub fn create_api(input: TokenStream) -> TokenStream {
     #vis mod #metadata_ident {
       use super::*;
 
-      #route_fn
+      #uri_fn
     }
   )
   .into()
