@@ -12,7 +12,7 @@ frontend = []
 proc-macro=true
 
 [dependencies]
-convert_case="0.4.0"
+convert_case="0.5.0"
 proc-macro2="1.0.32"
 proc-macro-error="1.0.4"
 quote="1.0.9"
