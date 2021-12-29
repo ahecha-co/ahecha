@@ -66,8 +66,8 @@ impl From<Ident> for HttpMethod {
 
 #[derive(Clone)]
 pub struct RoutePartDynamic {
-  ident: Ident,
-  ty: Box<syn::Type>,
+  pub ident: Ident,
+  pub ty: Box<syn::Type>,
 }
 
 impl RoutePartDynamic {
@@ -140,12 +140,15 @@ impl Route {
         };
 
         if part.starts_with("__") && part.ends_with("__") {
-          if let Some(part) =
-            url_params.find(|param| param.cmp(part.get(2..part.len() - 2).unwrap()))
-          {
+          let param_name = part.get(2..part.len() - 2).unwrap();
+          if let Some(part) = url_params.find(|param| param.cmp(param_name)) {
             RoutePart::Dynamic(part)
           } else {
-            emit_error!(part.span(), "route parameter `{}` not found", part);
+            emit_error!(
+              part.span(),
+              "Route parameter `{}` not found in the page/api handler",
+              param_name
+            );
             RoutePart::Static(part.to_string())
           }
         } else {
@@ -171,7 +174,7 @@ impl Route {
         RoutePart::Static(_) => None,
         RoutePart::Dynamic(d) => {
           let ident = d.ident.clone();
-          Some(quote! { #ident })
+          Some(quote! { #ident .to_string() })
         }
       })
       .collect::<Vec<_>>();
@@ -197,19 +200,17 @@ impl Route {
     }
   }
 
-  pub fn params(&self) -> proc_macro2::TokenStream {
-    let types = self
-      .parts
-      .iter()
-      .filter_map(|part| match part {
-        RoutePart::Static(_) => None,
-        RoutePart::Dynamic(d) => Some(d),
-      })
-      .map(|d| quote!( #d ))
-      .collect::<Vec<_>>();
-
-    quote!( #(#types),* )
-  }
+  // pub fn params(&self) -> Vec<proc_macro2::TokenStream> {
+  //   self
+  //     .parts
+  //     .iter()
+  //     .filter_map(|part| match part {
+  //       RoutePart::Static(_) => None,
+  //       RoutePart::Dynamic(d) => Some(d),
+  //     })
+  //     .map(|d| quote!( #d ))
+  //     .collect::<Vec<_>>()
+  // }
 
   // pub fn params_types(&self) -> proc_macro2::TokenStream {
   //   let types = self

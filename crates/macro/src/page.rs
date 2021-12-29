@@ -72,9 +72,17 @@ pub fn create_page(attrs: AttributeArgs, input: TokenStream) -> TokenStream {
         #document ( #maybe_title , ahecha::html::Node::Fragment(vec![]), #block)
       }
 
+      #[cfg(feature = "backend")]
+      pub async fn axum_handler( #inputs ) -> axum::response::Html<String> {
+        use ahecha::html::RenderString;
+        axum::response::Html(
+          #document ( #maybe_title , ahecha::html::Node::Fragment(vec![]), #block).render()
+        )
+      }
+
       #struct_params
 
-      pub fn view #impl_generics ( #args_params ) #output {
+      pub #maybe_async fn view #impl_generics ( #args_params ) #output {
         #block
       }
 

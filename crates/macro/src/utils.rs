@@ -6,7 +6,7 @@ use syn::{
   Pat, ReturnType, Visibility,
 };
 
-use crate::routes::{generate_route_path, RouteType};
+use crate::routes::{generate_route_path, RoutePart, RoutePartDynamic, RouteType};
 
 pub struct FnInfo {
   pub block: Box<Block>,
@@ -98,10 +98,43 @@ impl FnInfo {
   pub fn uri(&self, route_type: RouteType) -> proc_macro2::TokenStream {
     let route = generate_route_path(route_type, self.ident.to_string(), &self.inputs);
     let uri = route.build_uri();
-    let uri_input_fields = route.params();
+    let params = route
+      .parts
+      .iter()
+      .filter_map(|part| match part {
+        RoutePart::Static(_) => None,
+        RoutePart::Dynamic(d) => Some(d),
+      })
+      .map(|RoutePartDynamic { ident, .. }| quote!( #ident ))
+      .collect::<Vec<_>>();
+    let (generics, arguments) = if params.is_empty() {
+      (quote!(), quote!())
+    } else {
+      let abc = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      let generic_idents = (0..params.len())
+        .map(|i| Ident::new(&abc.chars().nth(i).unwrap().to_string(), self.ident.span()))
+        .collect::<Vec<_>>();
+
+      let generics = generic_idents
+        .iter()
+        .map(|g| quote!( #g: ToString ))
+        .collect::<Vec<_>>();
+
+      let arguments = generic_idents
+        .iter()
+        .enumerate()
+        .map(|(i, g)| {
+          let ident = params[i].clone();
+
+          quote!(#ident : #g)
+        })
+        .collect::<Vec<_>>();
+
+      (quote!(< #(#generics,)* >), quote!(#(#arguments,)*))
+    };
 
     quote!(
-      pub fn uri( #uri_input_fields ) -> String {
+      pub fn uri #generics ( #arguments ) -> String {
         #uri
       }
     )
