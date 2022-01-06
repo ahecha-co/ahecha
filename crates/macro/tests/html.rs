@@ -1,11 +1,7 @@
 #[cfg(feature = "backend")]
 mod backend {
-  use ahecha::html::RenderString;
-  use ahecha_macro::*;
+  use ahecha::prelude::*;
 
-  mod ahecha {
-    pub use ahecha_html as html;
-  }
   #[test]
   fn test_html_tag() {
     let res = html! { <div attr="value">Hello (world)</div> };

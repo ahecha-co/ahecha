@@ -1,10 +1,6 @@
 #[cfg(feature = "backend")]
 mod backend {
-  use ahecha::html::RenderString;
-  use ahecha_macro::*;
-  mod ahecha {
-    pub use ahecha_html as html;
-  }
+  use ahecha::prelude::*;
 
   #[test]
   fn test_custom_element_with_macro_attr() {

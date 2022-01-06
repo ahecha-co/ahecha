@@ -1,9 +1,4 @@
-use ahecha::html::*;
-use ahecha_macro::*;
-
-mod ahecha {
-  pub use ahecha_html as html;
-}
+use ahecha::prelude::*;
 
 #[test]
 fn test_partial() {

@@ -1,12 +1,7 @@
 mod app;
 
-use ahecha::html::RenderString;
-use ahecha_macro::html;
+use ahecha::prelude::*;
 use app::pages;
-
-mod ahecha {
-  pub use ahecha_html as html;
-}
 
 #[test]
 fn test_generate_route() {
@@ -34,8 +29,7 @@ mod frontend {
 
   #[test]
   fn test_index_page_partial() {
-    let response: String =
-      pages::index::IndexPage::view().render();
+    let response: String = pages::index::IndexPage::view().render();
     assert_eq!(response, "<div>Index page</div>");
   }
 
