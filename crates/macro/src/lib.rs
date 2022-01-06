@@ -18,6 +18,7 @@ mod page;
 mod partial;
 mod routes;
 mod utils;
+mod validator;
 
 #[proc_macro_attribute]
 #[proc_macro_error]
@@ -73,4 +74,10 @@ pub fn uri(input: TokenStream) -> TokenStream {
     #name ::uri(#args)
   }
   .into()
+}
+
+#[proc_macro_derive(Validate, attributes(validate))]
+#[proc_macro_error]
+pub fn validator(input: TokenStream) -> TokenStream {
+  validator::create_validator(input)
 }
