@@ -138,6 +138,13 @@ impl Validator {
                 field.clone(),
                 None,
               ))]),
+              "length" => Some(vec![Self::Length(LengthValidator::new(
+                field.clone(),
+                ValidatorAttribute {
+                  name: field.clone(),
+                  attrs: HashMap::new(),
+                },
+              ))]),
               _ => {
                 emit_error!(
                   ident.span(),
@@ -148,7 +155,7 @@ impl Validator {
               }
             }
           }
-          syn::Meta::List(list) => None,
+          syn::Meta::List(_list) => None,
           syn::Meta::NameValue(named) => {
             let span = named.path.segments.iter().last().unwrap().ident.span();
             emit_error!(span, "Unsuported named value at this level");
@@ -248,41 +255,21 @@ pub fn create_validator(input: proc_macro::TokenStream) -> proc_macro::TokenStre
     }
   };
 
-  // let from_value = match &struct_item.fields {
-  //   Fields::Named(FieldsNamed { named, .. }) => named
-  //     .iter()
-  //     .map(|f| {
-  //       let ident = f.ident.clone().unwrap();
-  //       let ident_str = ident.to_string();
-  //       quote!(#ident: value[#ident_str].into() )
-  //     })
-  //     .collect::<Vec<TokenStream>>(),
-  //   _ => {
-  //     emit_error!(
-  //       struct_item.ident.span(),
-  //       "Only named properties are supported"
-  //     );
-
-  //     vec![]
-  //   }
-  // };
-
   quote!(
     impl ::ahecha::Validate for #name {
-      fn validate(value: serde_json::Value) -> anyhow::Result<()> {
+      fn validate(value: serde_json::Value) -> Result<(), ahecha::validate::Error> {
         let mut errors = vec![];
 
         #validators
 
         if errors.is_empty() {
-          // Ok(Self {
-          //   #(#from_value),*
-          // })
-          Ok()
+          Ok(())
         } else {
-          let err = std::collections::HashMap::new();
-          errors.iter().for_each(|(k, v)| err.insert(k, v));
-          Err(ahecha::validate::Error::KeyValue(err))
+          let mut err = std::collections::HashMap::new();
+          errors.iter().for_each(|(k, v)| {
+            err.insert(k.to_string(), v.to_string());
+          });
+          Err(ahecha::validate::Error::KeyValue(err).into())
         }
       }
     }
