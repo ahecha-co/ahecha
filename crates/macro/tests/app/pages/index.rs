@@ -1,8 +1,4 @@
-use ahecha_macro::*;
-
-mod ahecha {
-  pub use ahecha_html as html;
-}
+use ahecha::prelude::*;
 
 #[page(document = "crate::app::document::Document", title = "Index")]
 pub fn IndexPage() -> ahecha::html::Node {

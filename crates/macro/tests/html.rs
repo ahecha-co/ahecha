@@ -49,9 +49,26 @@ mod backend {
       </html>
     };
     assert_eq!(
-    res.render(),
-    "<!doctype html><html><head><title>Document title</title></head><body><header class=\"container\"><div class=\"row\"><div class=\"col-9\"></div></div></header></body></html>"
-  );
+      res.render(),
+      "<!doctype html><html><head><title>Document title</title></head><body><header class=\"container\"><div class=\"row\"><div class=\"col-9\"></div></div></header></body></html>"
+    );
+  }
+
+  #[test]
+  fn test_html_with_stylesheet() {
+    let res = html! {
+      <!doctype html>
+      <html>
+        <head>
+          <link rel="stylesheet" href="/stylesheet.css"/>
+        </head>
+        <body></body>
+      </html>
+    };
+    assert_eq!(
+      res.render(),
+      "<!doctype html><html><head><link rel=\"stylesheet\" href=\"/stylesheet.css\"/></head><body></body></html>"
+    );
   }
 
   #[test]

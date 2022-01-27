@@ -1,8 +1,4 @@
-use ahecha_macro::{document, html};
-
-mod ahecha {
-  pub use ahecha_html as html;
-}
+use ahecha::prelude::*;
 
 #[document]
 pub fn Document(

@@ -33,6 +33,33 @@ impl From<Option<Vec<Node>>> for Node {
   }
 }
 
+impl ToString for Node {
+  fn to_string(&self) -> String {
+    match self {
+      Node::CustomElement => todo!(),
+      Node::Document(doctype, nodes) => {
+        format!(
+          "{}{}",
+          doctype.to_string(),
+          nodes
+            .iter()
+            .map(|n| n.to_string())
+            .collect::<Vec<_>>()
+            .join("\n")
+        )
+      }
+      Node::Element(el) => el.to_string(),
+      Node::Fragment(nodes) => nodes
+        .iter()
+        .map(|n| n.to_string())
+        .collect::<Vec<_>>()
+        .join("\n"),
+      Node::None => String::new(),
+      Node::Text(text) => text.clone(),
+    }
+  }
+}
+
 macro_rules! impl_renderable {
   ($($t:ty),*) => {
     $(

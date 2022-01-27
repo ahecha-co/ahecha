@@ -1,5 +1,6 @@
 pub use ahecha_html as html;
-pub use ahecha_macro;
+pub use ahecha_macro::*;
+pub use ahecha_record::*;
 
 mod form;
 pub mod validate;

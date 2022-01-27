@@ -9,9 +9,10 @@ backend = ["ahecha_macro/backend"]
 frontend = ["ahecha_macro/frontend"]
 
 [dependencies]
-ahecha_macro={ path="../macro", version="*" }
-ahecha_html={ path="../html", version="*" }
+ahecha_macro = { path="../macro", version="*" }
+ahecha_html = { path="../html", version="*" }
+ahecha_record = { path="../record", version="*" }
 anyhow = "1.0"
-serde = "1.0.130"
-serde_json = "1.0.72"
-serde_urlencoded = "0.7.0"
+serde = "1.0"
+serde_json = "1.0"
+serde_urlencoded = "0.7"

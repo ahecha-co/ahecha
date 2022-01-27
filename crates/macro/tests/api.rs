@@ -4,12 +4,12 @@ use crate::app::SuperUser;
 
 mod app;
 
-#[test]
-fn test_generate_route() {
-  assert_eq!(api::index::__get_metadata::uri(), "/");
-  assert_eq!(api::__id__::__get_metadata::uri(5), "/5");
-  assert_eq!(api::__id__::__post_metadata::uri(5), "/5");
-}
+// #[test]
+// fn test_generate_route() {
+//   assert_eq!(api::index::__get_metadata::uri(), "/");
+//   assert_eq!(api::__id__::__get_metadata::uri(5), "/5");
+//   assert_eq!(api::__id__::__post_metadata::uri(5), "/5");
+// }
 
 #[test]
 fn test_index_api_request() {

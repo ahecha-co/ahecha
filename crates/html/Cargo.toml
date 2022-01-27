@@ -13,5 +13,14 @@ readme = "README.md"
 [lib]
 
 [dependencies]
-custom-elements = "0.2.0"
-gloo = "0.5.0"
+axum = "0.4"
+custom-elements = "0.2"
+gloo = "0.6"
+serde = "1.0"
+
+[dependencies.sqlx]
+version = "0.5"
+features = [
+  "chrono",
+  "runtime-tokio-rustls"
+]

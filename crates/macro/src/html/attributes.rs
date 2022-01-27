@@ -19,7 +19,7 @@ impl ToTokens for AttributeValue {
         .to_tokens(tokens);
       }
       AttributeValue::Lit(s) => {
-        quote!(ahecha::html::AttributeValue::String(#s .to_string())).to_tokens(tokens)
+        quote!(ahecha::html::SerializableAttributeValue(Some( #s .to_string()))).to_tokens(tokens)
       }
     }
   }
