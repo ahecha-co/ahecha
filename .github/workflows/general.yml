@@ -1,21 +1,13 @@
-on:
-  pull_request:
-  push:
-    branches:
-      - main
-    # Don't run Clippy tests, when only textfiles were modified
-    paths-ignore:
-    - 'CHANGELOG'
-    - 'LICENSE'
-    - '**.md'
-    - '**.txt'
+name: Rust
 
+on: [push, pull_request]
 
-name: Check and Lint
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
-  check:
-    name: Check
+  test:
+    name: Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -26,7 +18,7 @@ jobs:
           override: true
       - uses: actions-rs/cargo@v1
         with:
-          command: check
+          command: test
 
   fmt:
     name: Rustfmt
@@ -35,7 +27,6 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-          profile: minimal
           toolchain: nightly
           override: true
           components: rustfmt
@@ -52,10 +43,27 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
-          components: clippy
           override: true
+          components: clippy
       - uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-features
-          name: Clippy Output
+          args: -- -D warnings
+
+  coverage:
+    name: Code coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install nightly toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+
+      - name: Run cargo-tarpaulin
+        uses: actions-rs/tarpaulin@v0.1
+        with:
+          args: '--ignore-tests'
