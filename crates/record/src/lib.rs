@@ -2,6 +2,8 @@ use sqlx::postgres::PgArguments;
 
 pub mod migration;
 // TODO: This module will be used to check the struct integrity against an offline representation of the database
+mod backend;
+mod metadata;
 mod schema;
 mod to_sql;
 

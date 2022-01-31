@@ -1,17 +1,26 @@
 [package]
 name = "ahecha"
-version = "0.0.1"
+version = "0.0.3"
 edition = "2021"
+license = "MIT"
+description = "Ahecha crate"
+homepage = "https://github.com/ahecha-co/ahecha"
+documentation = "https://docs.rs/ahecha"
+repository = "https://github.com/ahecha-co/ahecha"
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
+default = []
 backend = ["ahecha_macro/backend"]
 frontend = ["ahecha_macro/frontend"]
+time = ["ahecha_html/time"]
+chrono = ["ahecha_html/chrono"]
 
 [dependencies]
-ahecha_macro = { path="../macro", version="*" }
-ahecha_html = { path="../html", version="*" }
-ahecha_record = { path="../record", version="*" }
+ahecha_macro = { path="../macro", version="0" }
+ahecha_html = { path="../html", version="0" }
+# ahecha_record = { path="../record", version="*" }
 anyhow = "1.0"
 serde = "1.0"
 serde_json = "1.0"

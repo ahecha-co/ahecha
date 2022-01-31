@@ -1,4 +1,4 @@
-// use ahecha_tuple_list::TupleList;
+#[cfg(feature = "chrono")]
 use sqlx::types::chrono::{DateTime, Utc};
 use std::fmt::{Result, Write};
 
@@ -168,19 +168,39 @@ impl RenderAttributeValue for SerializableAttributeValue {
 }
 
 impl_serializable_attribute_value!(&&str, &str, &String, String, bool);
-impl_serializable_attribute_value_with_into!(
-  u8,
-  u16,
-  u32,
-  u64,
-  i8,
-  i16,
-  i32,
-  i64,
-  f32,
-  f64,
-  DateTime<Utc>
-);
+impl_serializable_attribute_value_with_into!(u8, u16, u32, u64, i8, i16, i32, i64, f32, f64);
+
+#[cfg(feature = "chrono")]
+impl_serializable_attribute_value_with_into!(DateTime<Utc>);
+
+#[cfg(feature = "time")]
+mod time_impl {
+  use super::*;
+  use sqlx::types::time::{Date, OffsetDateTime, PrimitiveDateTime, Time, UtcOffset};
+  impl_serializable_attribute_value!(Date);
+  impl_serializable_attribute_value!(OffsetDateTime);
+  impl_serializable_attribute_value!(PrimitiveDateTime);
+  impl_serializable_attribute_value!(Time);
+  impl_serializable_attribute_value!(UtcOffset);
+
+  impl From<SerializableAttributeValue> for OffsetDateTime {
+    fn from(item: SerializableAttributeValue) -> OffsetDateTime {
+      match item.0 {
+        Some(s) => OffsetDateTime::parse(s, "%F%T%z").unwrap(),
+        None => unimplemented!(),
+      }
+    }
+  }
+
+  impl From<SerializableAttributeValue> for Option<OffsetDateTime> {
+    fn from(item: SerializableAttributeValue) -> Option<OffsetDateTime> {
+      match item.0 {
+        Some(s) => Some(OffsetDateTime::parse(s, "%F%T%z").unwrap()),
+        None => None,
+      }
+    }
+  }
+}
 
 // TODO: Find a way to implement this for serde
 // impl<T> From<T> for SerializableAttributeValue

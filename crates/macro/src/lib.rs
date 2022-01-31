@@ -133,11 +133,12 @@ pub fn page(metadata: TokenStream, input: TokenStream) -> TokenStream {
 //   table::create_queryable(parse_macro_input!(input as DeriveInput)).into()
 // }
 
-// #[proc_macro_derive(Table, attributes(name))]
-// #[proc_macro_error]
-// pub fn table(input: TokenStream) -> TokenStream {
-//   table::create_table(parse_macro_input!(input as DeriveInput)).into()
-// }
+// The purpose of this derive is to mark structs so a build script can find them, parse them and write
+// down the metadata that will be used internally to do the checks in the queries.
+#[proc_macro_derive(Table, attributes(table))]
+pub fn table(input: TokenStream) -> TokenStream {
+  input
+}
 
 #[proc_macro]
 pub fn uri(input: TokenStream) -> TokenStream {

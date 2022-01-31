@@ -1,9 +1,159 @@
 use std::fmt::Error;
 
+/*
+record!("users", {
+  pub struct User {
+    id, // infers type and primary key from the schema
+    name,
+    email, // infers from the schema that is indexed
+    password: Password, // You can still specify the type if you want, for cases like this
+    created_at: DateTime<Utc>, // infers from the schema that has default
+    updated_at: DateTime<Utc>, // infers from the schema that has default
+  }
+
+  // This are called variants, and are checked all with the same rule as the first one
+  struct UserSignup {
+    name,
+    email,
+    password,
+  }
+
+  pub(crate) struct UserSession {
+    id,
+    name,
+    email,
+  }
+
+  struct Author {
+    id,
+    name,
+    posts: Vec<Post>,
+  }
+});
+
+record!("posts", {
+  pub struct Post {
+    id,
+    title,
+    content,
+    author_id,
+    created_at,
+    updated_at,
+  }
+
+  struct PostAuthor {
+    id,
+    title,
+    content,
+    author: UserSession,
+  }
+});
+
+// -- Expands to
+// >> Auxiliary files will be written that will be use by the query macro
+
+pub struct User {
+  id: Uuid,
+  name: String,
+  email: String,
+  password: Password,
+  created_at: DateTime<Utc>,
+  updated_at: DateTime<Utc>,
+}
+
+impl Record for User {}
+
+struct UserSignup {
+  name: String,
+  email: String,
+  password: Password,
+}
+
+impl Record for UserSignup {}
+
+pub(crate) struct UserSession {
+  id: Uuid,
+  name: String,
+  email: String,
+  password: Password,
+}
+
+impl Record for UserSession {}
+
+struct Author {
+  id: Uuid,
+  name: String
+  posts: Vec<Post>
+}
+
+impl Record for Author {}
+
+pub struct Post {
+  id,
+  title,
+  content,
+  author_id,
+  created_at,
+  updated_at,
+}
+
+impl Record for Post {}
+
+struct PostAuthor {
+  id,
+  title,
+  content,
+  author: UserSession,
+}
+
+impl Record for PostAuthor {}
+
+// Reads the data from tmp/User.json? to do get the fields, table name, and check the fields at compile time
+query!(SELECT User WHERE User.id = 'abc')
+
+// It already knows that Author uses the "users" table
+query!(SELECT Author WHERE Author::id = 'abc')
+// `SELECT Author.id, Author.name, json_agg(Post.id, Post.title, ...) FROM users as Author Where Author.id = 'abc';
+// > :warning check if json_agg can do what I expect
+
+query!(SELECT Author WHERE Author::id = 'abc' LEFT JOIN Post ON Post::author_id = Author::id)
+// `SELECT Author.id, Author.name, json_agg(Post.id, Post.title, ...) FROM users as Author Where Author.id = 'abc';
+
+let post = Post { ... };
+query!(INSERT Post VALUES (post))
+>> `INSERT posts as Post (Post.id, Post.title, Post.content, ...) VALUES ($1, $2, ...)`, ...
+
+let posts = vec![Post { ... }, Post { ... }];
+query!(INSERT Post[] VALUES (post))
+>> `INSERT posts as Post (Post.id, Post.title, Post.content, ...) VALUES ($1, $2, ...), ($n1, $n2, ...)`, ...
+
+query!(UPDATE Post SET post WHERE Post::id)
+>> `UPDATE posts as Post SET post.title = $1, post.content = $2, post.author_id = $3, post.created_at = $4, post.updated_at = $5
+>>    WHERE Post.id = $6`, post.title, ..., post.id
+// `id` is automatically excluded from the SET statement because is used in the WHERE statement
+
+query!(UPDATE Post SET post WHERE Post::id AND Post::author_id)
+>> `UPDATE posts as Post SET post.title = $1, post.content = $2, post.created_at = $3, post.updated_at = $4
+>>    WHERE Post.id = $5 AND Post.author_id = $6`, post.title, ..., post.id, post.author_id
+// `id` and `author_id` are automatically excluded from the SET statement because is used in the WHERE statement
+
+query!(DELETE Post WHERE Post::id = { post.id })
+>> `DELETE posts as Post WHERE Post.id = $1`, post.id
+
+query!(SELECT NotARecord)
+>> Will throw a rust error complaining about the `Record` trait not being implemented, if you do so manually it will complain about
+// the missing entry in the offline schema, if it has the same name as an existing one it might work if the fields are the same, if not,
+// you will get some kind of error, this is a limitation of the system, because we don't have all the information about the struct it could
+// leat to some issues if multiple structs share the same name.
+*/
+
 use proc_macro2::Ident;
 use proc_macro_error::emit_error;
 use quote::{quote, ToTokens};
-use syn::{braced, bracketed, spanned::Spanned, ext::IdentExt, parse::Parse, parse_macro_input, Lit, LitStr, Token};
+use syn::{
+  braced, bracketed, ext::IdentExt, parse::Parse, parse_macro_input, spanned::Spanned, Lit, LitStr,
+  Token,
+};
 
 enum ParseError {
   Skip,
@@ -302,9 +452,8 @@ impl ToTokens for PrepareColumnsStatement {
       .collect::<Vec<_>>();
 
     dbg!(&sql, &col_numbers, &struct_cols);
-    quote!(
-      ahecha::prepare_statement!(format!(#sql, #(#col_numbers),*), #(#struct_cols),*)
-    ).to_tokens(tokens);
+    quote!(ahecha::prepare_statement!(format!(#sql, #(#col_numbers),*), #(#struct_cols),*))
+      .to_tokens(tokens);
   }
 }
 
