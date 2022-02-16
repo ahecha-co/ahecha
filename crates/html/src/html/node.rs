@@ -1,7 +1,6 @@
 use crate::html::{Doctype, Element};
 
 pub enum Node {
-  CustomElement,
   Document(Doctype, Vec<Node>),
   Element(Element),
   Fragment(Vec<Node>),
@@ -36,7 +35,6 @@ impl From<Option<Vec<Node>>> for Node {
 impl ToString for Node {
   fn to_string(&self) -> String {
     match self {
-      Node::CustomElement => todo!(),
       Node::Document(doctype, nodes) => {
         format!(
           "{}{}",

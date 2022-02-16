@@ -3,7 +3,6 @@ use crate::{html::Node, RenderString};
 impl RenderString for Node {
   fn render_into<W: std::fmt::Write>(self, writer: &mut W) -> std::fmt::Result {
     match self {
-      Self::CustomElement => unimplemented!(),
       Self::Document(doctype, elements) => {
         doctype.render_into(writer)?;
         elements.render_into(writer)?;
