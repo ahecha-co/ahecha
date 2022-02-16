@@ -1,10 +1,10 @@
-use ::axum::{
+use ::axum_::{
   body,
   http::StatusCode,
   response::{IntoResponse, Response},
 };
 
-use crate::{Node, RenderString};
+use crate::{Node, ToHtmlString};
 
 impl IntoResponse for Node {
   fn into_response(self) -> Response {

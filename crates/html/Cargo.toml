@@ -14,14 +14,13 @@ readme = "README.md"
 
 [features]
 default = []
+axum = ["axum_"]
 time = ["sqlx/time", "time_"]
-chrono = ["sqlx/chrono"]
 
-[dependencies]
-axum = "0.4"
-custom-elements = "0.2"
-gloo = "0.6"
-serde = "1.0"
+[dependencies.axum_]
+package = "axum"
+version = "0.4"
+optional = true
 
 [dependencies.sqlx]
 version = "0.5"
