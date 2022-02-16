@@ -1,6 +1,6 @@
 use std::fmt::{Result, Write};
 
-mod attributes;
+mod attribute;
 mod doctype;
 mod elements;
 mod node;
@@ -16,9 +16,7 @@ pub trait RenderString: Sized {
   /// Render the component to string
   fn render(self) -> String {
     let mut buf = String::new();
-    // dbg!("++++++++", &buf);
     self.render_into(&mut buf).unwrap();
-    // dbg!("----------", &buf);
     buf
   }
 }
