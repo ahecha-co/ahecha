@@ -1,6 +1,8 @@
 [workspace]
 members = [
-  "core/codegen",
-  "core/lib",
-  "core/view",
+  # "crates/cli",
+  "crates/macro",
+  "crates/lib",
+  "crates/html",
+  # "crates/record",
 ]

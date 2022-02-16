@@ -1,0 +1,33 @@
+[package]
+name = "ahecha_macro"
+version = "0.0.3"
+edition = "2021"
+license = "MIT"
+description = "Ahecha macro crate"
+homepage = "https://github.com/ahecha-co/ahecha"
+documentation = "https://docs.rs/ahecha"
+repository = "https://github.com/ahecha-co/ahecha"
+readme = "README.md"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+backend = []
+frontend = []
+
+[lib]
+proc-macro=true
+
+[dependencies]
+convert_case = "0.5"
+inflection = "0.1"
+proc-macro2 = "1.0"
+proc-macro-error = "1.0"
+quote = "1.0"
+syn = { version = "1.0", features = ["full"] }
+
+
+[dev-dependencies]
+ahecha = { path = "../lib", version = "0" }
+axum = "0.4"
+serde = "1.0"
+serde_json = "1.0"

@@ -1,0 +1,36 @@
+[package]
+name = "ahecha_html"
+version = "0.0.3"
+edition = "2021"
+license = "MIT"
+description = "Ahecha html"
+homepage = "https://github.com/ahecha-co/ahecha"
+documentation = "https://docs.rs/ahecha"
+repository = "https://github.com/ahecha-co/ahecha"
+readme = "README.md"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+
+[features]
+default = []
+time = ["sqlx/time", "time_"]
+chrono = ["sqlx/chrono"]
+
+[dependencies]
+axum = "0.4"
+custom-elements = "0.2"
+gloo = "0.6"
+serde = "1.0"
+
+[dependencies.sqlx]
+version = "0.5"
+features = [
+  "runtime-tokio-rustls"
+]
+optional = true
+
+[dependencies.time_]
+package = "time"
+version = "0.2.27"
+optional = true
