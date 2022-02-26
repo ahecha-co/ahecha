@@ -1,14 +1,15 @@
-use ::axum::{
+use axum_core::{
   body,
-  http::StatusCode,
   response::{IntoResponse, Response},
 };
+use http::StatusCode;
+use http_body::Full;
 
 use crate::{Node, RenderString};
 
 impl IntoResponse for Node {
   fn into_response(self) -> Response {
-    let body = body::boxed(body::Full::from(self.render()));
+    let body = body::boxed(Full::from(self.render()));
 
     Response::builder()
       .header("Content-Type", "text/html")

@@ -1,6 +1,6 @@
 [package]
 name = "ahecha_html"
-version = "0.0.3"
+version = "0.0.4"
 edition = "2021"
 license = "MIT"
 description = "Ahecha html"
@@ -18,8 +18,10 @@ time = ["sqlx/time", "time_"]
 chrono = ["sqlx/chrono"]
 
 [dependencies]
-axum = "0.4"
+axum-core = "0.1.2"
 custom-elements = "0.2"
+http = "0.2.5"
+http-body = "0.4.4"
 gloo = "0.6"
 serde = "1.0"
 
