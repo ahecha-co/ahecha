@@ -145,4 +145,10 @@ mod backend {
     let res = html! { <div aria-label="sum">Aria attribute</div> };
     assert_eq!(res.render(), "<div aria-label=\"sum\">Aria attribute</div>");
   }
+
+  #[test]
+  fn test_parse_custom_element_tag_name() {
+    let res = html! { <word-count>Aria attribute</word-count> };
+    assert_eq!(res.render(), "<word-count>Aria attribute</word-count>");
+  }
 }

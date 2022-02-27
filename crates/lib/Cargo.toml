@@ -18,5 +18,5 @@ time = ["ahecha_html/time"]
 chrono = ["ahecha_html/chrono"]
 
 [dependencies]
-ahecha_macro = { path="../macro", version="0.0.5" }
+ahecha_macro = { path="../macro", version="0.0.6" }
 ahecha_html = { path="../html", version="0.0.5" }

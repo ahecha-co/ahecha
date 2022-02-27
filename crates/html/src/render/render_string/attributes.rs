@@ -59,7 +59,7 @@ macro_rules! impl_attribute_value_with_into {
       fn from(item: AttributeValue) -> $t {
         match item {
           AttributeValue::String(s) => s.parse().unwrap(),
-          _ => unimplemented!(),
+          _ => todo!("AttributeValue"),
         }
       }
     })*
@@ -145,7 +145,7 @@ macro_rules! impl_serializable_attribute_value_with_into {
       fn from(item: SerializableAttributeValue) -> $t {
         match item.0 {
           Some(s) => s.parse().unwrap(),
-          None => unimplemented!(),
+          None => todo!("SerializableAttribute"),
         }
       }
     })*
@@ -187,7 +187,7 @@ mod time_impl {
     fn from(item: SerializableAttributeValue) -> OffsetDateTime {
       match item.0 {
         Some(s) => OffsetDateTime::parse(s, "%F%T%z").unwrap(),
-        None => unimplemented!(),
+        None => todo!("OffsetDateTime"),
       }
     }
   }

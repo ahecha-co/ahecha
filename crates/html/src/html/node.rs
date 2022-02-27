@@ -36,7 +36,7 @@ impl From<Option<Vec<Node>>> for Node {
 impl ToString for Node {
   fn to_string(&self) -> String {
     match self {
-      Node::CustomElement => todo!(),
+      Node::CustomElement => todo!("CustomElement"),
       Node::Document(doctype, nodes) => {
         format!(
           "{}{}",

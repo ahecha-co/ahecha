@@ -21,6 +21,8 @@ pub use text::HtmlText;
 
 use crate::html::{attributes::Attributes, children::Children};
 
+use super::tag_name::TagName;
+
 #[derive(Debug)]
 pub enum Node {
   Block(HtmlBlock),
@@ -73,7 +75,7 @@ impl Parse for Node {
       Ok(Node::Doctype(doctype))
     } else if input.peek(syn::Token![<]) && input.peek2(syn::Ident) {
       input.parse::<syn::Token![<]>()?;
-      let name = input.parse::<syn::Ident>()?;
+      let name = input.parse::<TagName>()?;
       let attributes = input.parse::<Attributes>()?;
 
       let self_closing_tags = [
@@ -91,7 +93,7 @@ impl Parse for Node {
         let children = input.parse::<Children>()?;
         input.parse::<syn::Token![<]>()?;
         input.parse::<syn::Token![/]>()?;
-        let closing_name = input.parse::<syn::Ident>()?;
+        let closing_name = input.parse::<TagName>()?;
         input.parse::<syn::Token![>]>()?;
 
         if closing_name != name {
