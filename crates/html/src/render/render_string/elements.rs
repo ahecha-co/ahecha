@@ -1,12 +1,14 @@
 use std::fmt::{Result, Write};
 
 use super::RenderString;
-use crate::{html::Element, render::render_string::attributes::RenderAttributes};
+use crate::html::Element;
 
 impl RenderString for Element {
   fn render_into<W: Write>(self, writer: &mut W) -> Result {
     write!(writer, "<{}", self.name)?;
-    self.attributes.render_attributes_into(writer)?;
+    if !self.attributes.is_empty() {
+      self.attributes.render_into(writer)?;
+    }
     if self.children.is_empty() {
       let self_closing_tags = [
         "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param",
@@ -36,8 +38,8 @@ impl RenderString for Element {
 //   fn test_tag_element() {
 //     let element = Element {
 //       name: "div",
-//       attributes: vec![],
-//       children: vec![],
+//       attributes: Default::default(),
+//       children: Default::default(),
 //     };
 
 //     assert_eq!(element.render(), "<div></div>");
@@ -58,7 +60,7 @@ impl RenderString for Element {
 //           AttributeValue::String("color: red;".to_owned()),
 //         ),
 //       ],
-//       children: vec![],
+//       children: Default::default(),
 //     };
 
 //     assert_eq!(
@@ -77,7 +79,7 @@ impl RenderString for Element {
 //       )],
 //       children: vec![Node::Element(Element {
 //         name: "h1",
-//         attributes: vec![],
+//         attributes: Default::default(),
 //         children: vec![Node::Text("Hello World".to_owned())],
 //       })],
 //     };
@@ -99,19 +101,19 @@ impl RenderString for Element {
 //       children: vec![
 //         Node::Element(Element {
 //           name: "h1",
-//           attributes: vec![],
+//           attributes: Default::default(),
 //           children: vec![
 //             Node::Text("Hello ".to_owned()),
 //             Node::Element(Element {
 //               name: "span",
-//               attributes: vec![],
+//               attributes: Default::default(),
 //               children: vec![Node::Text("World".to_owned())],
 //             }),
 //           ],
 //         }),
 //         Node::Element(Element {
 //           name: "p",
-//           attributes: vec![],
+//           attributes: Default::default(),
 //           children: vec![Node::Text("This is a paragraph".to_owned())],
 //         }),
 //       ],
@@ -133,16 +135,16 @@ impl RenderString for Element {
 //       )],
 //       children: vec![Node::Element(Element {
 //         name: "ul",
-//         attributes: vec![],
+//         attributes: Default::default(),
 //         children: vec![
 //           Node::Element(Element {
 //             name: "li",
-//             attributes: vec![],
+//             attributes: Default::default(),
 //             children: vec![Node::Text("Hello".to_owned())],
 //           }),
 //           Node::Element(Element {
 //             name: "li",
-//             attributes: vec![],
+//             attributes: Default::default(),
 //             children: vec![Node::Text("World".to_owned())],
 //           }),
 //         ],
@@ -158,7 +160,7 @@ impl RenderString for Element {
 
 #[cfg(test)]
 mod test {
-  use crate::html::{Node, SerializableAttributeValue};
+  use crate::{html::Node, Attributes};
 
   use super::*;
 
@@ -166,8 +168,8 @@ mod test {
   fn test_tag_element() {
     let element = Element {
       name: "div",
-      attributes: vec![],
-      children: vec![],
+      attributes: Default::default(),
+      children: Default::default(),
     };
 
     assert_eq!(element.render(), "<div></div>");
@@ -177,21 +179,11 @@ mod test {
   fn test_tag_element_with_attributes() {
     let element = Element {
       name: "div",
-      attributes: vec![
-        (
-          "class".to_owned(),
-          SerializableAttributeValue(Some("test".to_owned())),
-        ),
-        (
-          "id".to_owned(),
-          SerializableAttributeValue(Some("test".to_owned())),
-        ),
-        (
-          "style".to_owned(),
-          SerializableAttributeValue(Some("color: red;".to_owned())),
-        ),
-      ],
-      children: vec![],
+      attributes: Attributes::default()
+        .set("class", "test")
+        .set("id", "test")
+        .set("style", "color: red;"),
+      children: Default::default(),
     };
 
     assert_eq!(
@@ -204,13 +196,10 @@ mod test {
   fn test_tag_element_with_one_child() {
     let element = Element {
       name: "div",
-      attributes: vec![(
-        "class".to_owned(),
-        SerializableAttributeValue(Some("test".to_owned())),
-      )],
+      attributes: Attributes::default().set("class", "test"),
       children: vec![Node::Element(Element {
         name: "h1",
-        attributes: vec![],
+        attributes: Default::default(),
         children: vec![Node::Text("Hello World".to_owned())],
       })],
     };
@@ -225,26 +214,23 @@ mod test {
   fn test_ag_element_with_children() {
     let element = Element {
       name: "div",
-      attributes: vec![(
-        "class".to_owned(),
-        SerializableAttributeValue(Some("test".to_owned())),
-      )],
+      attributes: Attributes::default().set("class", "test"),
       children: vec![
         Node::Element(Element {
           name: "h1",
-          attributes: vec![],
+          attributes: Default::default(),
           children: vec![
             Node::Text("Hello ".to_owned()),
             Node::Element(Element {
               name: "span",
-              attributes: vec![],
+              attributes: Default::default(),
               children: vec![Node::Text("World".to_owned())],
             }),
           ],
         }),
         Node::Element(Element {
           name: "p",
-          attributes: vec![],
+          attributes: Default::default(),
           children: vec![Node::Text("This is a paragraph".to_owned())],
         }),
       ],
@@ -260,22 +246,19 @@ mod test {
   fn test_tag_element_with_children_list() {
     let element = Element {
       name: "div",
-      attributes: vec![(
-        "class".to_owned(),
-        SerializableAttributeValue(Some("test".to_owned())),
-      )],
+      attributes: Attributes::default().set("class", "test"),
       children: vec![Node::Element(Element {
         name: "ul",
-        attributes: vec![],
+        attributes: Default::default(),
         children: vec![
           Node::Element(Element {
             name: "li",
-            attributes: vec![],
+            attributes: Default::default(),
             children: vec![Node::Text("Hello".to_owned())],
           }),
           Node::Element(Element {
             name: "li",
-            attributes: vec![],
+            attributes: Default::default(),
             children: vec![Node::Text("World".to_owned())],
           }),
         ],

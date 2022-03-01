@@ -1,38 +1,10 @@
-use serde::{Deserialize, Serialize};
+use crate::{Attributes, RenderString};
 
 use super::node::Node;
 use std::fmt::Write;
 
-#[derive(Serialize, Deserialize)]
-pub struct SerializableAttributeValue(pub Option<String>);
-
-impl ToString for SerializableAttributeValue {
-  fn to_string(&self) -> String {
-    match &self.0 {
-      Some(value) => value.clone(),
-      None => String::new(),
-    }
-  }
-}
-
-pub enum AttributeValue {
-  Bool(bool),
-  None,
-  String(String),
-}
-
-impl ToString for AttributeValue {
-  fn to_string(&self) -> String {
-    match self {
-      AttributeValue::Bool(value) => value.to_string(),
-      AttributeValue::None => "".to_owned(),
-      AttributeValue::String(text) => text.clone(),
-    }
-  }
-}
-
 pub struct Element {
-  pub attributes: Vec<(String, SerializableAttributeValue)>,
+  pub attributes: Attributes,
   pub children: Vec<Node>,
   pub name: &'static str,
 }
@@ -44,21 +16,7 @@ impl ToString for Element {
     write!(&mut buffer, "<{}", self.name).unwrap();
 
     if !self.attributes.is_empty() {
-      let attr = self
-        .attributes
-        .iter()
-        .map(|(key, value)| {
-          let value = value.to_string();
-
-          if value.is_empty() {
-            format!("{}", key)
-          } else {
-            format!("{}={}", key, value)
-          }
-        })
-        .collect::<Vec<_>>()
-        .join(" ");
-      write!(&mut buffer, " {}", attr).unwrap();
+      self.attributes.clone().render_into(&mut buffer).unwrap();
     }
 
     if self.children.is_empty() {

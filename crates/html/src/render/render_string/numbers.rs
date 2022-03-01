@@ -31,11 +31,11 @@ mod test {
   fn test_render_into() {
     let element = Element {
       name: "div",
-      attributes: vec![],
+      attributes: Default::default(),
       children: vec![
         Node::Element(Element {
           name: "span",
-          attributes: vec![],
+          attributes: Default::default(),
           children: vec![
             Node::Text("Hello".to_owned()),
             Node::Text(" ".to_owned()),

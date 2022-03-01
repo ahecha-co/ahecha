@@ -1,11 +1,12 @@
 #[cfg(feature = "backend")]
 mod backend {
   use ahecha::prelude::*;
+  use pretty_assertions::assert_eq;
 
   #[test]
   fn test_html_tag() {
     let res = html! { <div attr="value">Hello (world)</div> };
-    assert_eq!(res.render(), "<div attr=\"value\">Hello (world)</div>");
+    assert_eq!(res.render(), r#"<div attr="value">Hello (world)</div>"#);
   }
 
   #[test]
@@ -13,7 +14,7 @@ mod backend {
     let res = html! { <div attr="value" attr2="value2">Hello</div> };
     assert_eq!(
       res.render(),
-      "<div attr=\"value\" attr2=\"value2\">Hello</div>"
+      r#"<div attr="value" attr2="value2">Hello</div>"#
     );
   }
 
@@ -26,9 +27,9 @@ mod backend {
       </div>
     };
     assert_eq!(
-    res.render(),
-    "<div class=\"main\"><h1 class=\"heading\">I am a test</h1><p class=\"paragraph\">Lorem ipsum dolor sit amet .</p></div>"
-  );
+      res.render(),
+      r#"<div class="main"><h1 class="heading">I am a test</h1><p class="paragraph">Lorem ipsum dolor sit amet .</p></div>"#
+    );
   }
 
   #[test]
@@ -50,7 +51,7 @@ mod backend {
     };
     assert_eq!(
       res.render(),
-      "<!doctype html><html><head><title>Document title</title></head><body><header class=\"container\"><div class=\"row\"><div class=\"col-9\"></div></div></header></body></html>"
+      r#"<!doctype html><html><head><title>Document title</title></head><body><header class="container"><div class="row"><div class="col-9"></div></div></header></body></html>"#
     );
   }
 
@@ -67,20 +68,20 @@ mod backend {
     };
     assert_eq!(
       res.render(),
-      "<!doctype html><html><head><link rel=\"stylesheet\" href=\"/stylesheet.css\"/></head><body></body></html>"
+      r#"<!doctype html><html><head><link rel="stylesheet" href="/stylesheet.css"/></head><body></body></html>"#
     );
   }
 
   #[test]
   fn test_use_block_in_attribute_value() {
     let res = html! { <div class={"container"}/> };
-    assert_eq!(res.render(), "<div class=\"container\"></div>");
+    assert_eq!(res.render(), r#"<div class="container"></div>"#);
   }
 
   #[test]
   fn test_use_expression_block_in_attribute_value() {
     let res = html! { <div class={ 2 + 2u8 }/> };
-    assert_eq!(res.render(), "<div class=\"4\"></div>");
+    assert_eq!(res.render(), r#"<div class="4"></div>"#);
   }
 
   #[test]
@@ -128,7 +129,10 @@ mod backend {
         <wbr>
       </html>
     };
-    assert_eq!(res.render(), "<html><area alt=\"text\" class=\"\" coords=\"\" shape=\"\"/><base href=\"https://example.com\" target=\"_blank\"/><br/><col span=\"2\" class=\"batman\"/><embed Required=\"true\" attributes=\"true\"/><hr/><img src=\"images/stickman.gif\" width=\"24\" height=\"39\" alt=\"Stickman\"/><input type=\"text\" name=\"text\" value=\"\"/><link rel=\"stylesheet\" href=\"stylesheet.css\"/><meta name=\"description\" content=\"\"/><param name=\"movie\" value=\"movie.swf\"/><source src=\"movie.ogg\" type=\"video/ogg\"/><track src=\"movie.vtt\" kind=\"subtitles\" srclang=\"en\" label=\"English\"/><wbr/></html>");
+    assert_eq!(
+      res.render(),
+      r#"<html><area alt="text" class coords shape/><base href="https://example.com" target="_blank"/><br/><col span="2" class="batman"/><embed Required attributes/><hr/><img src="images/stickman.gif" width="24" height="39" alt="Stickman"/><input type="text" name="text" value/><link rel="stylesheet" href="stylesheet.css"/><meta name="description" content/><param name="movie" value="movie.swf"/><source src="movie.ogg" type="video/ogg"/><track src="movie.vtt" kind="subtitles" srclang="en" label="English"/><wbr/></html>"#
+    );
   }
 
   #[test]
@@ -136,14 +140,17 @@ mod backend {
     let res = html! { <div data-tooltip="sum">Data attribute</div> };
     assert_eq!(
       res.render(),
-      "<div data-tooltip=\"sum\">Data attribute</div>"
+      r#"<div data-tooltip="sum">Data attribute</div>"#
     );
   }
 
   #[test]
   fn test_attribute_aria() {
     let res = html! { <div aria-label="sum">Aria attribute</div> };
-    assert_eq!(res.render(), "<div aria-label=\"sum\">Aria attribute</div>");
+    assert_eq!(
+      res.render(),
+      r#"<div aria-label="sum">Aria attribute</div>"#
+    );
   }
 
   #[test]

@@ -11,7 +11,7 @@ pub struct Children {
 impl ToTokens for Children {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
     if self.nodes.is_empty() {
-      quote! { vec![] }.to_tokens(tokens);
+      quote! { Default::default() }.to_tokens(tokens);
     } else {
       let mut list = vec![];
 

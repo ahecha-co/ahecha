@@ -18,9 +18,7 @@ impl ToTokens for AttributeValue {
         }
         .to_tokens(tokens);
       }
-      AttributeValue::Lit(s) => {
-        quote!(ahecha::html::SerializableAttributeValue(Some( #s .to_string()))).to_tokens(tokens)
-      }
+      AttributeValue::Lit(s) => quote!(#s).to_tokens(tokens),
     }
   }
 }
@@ -145,7 +143,7 @@ impl From<Option<Vec<Attribute>>> for Attributes {
 impl ToTokens for Attributes {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
     if self.attrs.is_empty() {
-      quote!(vec![])
+      quote!(Default::default())
     } else {
       let mut list = vec![];
 
@@ -161,10 +159,14 @@ impl ToTokens for Attributes {
           .map(|i| i.to_string())
           .collect::<Vec<_>>()
           .join("-");
-        list.push(quote! { (#key.to_owned(), #value) })
+
+        match value {
+          AttributeValue::Block(value) => list.push(quote! { .set(#key, #value .to_string()) }),
+          AttributeValue::Lit(_) => list.push(quote! { .set(#key, #value) }),
+        }
       }
 
-      quote!(vec![ #(#list),* ])
+      quote!( Attributes::default() #(#list)* )
     }
     .to_tokens(tokens);
   }
