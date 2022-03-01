@@ -30,24 +30,83 @@ impl Attributes {
     self
   }
 
+  pub fn set_attr<K>(mut self, key: K, value: AttributeValue) -> Self
+  where
+    K: Into<String>,
+  {
+    self.attrs.push((key.into(), value));
+    self
+  }
+
   pub fn is_empty(&self) -> bool {
     self.attrs.is_empty()
   }
 }
 
-impl<V> From<V> for AttributeValue
-where
-  V: std::fmt::Display,
-{
-  fn from(item: V) -> Self {
-    let value = item.to_string();
+macro_rules! impl_into_attribute_value {
+  ($($ty: ty),*) => {
+    $(
+      impl From<$ty> for AttributeValue
+      {
+        fn from(item: $ty) -> Self {
+          let value = format!("{}", item);
 
-    if value.is_empty() {
-      AttributeValue::None
-    } else if let Ok(boolean) = value.parse::<bool>() {
-      AttributeValue::Bool(boolean)
-    } else {
-      AttributeValue::String(value)
-    }
-  }
+          if value.is_empty() {
+            AttributeValue::None
+          } else if let Ok(boolean) = value.parse::<bool>() {
+            AttributeValue::Bool(boolean)
+          } else {
+            AttributeValue::String(value)
+          }
+        }
+      }
+
+      impl From<Option<$ty>> for AttributeValue
+      {
+        fn from(item: Option<$ty>) -> Self {
+          match item {
+            Some(value) => value.into(),
+            None => AttributeValue::None,
+          }
+        }
+      }
+
+      impl From<&$ty> for AttributeValue
+      {
+        fn from(item: &$ty) -> Self {
+          let value = format!("{}", item);
+
+          if value.is_empty() {
+            AttributeValue::None
+          } else if let Ok(boolean) = value.parse::<bool>() {
+            AttributeValue::Bool(boolean)
+          } else {
+            AttributeValue::String(value)
+          }
+        }
+      }
+
+      impl From<Option<&$ty>> for AttributeValue
+      {
+        fn from(item: Option<&$ty>) -> Self {
+          match item {
+            Some(value) => value.into(),
+            None => AttributeValue::None,
+          }
+        }
+      }
+    )*
+  };
+}
+
+impl_into_attribute_value!(
+  bool, i8, i16, i32, i64, i128, f32, f64, u8, u16, u32, u64, u128, &str, String
+);
+
+#[cfg(feature = "time")]
+mod time {
+  use super::*;
+  use time_::OffsetDateTime;
+
+  impl_into_attribute_value!(OffsetDateTime);
 }

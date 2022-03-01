@@ -161,8 +161,8 @@ impl ToTokens for Attributes {
           .join("-");
 
         match value {
-          AttributeValue::Block(value) => list.push(quote! { .set(#key, #value .to_string()) }),
-          AttributeValue::Lit(_) => list.push(quote! { .set(#key, #value) }),
+          AttributeValue::Block(value) => list.push(quote! { .set_attr( #key, #value .into() ) }),
+          AttributeValue::Lit(_) => list.push(quote! { .set( #key, #value) }),
         }
       }
 
