@@ -1,6 +1,7 @@
 use std::fmt::{Result, Write};
 
 mod attributes;
+mod children;
 mod doctype;
 mod elements;
 mod node;

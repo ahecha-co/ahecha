@@ -1,11 +1,11 @@
 use crate::{Attributes, RenderString};
 
-use super::node::Node;
+use super::children::Children;
 use std::fmt::Write;
 
 pub struct Element {
   pub attributes: Attributes,
-  pub children: Vec<Node>,
+  pub children: Children,
   pub name: &'static str,
 }
 
@@ -23,6 +23,7 @@ impl ToString for Element {
       write!(&mut buffer, "/>").unwrap();
     } else {
       let children = self
+        .children
         .children
         .iter()
         .map(|c| c.to_string())

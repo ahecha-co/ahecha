@@ -16,10 +16,13 @@ impl ToTokens for Children {
       let mut list = vec![];
 
       for node in self.nodes.iter() {
-        list.push(quote!( #node ));
+        match node {
+          Node::Block(block) => list.push(quote!( .set_node( #block .into() ) )),
+          _ => list.push(quote!( .set( #node ) )),
+        }
       }
 
-      quote! { vec![ #(#list),* ] }.to_tokens(tokens);
+      quote! { ahecha::html::Children::default() #(#list)* }.to_tokens(tokens);
     }
   }
 }

@@ -17,7 +17,8 @@ impl From<HtmlComment> for Node {
 impl ToTokens for HtmlComment {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
     let comment = &self.comment;
-    quote!( #comment ).to_tokens(tokens);
+    quote!( ahecha::html::Node::Comment(ahecha::html::Children::default().set_node( #comment .into())) )
+      .to_tokens(tokens);
   }
 }
 

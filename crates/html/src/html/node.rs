@@ -1,17 +1,21 @@
-use crate::html::{Doctype, Element};
+use crate::{
+  html::{Doctype, Element},
+  Children,
+};
 
 pub enum Node {
+  Comment(Children),
   CustomElement,
-  Document(Doctype, Vec<Node>),
+  Document(Doctype, Children),
   Element(Element),
-  Fragment(Vec<Node>),
+  Fragment(Children),
   None,
   Text(String),
 }
 
 impl From<Vec<Node>> for Node {
-  fn from(item: Vec<Node>) -> Node {
-    Node::Fragment(item)
+  fn from(children: Vec<Node>) -> Node {
+    Node::Fragment(Children { children })
   }
 }
 
@@ -27,7 +31,7 @@ impl From<Option<Node>> for Node {
 impl From<Option<Vec<Node>>> for Node {
   fn from(item: Option<Vec<Node>>) -> Node {
     match item {
-      Some(node) => Node::Fragment(node),
+      Some(children) => Node::Fragment(Children { children }),
       None => Node::None,
     }
   }
@@ -36,12 +40,19 @@ impl From<Option<Vec<Node>>> for Node {
 impl ToString for Node {
   fn to_string(&self) -> String {
     match self {
+      Node::Comment(children) => children
+        .children
+        .iter()
+        .map(|n| n.to_string())
+        .collect::<Vec<_>>()
+        .join("\n"),
       Node::CustomElement => todo!("CustomElement"),
-      Node::Document(doctype, nodes) => {
+      Node::Document(doctype, children) => {
         format!(
           "{}{}",
           doctype.to_string(),
-          nodes
+          children
+            .children
             .iter()
             .map(|n| n.to_string())
             .collect::<Vec<_>>()
@@ -49,7 +60,8 @@ impl ToString for Node {
         )
       }
       Node::Element(el) => el.to_string(),
-      Node::Fragment(nodes) => nodes
+      Node::Fragment(children) => children
+        .children
         .iter()
         .map(|n| n.to_string())
         .collect::<Vec<_>>()

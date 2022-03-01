@@ -25,6 +25,7 @@ mod test {
   use crate::{
     html::{Element, Node},
     render::RenderString,
+    Children,
   };
 
   #[test]
@@ -32,18 +33,16 @@ mod test {
     let element = Element {
       name: "div",
       attributes: Default::default(),
-      children: vec![
-        Node::Element(Element {
+      children: Children::default()
+        .set(Node::Element(Element {
           name: "span",
           attributes: Default::default(),
-          children: vec![
-            Node::Text("Hello".to_owned()),
-            Node::Text(" ".to_owned()),
-            Node::Text("1".to_owned()),
-          ],
-        }),
-        Node::Text(", World 2".to_owned()),
-      ],
+          children: Children::default()
+            .set(Node::Text("Hello".to_owned()))
+            .set(Node::Text(" ".to_owned()))
+            .set(Node::Text("1".to_owned())),
+        }))
+        .set(Node::Text(", World 2".to_owned())),
     };
 
     assert_eq!(element.render(), "<div><span>Hello 1</span>, World 2</div>");

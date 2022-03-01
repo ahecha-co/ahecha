@@ -166,7 +166,7 @@ impl ToTokens for Attributes {
         }
       }
 
-      quote!( Attributes::default() #(#list)* )
+      quote!( ahecha::html::Attributes::default() #(#list)* )
     }
     .to_tokens(tokens);
   }

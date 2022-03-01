@@ -160,7 +160,7 @@ impl RenderString for Element {
 
 #[cfg(test)]
 mod test {
-  use crate::{html::Node, Attributes};
+  use crate::{html::Node, Attributes, Children};
 
   use super::*;
 
@@ -197,11 +197,11 @@ mod test {
     let element = Element {
       name: "div",
       attributes: Attributes::default().set("class", "test"),
-      children: vec![Node::Element(Element {
+      children: Children::default().set(Node::Element(Element {
         name: "h1",
         attributes: Default::default(),
-        children: vec![Node::Text("Hello World".to_owned())],
-      })],
+        children: Children::default().set(Node::Text("Hello World".to_owned())),
+      })),
     };
 
     assert_eq!(
@@ -215,25 +215,23 @@ mod test {
     let element = Element {
       name: "div",
       attributes: Attributes::default().set("class", "test"),
-      children: vec![
-        Node::Element(Element {
+      children: Children::default()
+        .set(Node::Element(Element {
           name: "h1",
           attributes: Default::default(),
-          children: vec![
-            Node::Text("Hello ".to_owned()),
-            Node::Element(Element {
+          children: Children::default()
+            .set(Node::Text("Hello ".to_owned()))
+            .set(Node::Element(Element {
               name: "span",
               attributes: Default::default(),
-              children: vec![Node::Text("World".to_owned())],
-            }),
-          ],
-        }),
-        Node::Element(Element {
+              children: Children::default().set(Node::Text("World".to_owned())),
+            })),
+        }))
+        .set(Node::Element(Element {
           name: "p",
           attributes: Default::default(),
-          children: vec![Node::Text("This is a paragraph".to_owned())],
-        }),
-      ],
+          children: Children::default().set(Node::Text("This is a paragraph".to_owned())),
+        })),
     };
 
     assert_eq!(
@@ -247,22 +245,21 @@ mod test {
     let element = Element {
       name: "div",
       attributes: Attributes::default().set("class", "test"),
-      children: vec![Node::Element(Element {
+      children: Children::default().set(Node::Element(Element {
         name: "ul",
         attributes: Default::default(),
-        children: vec![
-          Node::Element(Element {
+        children: Children::default()
+          .set(Node::Element(Element {
             name: "li",
             attributes: Default::default(),
-            children: vec![Node::Text("Hello".to_owned())],
-          }),
-          Node::Element(Element {
+            children: Children::default().set(Node::Text("Hello".to_owned())),
+          }))
+          .set(Node::Element(Element {
             name: "li",
             attributes: Default::default(),
-            children: vec![Node::Text("World".to_owned())],
-          }),
-        ],
-      })],
+            children: Children::default().set(Node::Text("World".to_owned())),
+          })),
+      })),
     };
 
     assert_eq!(
