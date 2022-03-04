@@ -21,20 +21,14 @@ pub struct Attributes {
 }
 
 impl Attributes {
-  pub fn set<K, V>(mut self, key: K, value: V) -> Self
+  pub fn set<K, V>(mut self, tuple: Option<(K, V)>) -> Self
   where
     K: Into<String>,
     V: Into<AttributeValue>,
   {
-    self.attrs.push((key.into(), value.into()));
-    self
-  }
-
-  pub fn set_attr<K>(mut self, key: K, value: AttributeValue) -> Self
-  where
-    K: Into<String>,
-  {
-    self.attrs.push((key.into(), value));
+    if let Some((key, value)) = tuple {
+      self.attrs.push((key.into(), value.into()));
+    }
     self
   }
 

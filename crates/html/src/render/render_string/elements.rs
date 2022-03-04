@@ -180,9 +180,9 @@ mod test {
     let element = Element {
       name: "div",
       attributes: Attributes::default()
-        .set("class", "test")
-        .set("id", "test")
-        .set("style", "color: red;"),
+        .set(Some(("class", "test")))
+        .set(Some(("id", "test")))
+        .set(Some(("style", "color: red;"))),
       children: Default::default(),
     };
 
@@ -196,7 +196,7 @@ mod test {
   fn test_tag_element_with_one_child() {
     let element = Element {
       name: "div",
-      attributes: Attributes::default().set("class", "test"),
+      attributes: Attributes::default().set(Some(("class", "test"))),
       children: Children::default().set(Node::Element(Element {
         name: "h1",
         attributes: Default::default(),
@@ -214,7 +214,7 @@ mod test {
   fn test_ag_element_with_children() {
     let element = Element {
       name: "div",
-      attributes: Attributes::default().set("class", "test"),
+      attributes: Attributes::default().set(Some(("class", "test"))),
       children: Children::default()
         .set(Node::Element(Element {
           name: "h1",
@@ -244,7 +244,7 @@ mod test {
   fn test_tag_element_with_children_list() {
     let element = Element {
       name: "div",
-      attributes: Attributes::default().set("class", "test"),
+      attributes: Attributes::default().set(Some(("class", "test"))),
       children: Children::default().set(Node::Element(Element {
         name: "ul",
         attributes: Default::default(),
@@ -265,6 +265,34 @@ mod test {
     assert_eq!(
       element.render(),
       "<div class=\"test\"><ul><li>Hello</li><li>World</li></ul></div>"
+    );
+  }
+
+  #[test]
+  fn test_optional_tag_attribute() {
+    let element = Element {
+      name: "div",
+      attributes: Default::default(),
+      children: Children::default().set(Node::Element(Element {
+        name: "ul",
+        attributes: Default::default(),
+        children: Children::default()
+          .set(Node::Element(Element {
+            name: "li",
+            attributes: Attributes::default().set(Some(("class", "active"))),
+            children: Children::default().set(Node::Text("Hello".to_owned())),
+          }))
+          .set(Node::Element(Element {
+            name: "li",
+            attributes: Attributes::default().set::<&str, &str>(None),
+            children: Children::default().set(Node::Text("World".to_owned())),
+          })),
+      })),
+    };
+
+    assert_eq!(
+      element.render(),
+      r#"<div><ul><li class="active">Hello</li><li>World</li></ul></div>"#
     );
   }
 }

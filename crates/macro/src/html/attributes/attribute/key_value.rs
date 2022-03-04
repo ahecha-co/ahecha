@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use proc_macro2::{Ident, Span};
 use quote::{quote, ToTokens};
-use syn::{ext::IdentExt, parse::Parse, Block, Lit, LitBool, LitStr};
+use syn::{parse::Parse, Block, Lit, LitBool, LitStr};
 
 pub enum AttributeValue {
   Block(Block),
@@ -48,13 +48,13 @@ impl Parse for AttributeValue {
   }
 }
 
-pub struct Attribute {
+pub struct AttributeKeyValue {
   pub extended: Vec<Ident>,
   pub key: Ident,
   pub value: AttributeValue,
 }
 
-impl Debug for Attribute {
+impl Debug for AttributeKeyValue {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(
       f,
@@ -65,7 +65,7 @@ impl Debug for Attribute {
   }
 }
 
-impl Default for Attribute {
+impl Default for AttributeKeyValue {
   fn default() -> Self {
     Self {
       extended: vec![],
@@ -75,7 +75,26 @@ impl Default for Attribute {
   }
 }
 
-impl Parse for Attribute {
+impl ToTokens for AttributeKeyValue {
+  fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+    let key = vec![self.key.clone()]
+      .into_iter()
+      .chain(self.extended.clone())
+      .map(|i| i.to_string())
+      .collect::<Vec<_>>()
+      .join("-");
+
+    match &self.value {
+      AttributeValue::Block(value) => {
+        quote! { .set(Some(( #key, #value ))) }
+      }
+      AttributeValue::Lit(value) => quote! { .set(Some(( #key, #value ))) },
+    }
+    .to_tokens(tokens);
+  }
+}
+
+impl Parse for AttributeKeyValue {
   fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
     let mut extended = vec![];
     let key = if input.peek(syn::token::Type) {
@@ -111,76 +130,10 @@ impl Parse for Attribute {
       AttributeValue::Lit(Lit::Bool(LitBool::new(true, Span::call_site())))
     };
 
-    Ok(Attribute {
+    Ok(AttributeKeyValue {
       extended,
       key,
       value,
     })
-  }
-}
-
-#[derive(Debug, Default)]
-pub struct Attributes {
-  pub attrs: Vec<Attribute>,
-}
-
-impl From<Vec<Attribute>> for Attributes {
-  fn from(attrs: Vec<Attribute>) -> Self {
-    Self { attrs }
-  }
-}
-
-impl From<Option<Vec<Attribute>>> for Attributes {
-  fn from(attrs: Option<Vec<Attribute>>) -> Self {
-    if let Some(attrs) = attrs {
-      Self::from(attrs)
-    } else {
-      Self::default()
-    }
-  }
-}
-
-impl ToTokens for Attributes {
-  fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-    if self.attrs.is_empty() {
-      quote!(Default::default())
-    } else {
-      let mut list = vec![];
-
-      for Attribute {
-        extended,
-        key,
-        value,
-      } in self.attrs.iter()
-      {
-        let key = vec![key.clone()]
-          .into_iter()
-          .chain(extended.clone())
-          .map(|i| i.to_string())
-          .collect::<Vec<_>>()
-          .join("-");
-
-        match value {
-          AttributeValue::Block(value) => list.push(quote! { .set_attr( #key, #value .into() ) }),
-          AttributeValue::Lit(_) => list.push(quote! { .set( #key, #value) }),
-        }
-      }
-
-      quote!( ahecha::html::Attributes::default() #(#list)* )
-    }
-    .to_tokens(tokens);
-  }
-}
-
-impl Parse for Attributes {
-  fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-    let mut attrs = vec![];
-
-    while input.peek(syn::Ident::peek_any) {
-      let attr = input.parse()?;
-      attrs.push(attr);
-    }
-
-    Ok(Attributes { attrs })
   }
 }

@@ -158,4 +158,12 @@ mod backend {
     let res = html! { <word-count>Aria attribute</word-count> };
     assert_eq!(res.render(), "<word-count>Aria attribute</word-count>");
   }
+
+  #[test]
+  fn test_optional_tag_attribute() {
+    let class = Some(("class", "test"));
+    let selected = Option::<(&str, &str)>::None;
+    let res = html! { <div {selected} {class}>Aria attribute</div> };
+    assert_eq!(res.render(), r#"<div class="test">Aria attribute</div>"#);
+  }
 }

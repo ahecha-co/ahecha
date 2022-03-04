@@ -11,5 +11,8 @@ mod html;
 #[proc_macro]
 pub fn html(input: TokenStream) -> TokenStream {
   let view = parse_macro_input!(input as Node);
-  quote!(#view).into()
+  quote!(
+    #view
+  )
+  .into()
 }
