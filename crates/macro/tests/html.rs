@@ -160,10 +160,40 @@ mod backend {
   }
 
   #[test]
+  #[allow(unused_braces)]
   fn test_optional_tag_attribute() {
     let class = Some(("class", "test"));
     let selected = Option::<(&str, &str)>::None;
     let res = html! { <div {selected} {class}>Aria attribute</div> };
     assert_eq!(res.render(), r#"<div class="test">Aria attribute</div>"#);
   }
+
+  #[test]
+  fn test_support_string_reference_for_text_nodes() {
+    let text = "Hello World".to_string();
+    let res = html! { <div>{&text}</div> };
+    assert_eq!(res.render(), r#"<div>Hello World</div>"#);
+  }
+
+  // #[test]
+  // fn test_support_everything_that_impl_display_trait_for_text_nodes() {
+  //   struct Hello;
+
+  //   impl std::fmt::Display for Hello {
+  //     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+  //       write!(f, "Hello ")
+  //     }
+  //   }
+
+  //   struct World;
+
+  //   impl std::fmt::Display for World {
+  //     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+  //       write!(f, "World")
+  //     }
+  //   }
+
+  //   let res = html! { <div>{Hello} {&World}</div> };
+  //   assert_eq!(res.render(), r#"<div>Hello World</div>"#);
+  // }
 }
