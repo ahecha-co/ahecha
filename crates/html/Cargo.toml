@@ -21,19 +21,6 @@ chrono = ["sqlx/chrono"]
 axum-core = "0.1.2"
 http = "0.2.5"
 http-body = "0.4.4"
-
-[dependencies.serde]
-version = "1.0"
-features = ["derive"]
-
-[dependencies.sqlx]
-version = "0.5"
-features = [
-  "runtime-tokio-rustls"
-]
-optional = true
-
-[dependencies.time_]
-package = "time"
-version = "0.2.27"
-optional = true
+serde = { version = "1.0", features = ["derive"] }
+sqlx = { version = "0.5", features = ["runtime-tokio-rustls"], optional = true }
+time_ = { package = "time", version = "0.2.27", optional = true }

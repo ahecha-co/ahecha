@@ -3,6 +3,7 @@ members = [
   # "crates/cli",
   "crates/macro",
   "crates/lib",
+  "crates/live_view",
   "crates/html",
   # "crates/record",
 ]
