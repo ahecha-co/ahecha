@@ -16,3 +16,18 @@ pub fn html(input: TokenStream) -> TokenStream {
   )
   .into()
 }
+
+#[proc_macro_derive(Partial)]
+pub fn partial(item: TokenStream) -> TokenStream {
+  let input = parse_macro_input!(item as syn::ItemStruct);
+  let name = input.ident;
+  let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
+  quote!(
+    impl #impl_generics ahecha::html::partials::PartialView for #name #ty_generics #where_clause {
+      fn id() -> &'static str {
+        stringify!(#name)
+      }
+    }
+  )
+  .into()
+}
