@@ -15,52 +15,52 @@ struct PartialQuery {
 }
 
 pub trait PartialView: Component {
-  fn id() -> &'static str;
+  fn id(&self) -> String;
 }
 
-pub struct PartialInner {
+pub struct PartialLayoutBuilder {
+  path: String,
   partials: HashMap<String, Node>,
 }
 
-impl PartialInner {
+impl PartialLayoutBuilder {
   pub fn render<P>(&mut self, partial: P) -> Node
   where
     P: PartialView,
   {
     let view = partial.view();
-    self.partials.insert(P::id().to_owned(), view.clone());
+    self.partials.insert(partial.id().to_owned(), view.clone());
     view
+  }
+
+  pub fn url_for<P>(&self, partial: &P) -> String
+  where
+    P: PartialView,
+  {
+    format!("{}?partial={}", &self.path, partial.id())
   }
 }
 
 pub struct PartialLayout {
-  inner: PartialInner,
-  path: String,
+  builder: PartialLayoutBuilder,
   partial: Option<String>,
 }
 
 impl PartialLayout {
   pub fn render<F>(mut self, render: F) -> Node
   where
-    F: FnOnce(&mut PartialInner) -> Node,
+    F: FnOnce(&mut PartialLayoutBuilder) -> Node,
   {
     // TODO: find a way to register partials in the layout to avoid rendering them twice, this also will help in the future if we move the logic inside each component
-    let view = render(&mut self.inner);
+    let view = render(&mut self.builder);
 
     if let Some(partial) = self.partial.as_ref() {
-      if let Some(partial) = self.inner.partials.get(partial) {
+      if let Some(partial) = self.builder.partials.get(partial) {
         return partial.clone();
       }
     }
 
     view
-  }
-
-  pub fn url_for<P>(&self) -> String
-  where
-    P: PartialView,
-  {
-    format!("{}?partial={}", &self.path, P::id())
   }
 }
 
@@ -81,10 +81,10 @@ where
     };
 
     Ok(Self {
-      inner: PartialInner {
+      builder: PartialLayoutBuilder {
+        path,
         partials: HashMap::new(),
       },
-      path,
       partial,
     })
   }
@@ -110,7 +110,7 @@ mod test {
 
   #[test]
   fn test_partial_layout() {
-    fn main_layout(_: &mut PartialInner) -> Node {
+    fn main_layout(_: &mut PartialLayoutBuilder) -> Node {
       Node::Element(Element {
         name: "div",
         attributes: Default::default(),
@@ -119,10 +119,10 @@ mod test {
     }
 
     let layout = PartialLayout {
-      inner: PartialInner {
+      builder: PartialLayoutBuilder {
+        path: "/".to_owned(),
         partials: HashMap::new(),
       },
-      path: "/".to_owned(),
       partial: None,
     };
 
@@ -136,8 +136,8 @@ mod test {
     struct PartialTest;
 
     impl PartialView for PartialTest {
-      fn id() -> &'static str {
-        "test"
+      fn id(&self) -> String {
+        "test".to_owned()
       }
     }
 
@@ -147,7 +147,7 @@ mod test {
       }
     }
 
-    fn main_layout(inner: &mut PartialInner) -> Node {
+    fn main_layout(inner: &mut PartialLayoutBuilder) -> Node {
       Node::Element(Element {
         name: "div",
         attributes: Default::default(),
@@ -158,10 +158,10 @@ mod test {
     }
 
     let layout = PartialLayout {
-      inner: PartialInner {
+      builder: PartialLayoutBuilder {
+        path: "/".to_owned(),
         partials: HashMap::new(),
       },
-      path: "/".to_owned(),
       partial: None,
     };
 
@@ -170,14 +170,17 @@ mod test {
     assert_eq!("<div>Hello world I am a partial</div>", res.render());
 
     let layout_partial = PartialLayout {
-      inner: PartialInner {
+      builder: PartialLayoutBuilder {
+        path: "/".to_owned(),
         partials: HashMap::new(),
       },
-      path: "/".to_owned(),
       partial: Some("test".to_owned()),
     };
 
-    assert_eq!("/?partial=test", layout_partial.url_for::<PartialTest>());
+    assert_eq!(
+      "/?partial=test",
+      layout_partial.builder.url_for(&PartialTest)
+    );
 
     let res = layout_partial.render(main_layout);
 
