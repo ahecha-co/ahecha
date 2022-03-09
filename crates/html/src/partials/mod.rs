@@ -40,17 +40,20 @@ pub struct PartialLayout {
 }
 
 impl PartialLayout {
-  pub fn render<F>(self, render: F) -> Node
+  pub fn render<F>(mut self, render: F) -> Node
   where
-    F: FnOnce(&PartialInner) -> Node,
+    F: FnOnce(&mut PartialInner) -> Node,
   {
+    // TODO: find a way to register partials in the layout to avoid rendering them twice, this also will help in the future if we move the logic inside each component
+    let view = render(&mut self.inner);
+
     if let Some(partial) = self.partial.as_ref() {
       if let Some(partial) = self.inner.partials.get(partial) {
         return partial.clone();
       }
     }
 
-    render(&self.inner)
+    view
   }
 
   pub fn url_for<P>(&self) -> String
@@ -96,5 +99,88 @@ impl IntoResponse for PartialLayoutRejection {
     match self {
       Self::HeadersAlreadyExtracted(inner) => inner.into_response(),
     }
+  }
+}
+
+#[cfg(test)]
+mod test {
+  use crate::{Children, Element, RenderString};
+
+  use super::*;
+
+  #[test]
+  fn test_partial_layout() {
+    fn main_layout(_: &mut PartialInner) -> Node {
+      Node::Element(Element {
+        name: "div",
+        attributes: Default::default(),
+        children: Children::default().set(Node::Text("Hello world".to_owned())),
+      })
+    }
+
+    let layout = PartialLayout {
+      inner: PartialInner {
+        partials: HashMap::new(),
+      },
+      path: "/".to_owned(),
+      partial: None,
+    };
+
+    let res = layout.render(main_layout);
+
+    assert_eq!("<div>Hello world</div>", res.render());
+  }
+
+  #[test]
+  fn test_render_partial() {
+    struct PartialTest;
+
+    impl PartialView for PartialTest {
+      fn id() -> &'static str {
+        "test"
+      }
+    }
+
+    impl Component for PartialTest {
+      fn view(&self) -> Node {
+        Node::Text(" I am a partial".to_owned())
+      }
+    }
+
+    fn main_layout(inner: &mut PartialInner) -> Node {
+      Node::Element(Element {
+        name: "div",
+        attributes: Default::default(),
+        children: Children::default()
+          .set(Node::Text("Hello world".to_owned()))
+          .set(inner.render(PartialTest)),
+      })
+    }
+
+    let layout = PartialLayout {
+      inner: PartialInner {
+        partials: HashMap::new(),
+      },
+      path: "/".to_owned(),
+      partial: None,
+    };
+
+    let res = layout.render(main_layout);
+
+    assert_eq!("<div>Hello world I am a partial</div>", res.render());
+
+    let layout_partial = PartialLayout {
+      inner: PartialInner {
+        partials: HashMap::new(),
+      },
+      path: "/".to_owned(),
+      partial: Some("test".to_owned()),
+    };
+
+    assert_eq!("/?partial=test", layout_partial.url_for::<PartialTest>());
+
+    let res = layout_partial.render(main_layout);
+
+    assert_eq!(" I am a partial", res.render());
   }
 }
