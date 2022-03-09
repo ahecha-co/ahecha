@@ -1,4 +1,4 @@
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum AttributeValue {
   Bool(bool),
   None,
@@ -15,7 +15,7 @@ impl ToString for AttributeValue {
   }
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Debug, Clone)]
 pub struct Attributes {
   pub attrs: Vec<(String, AttributeValue)>,
 }

@@ -3,6 +3,7 @@ use crate::{
   Children,
 };
 
+#[derive(Debug, Clone)]
 pub enum Node {
   Comment(Children),
   CustomElement,

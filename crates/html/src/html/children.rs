@@ -1,6 +1,6 @@
 use crate::Node;
 
-#[derive(Default)]
+#[derive(Default, Debug, Clone)]
 pub struct Children {
   pub children: Vec<Node>,
 }
