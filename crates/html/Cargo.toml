@@ -1,6 +1,6 @@
 [package]
 name = "ahecha_html"
-version = "0.0.8"
+version = "0.0.9"
 edition = "2021"
 license = "MIT"
 description = "Ahecha html"
@@ -16,11 +16,14 @@ readme = "README.md"
 default = []
 time = ["sqlx/time", "time_"]
 chrono = ["sqlx/chrono"]
+partials = ["async-trait", "serde_urlencoded"]
 
 [dependencies]
+async-trait = { version = "0.1.52", optional = true }
 axum-core = "0.1.2"
 http = "0.2.5"
 http-body = "0.4.4"
 serde = { version = "1.0", features = ["derive"] }
+serde_urlencoded = { version = "0.7.1", optional = true }
 sqlx = { version = "0.5", features = ["runtime-tokio-rustls"], optional = true }
 time_ = { package = "time", version = "0.2.27", optional = true }
