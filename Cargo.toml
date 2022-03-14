@@ -1,8 +1,6 @@
 [workspace]
 members = [
-  # "crates/cli",
   "crates/macro",
   "crates/lib",
   "crates/html",
-  # "crates/record",
 ]
