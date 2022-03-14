@@ -19,5 +19,5 @@ partials = ["ahecha_html/partials"]
 time = ["ahecha_html/time"]
 
 [dependencies]
-ahecha_macro = { path="../macro", version="0.0.9" }
-ahecha_html = { path="../html", version="0.0.9" }
+ahecha_html = { path = "../html", version = "0.0.9" }
+ahecha_macro = { path = "../macro", version = "0.0.10" }

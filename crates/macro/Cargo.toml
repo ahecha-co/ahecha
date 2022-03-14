@@ -1,6 +1,6 @@
 [package]
 name = "ahecha_macro"
-version = "0.0.9"
+version = "0.0.10"
 edition = "2021"
 license = "MIT"
 description = "Ahecha macro crate"
@@ -13,6 +13,7 @@ readme = "README.md"
 [features]
 backend = []
 frontend = []
+extra = []
 
 [lib]
 proc-macro=true
@@ -24,5 +25,9 @@ quote = "1.0.15"
 syn = { version = "1.0.86", features = ["full"] }
 
 [dev-dependencies]
-ahecha = { path = "../lib", version = "0.0" }
+ahecha = { path = "../lib", version = "0.0", features = ["partials"] }
+ahecha_extra = { path = "../extra", version = "0.0.1" }
+axum = "0.4.8"
+axum-extra = { version = "0.1.5", features = ["typed-routing"] }
 pretty_assertions = "1.1.0"
+serde = "1.0"

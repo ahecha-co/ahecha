@@ -18,12 +18,22 @@ pub trait PartialView: Component {
   fn id(&self) -> String;
 }
 
-pub struct PartialLayoutBuilder {
+pub struct PartialBuilder {
   path: String,
   partials: HashMap<String, Node>,
 }
 
-impl PartialLayoutBuilder {
+impl PartialBuilder {
+  pub fn new<T>(path: T) -> Self
+  where
+    T: ToString,
+  {
+    Self {
+      path: path.to_string(),
+      partials: HashMap::new(),
+    }
+  }
+
   pub fn render<P>(&mut self, partial: P) -> Node
   where
     P: PartialView,
@@ -42,14 +52,14 @@ impl PartialLayoutBuilder {
 }
 
 pub struct PartialLayout {
-  builder: PartialLayoutBuilder,
+  builder: PartialBuilder,
   partial: Option<String>,
 }
 
 impl PartialLayout {
   pub fn render<F>(mut self, render: F) -> Node
   where
-    F: FnOnce(&mut PartialLayoutBuilder) -> Node,
+    F: FnOnce(&mut PartialBuilder) -> Node,
   {
     // TODO: find a way to register partials in the layout to avoid rendering them twice, this also will help in the future if we move the logic inside each component
     let view = render(&mut self.builder);
@@ -81,7 +91,7 @@ where
     };
 
     Ok(Self {
-      builder: PartialLayoutBuilder {
+      builder: PartialBuilder {
         path,
         partials: HashMap::new(),
       },
@@ -109,7 +119,7 @@ mod test {
 
   #[test]
   fn test_partial_layout() {
-    fn main_layout(_: &mut PartialLayoutBuilder) -> Node {
+    fn main_layout(_: &mut PartialBuilder) -> Node {
       Node::Element(Element {
         name: "div",
         attributes: Default::default(),
@@ -118,7 +128,7 @@ mod test {
     }
 
     let layout = PartialLayout {
-      builder: PartialLayoutBuilder {
+      builder: PartialBuilder {
         path: "/".to_owned(),
         partials: HashMap::new(),
       },
@@ -146,7 +156,7 @@ mod test {
       }
     }
 
-    fn main_layout(inner: &mut PartialLayoutBuilder) -> Node {
+    fn main_layout(inner: &mut PartialBuilder) -> Node {
       Node::Element(Element {
         name: "div",
         attributes: Default::default(),
@@ -157,7 +167,7 @@ mod test {
     }
 
     let layout = PartialLayout {
-      builder: PartialLayoutBuilder {
+      builder: PartialBuilder {
         path: "/".to_owned(),
         partials: HashMap::new(),
       },
@@ -169,7 +179,7 @@ mod test {
     assert_eq!("<div>Hello world I am a partial</div>", res.render());
 
     let layout_partial = PartialLayout {
-      builder: PartialLayoutBuilder {
+      builder: PartialBuilder {
         path: "/".to_owned(),
         partials: HashMap::new(),
       },

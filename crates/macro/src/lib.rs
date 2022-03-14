@@ -7,6 +7,8 @@ use syn::parse_macro_input;
 
 use crate::html::node::Node;
 
+#[cfg(feature = "extra")]
+mod extra;
 mod html;
 
 #[proc_macro]
@@ -32,4 +34,11 @@ pub fn partial(item: TokenStream) -> TokenStream {
     }
   )
   .into()
+}
+
+#[cfg(feature = "extra")]
+#[proc_macro_derive(Page, attributes(route))]
+pub fn page(input: TokenStream) -> TokenStream {
+  let page = parse_macro_input!(input as extra::Page);
+  quote!(#page).into()
 }
