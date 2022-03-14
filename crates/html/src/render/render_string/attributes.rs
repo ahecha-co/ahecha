@@ -20,7 +20,7 @@ impl RenderString for Attributes {
         AttributeValue::String(value) => {
           if !value.is_empty() {
             write!(writer, "=\"")?;
-            escape_html(&value, writer)?;
+            escape_html(value, writer)?;
             write!(writer, "\"")?;
           }
         }

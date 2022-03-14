@@ -29,7 +29,7 @@ impl PartialLayoutBuilder {
     P: PartialView,
   {
     let view = partial.view();
-    self.partials.insert(partial.id().to_owned(), view.clone());
+    self.partials.insert(partial.id(), view.clone());
     view
   }
 
