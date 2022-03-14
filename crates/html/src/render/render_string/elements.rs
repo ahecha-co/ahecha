@@ -160,9 +160,8 @@ impl RenderString for Element {
 
 #[cfg(test)]
 mod test {
-  use crate::{html::Node, Attributes, Children};
-
   use super::*;
+  use crate::{html::Node, Attributes, Children};
 
   #[test]
   fn test_tag_element() {

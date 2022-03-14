@@ -1,6 +1,5 @@
-use crate::Attributes;
-
 use super::children::Children;
+use crate::Attributes;
 
 #[derive(Debug, Clone)]
 pub struct Element {

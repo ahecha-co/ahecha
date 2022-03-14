@@ -7,8 +7,6 @@ mod fragment;
 mod partial;
 mod text;
 
-use quote::ToTokens;
-
 pub use block::HtmlBlock;
 pub use comment::HtmlComment;
 pub use custom_element::HtmlCustomElement;
@@ -16,12 +14,12 @@ pub use doctype::HtmlDoctype;
 pub use element::HtmlElement;
 pub use fragment::HtmlFragment;
 pub use partial::HtmlPartial;
+use quote::ToTokens;
 use syn::parse::Parse;
 pub use text::HtmlText;
 
-use crate::html::{attributes::Attributes, children::Children};
-
 use super::tag_name::TagName;
+use crate::html::{attributes::Attributes, children::Children};
 
 #[derive(Debug)]
 pub enum Node {

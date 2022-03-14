@@ -104,9 +104,8 @@ impl IntoResponse for PartialLayoutRejection {
 
 #[cfg(test)]
 mod test {
-  use crate::{Children, Element, RenderString};
-
   use super::*;
+  use crate::{Children, Element, RenderString};
 
   #[test]
   fn test_partial_layout() {

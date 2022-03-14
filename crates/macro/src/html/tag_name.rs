@@ -1,7 +1,6 @@
 use std::fmt::Display;
 
 use proc_macro2::{Ident, Span};
-
 use syn::parse::Parse;
 
 #[derive(Debug)]

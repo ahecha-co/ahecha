@@ -1,8 +1,7 @@
 use quote::{quote, ToTokens};
 
-use crate::html::{attributes::Attributes, children::Children, tag_name::TagName};
-
 use super::{HtmlCustomElement, HtmlPartial, Node};
+use crate::html::{attributes::Attributes, children::Children, tag_name::TagName};
 
 #[derive(Debug)]
 pub struct HtmlElement {

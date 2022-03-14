@@ -1,9 +1,8 @@
 use quote::{quote, ToTokens};
 use syn::parse::Parse;
 
-use crate::html::children::Children;
-
 use super::Node;
+use crate::html::children::Children;
 
 #[derive(Debug)]
 pub struct HtmlFragment {

@@ -1,5 +1,6 @@
-use quote::{quote, ToTokens};
 use std::fmt::Debug;
+
+use quote::{quote, ToTokens};
 use syn::{parse::Parse, Block};
 
 pub struct AttributeBlock {
