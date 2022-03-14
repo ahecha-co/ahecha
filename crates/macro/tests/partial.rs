@@ -18,5 +18,5 @@ fn test_partial() {
   let partial = TestPartial;
 
   assert_eq!("<div>Hello</div>", partial.view().render());
-  assert_eq!("TestPartial", partial.id());
+  assert_eq!("test-partial", partial.id());
 }
