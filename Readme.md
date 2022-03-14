@@ -1,8 +1,7 @@
 # Achecha
 
-[![Clippy + fmt](https://github.com/norman784/ahecha/actions/workflows/check-and-lint.yaml/badge.svg)](https://github.com/norman784/ahecha/actions/workflows/check-and-lint.yaml)
+[![Rust](https://github.com/ahecha-co/ahecha/actions/workflows/general.yml/badge.svg)](https://github.com/ahecha-co/ahecha/actions/workflows/general.yml)
 [![Crate](https://img.shields.io/crates/v/ahecha.svg?color=brightgreen&style=flat-square)](https://crates.io/crates/ahecha)
-[![Tests](https://github.com/norman784/ahecha/actions/workflows/test.yml/badge.svg)](https://github.com/norman784/ahecha/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A View Model framework written in rust, inspired by [next.js](https://nextjs.org).
