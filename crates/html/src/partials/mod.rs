@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::future::Future;
 
 use async_trait::async_trait;
 use axum_core::{
@@ -52,23 +53,58 @@ impl PartialBuilder {
 }
 
 pub struct PartialLayout {
-  builder: PartialBuilder,
+  path: String,
   partial: Option<String>,
 }
 
 impl PartialLayout {
-  pub fn render<F>(mut self, render: F) -> Node
+  pub fn url_for<P>(&self, partial: &P) -> String
+  where
+    P: PartialView,
+  {
+    format!("{}?partial={}", &self.path, partial.id())
+  }
+
+  pub fn render<F>(self, render: F) -> Node
   where
     F: FnOnce(&mut PartialBuilder) -> Node,
   {
     // TODO: find a way to register partials in the layout to avoid rendering them twice, this also will help in the future if we move the logic inside each component
-    let view = render(&mut self.builder);
+    let mut builder = PartialBuilder {
+      path: self.path.clone(),
+      partials: Default::default(),
+    };
+
+    let view = render(&mut builder);
 
     if let Some(partial) = self.partial.as_ref() {
-      if let Some(partial) = self.builder.partials.get(partial) {
+      if let Some(partial) = builder.partials.get(partial) {
         return partial.clone();
       }
     }
+
+    view
+  }
+
+  pub async fn render_async<F, Fut>(self, render: F) -> Node
+  where
+    F: FnOnce(PartialBuilder) -> Fut,
+    Fut: Future<Output = Node>,
+  {
+    let builder = PartialBuilder {
+      path: self.path.clone(),
+      partials: Default::default(),
+    };
+
+    let view = render(builder).await;
+
+    /*
+    if let Some(partial) = self.partial.as_ref() {
+      if let Some(partial) = builder.partials.get(partial) {
+        return partial.clone();
+      }
+    }
+    */
 
     view
   }
@@ -90,13 +126,7 @@ where
       Err(_) => None,
     };
 
-    Ok(Self {
-      builder: PartialBuilder {
-        path,
-        partials: HashMap::new(),
-      },
-      partial,
-    })
+    Ok(Self { path, partial })
   }
 }
 
@@ -128,10 +158,7 @@ mod test {
     }
 
     let layout = PartialLayout {
-      builder: PartialBuilder {
-        path: "/".to_owned(),
-        partials: HashMap::new(),
-      },
+      path: "/".to_owned(),
       partial: None,
     };
 
@@ -167,10 +194,7 @@ mod test {
     }
 
     let layout = PartialLayout {
-      builder: PartialBuilder {
-        path: "/".to_owned(),
-        partials: HashMap::new(),
-      },
+      path: "/".to_owned(),
       partial: None,
     };
 
@@ -179,17 +203,11 @@ mod test {
     assert_eq!("<div>Hello world I am a partial</div>", res.render());
 
     let layout_partial = PartialLayout {
-      builder: PartialBuilder {
-        path: "/".to_owned(),
-        partials: HashMap::new(),
-      },
+      path: "/".to_owned(),
       partial: Some("test".to_owned()),
     };
 
-    assert_eq!(
-      "/?partial=test",
-      layout_partial.builder.url_for(&PartialTest)
-    );
+    assert_eq!("/?partial=test", layout_partial.url_for(&PartialTest));
 
     let res = layout_partial.render(main_layout);
 

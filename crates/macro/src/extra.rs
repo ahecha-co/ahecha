@@ -42,20 +42,35 @@ impl ToTokens for PagePath {
     let ident = &self.ident;
     let fields = &self.fields;
 
-    quote!(
-      #[derive(axum_extra::routing::TypedPath, serde::Deserialize)]
-      #[typed_path(#path)]
-      pub struct #ident {
-        #(#fields),*
-      }
-    )
-    .to_tokens(tokens);
+    if fields.is_empty() {
+      quote!(
+        #[derive(axum_extra::routing::TypedPath, serde::Deserialize)]
+        #[typed_path(#path)]
+        pub struct #ident;
+      )
+      .to_tokens(tokens);
+    } else {
+      quote!(
+        #[derive(axum_extra::routing::TypedPath, serde::Deserialize)]
+        #[typed_path(#path)]
+        pub struct #ident {
+          #(#fields),*
+        }
+      )
+      .to_tokens(tokens);
+    }
   }
+}
+
+enum PageType {
+  Async,
+  Sync,
 }
 
 pub struct Page {
   item: ItemStruct,
   path: PagePath,
+  ty: PageType,
 }
 
 impl Parse for Page {
@@ -74,33 +89,25 @@ impl Parse for Page {
       ));
     };
 
-    if missing_field(&item.fields, "partial") {
-      return Err(syn::Error::new(
-        item.ident.span(),
-        "The field `partial: ahecha::html::PartialBuilder` is required",
-      ));
+    let ty = if missing_field(&item.fields, "partial") {
+      PageType::Sync
     } else if invalid_type(&item.fields, "partial", "PartialBuilder") {
       return Err(syn::Error::new(
         item.ident.span(),
         "The field `partial` must be of type `ahecha::html::partials::PartialBuilder`",
       ));
-    }
+    } else {
+      PageType::Async
+    };
 
-    Ok(Self { item, path })
+    Ok(Self { item, path, ty })
   }
 }
 
 impl ToTokens for Page {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
     let path = &self.path;
-    let internal_impl = internal_impl(&self.item, &self.path);
-
-    let res = quote!(
-      #internal_impl
-
-      #path
-    );
-    dbg!(res.to_string());
+    let internal_impl = internal_impl(&self.item, &self.path, &self.ty);
 
     quote!(
       #internal_impl
@@ -111,7 +118,7 @@ impl ToTokens for Page {
   }
 }
 
-fn internal_impl(item: &ItemStruct, path: &PagePath) -> TokenStream {
+fn internal_impl(item: &ItemStruct, path: &PagePath, ty: &PageType) -> TokenStream {
   let ident = &item.ident;
   let mod_ident = Ident::new(
     format!("__internal__{}", &item.ident).as_str(),
@@ -129,7 +136,7 @@ fn internal_impl(item: &ItemStruct, path: &PagePath) -> TokenStream {
     })
     .collect::<Vec<_>>();
   let params = &item.fields.iter().map(|f| &f.ident).collect::<Vec<_>>();
-  let page_component = impl_page_component(item);
+  let page_component = impl_page_component(item, ty);
   let path_ident = &path.ident;
   let path_field = if path.fields.is_empty() {
     quote!(_: #path_ident)
@@ -142,30 +149,57 @@ fn internal_impl(item: &ItemStruct, path: &PagePath) -> TokenStream {
     )
   };
   let path_params = &path.fields.iter().map(|f| &f.ident).collect::<Vec<_>>();
+  match ty {
+    PageType::Async => {
+      quote!(
+        #[doc(hidden)]
+        #[allow(non_snake_case)]
+        mod #mod_ident {
+          use super::{ #ident, #path_ident };
 
-  quote!(
-    #[doc(hidden)]
-    #[allow(non_snake_case)]
-    mod #mod_ident {
-      use axum::response::IntoResponse;
-      use ahecha::html::Component;
-      use super::{ #ident, #path_ident };
+          pub async fn handler(#path_field, ___layout: ahecha::html::partials::PartialLayout, #(#fields),*) -> axum::response::Response {
+            use axum::response::IntoResponse;
+            use ahecha_extra::AsyncComponent;
 
-      pub async fn handler(#path_field, ___layout: ahecha::html::partials::PartialLayout, #(#fields),*) -> axum::response::Response {
-        ___layout.render(|partial| {
-          #ident {
-            #(#path_params),*
-            #(#params),*
-          }.view()
-        }).into_response()
-      }
+            ___layout.render_async(|partial| async {
+              #ident {
+                #(#path_params),*
+                #(#params),*
+              }.view().await
+            }).await.into_response()
+          }
 
-      #page_component
+          #page_component
+        }
+      )
     }
-  )
+    PageType::Sync => {
+      quote!(
+        #[doc(hidden)]
+        #[allow(non_snake_case)]
+        mod #mod_ident {
+          use super::{ #ident, #path_ident };
+
+          pub async fn handler(#path_field, ___layout: ahecha::html::partials::PartialLayout, #(#fields),*) -> axum::response::Response {
+            use axum::response::IntoResponse;
+            use ahecha_extra::Component;
+
+            ___layout.render(|partial| {
+              #ident {
+                #(#path_params),*
+                #(#params),*
+              }.view()
+            }).into_response()
+          }
+
+          #page_component
+        }
+      )
+    }
+  }
 }
 
-fn impl_page_component(item: &ItemStruct) -> TokenStream {
+fn impl_page_component(item: &ItemStruct, ty: &PageType) -> TokenStream {
   let ident = &item.ident;
   let generics = &item.generics;
   let generics_params = if item.generics.params.is_empty() {
@@ -174,9 +208,14 @@ fn impl_page_component(item: &ItemStruct) -> TokenStream {
     let params = &item.generics.params;
     quote!(< #params >)
   };
+  let page_ident = match ty {
+    PageType::Async => quote!(AsyncPageRoute),
+    PageType::Sync => quote!(PageRoute),
+  };
+
   quote!(
     #[doc(hidden)]
-    impl #generics_params ahecha_extra::PageRoute for #ident #generics {
+    impl #generics_params ahecha_extra:: #page_ident for #ident #generics {
       fn mount() -> axum::Router {
         use axum_extra::routing::RouterExt;
         axum::Router::new().typed_get(handler)
