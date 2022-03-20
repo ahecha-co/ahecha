@@ -99,7 +99,7 @@ impl_into_attribute_value!(
 
 #[cfg(feature = "time")]
 mod time {
-  use time_::OffsetDateTime;
+  use ::time::OffsetDateTime;
 
   use super::*;
 

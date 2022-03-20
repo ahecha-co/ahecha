@@ -6,6 +6,15 @@ pub struct Children {
 }
 
 impl Children {
+  pub fn find_live_view(&self, id: &str) -> Option<Node> {
+    for child in &self.children {
+      if let Some(node) = child.find_live_view(id) {
+        return Some(node);
+      }
+    }
+    None
+  }
+
   pub fn set<C>(mut self, child: C) -> Self
   where
     C: Into<Node>,

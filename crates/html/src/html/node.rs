@@ -1,6 +1,6 @@
 use crate::{
   html::{Doctype, Element},
-  Children,
+  Children, LiveView,
 };
 
 #[derive(Debug, Clone)]
@@ -11,7 +11,27 @@ pub enum Node {
   Element(Element),
   Fragment(Children),
   None,
+  LiveView(LiveView),
   Text(String),
+}
+
+impl Node {
+  pub fn find_live_view(&self, id: &str) -> Option<Node> {
+    match self {
+      Node::LiveView(partial) => {
+        dbg!(&partial.id, id, partial.id == id);
+        if partial.id == id {
+          Some(Node::Fragment(partial.children.clone()))
+        } else {
+          partial.children.find_live_view(id)
+        }
+      }
+      Node::Fragment(children) => children.find_live_view(id),
+      Node::Document(_, children) => children.find_live_view(id),
+      Node::Element(el) => el.children.find_live_view(id),
+      _ => None,
+    }
+  }
 }
 
 impl From<Vec<Node>> for Node {

@@ -4,7 +4,7 @@ mod custom_element;
 mod doctype;
 mod element;
 mod fragment;
-mod partial;
+mod live_view;
 mod text;
 
 pub use block::HtmlBlock;
@@ -13,12 +13,12 @@ pub use custom_element::HtmlCustomElement;
 pub use doctype::HtmlDoctype;
 pub use element::HtmlElement;
 pub use fragment::HtmlFragment;
-pub use partial::HtmlPartial;
+pub use live_view::LiveView;
 use quote::ToTokens;
 use syn::parse::Parse;
 pub use text::HtmlText;
 
-use super::tag_name::TagName;
+use super::{attributes::attribute::Attribute, tag_name::TagName};
 use crate::html::{attributes::Attributes, children::Children};
 
 #[derive(Debug)]
@@ -29,7 +29,7 @@ pub enum Node {
   Doctype(HtmlDoctype),
   Element(HtmlElement),
   Fragment(HtmlFragment),
-  Partial(HtmlPartial),
+  LiveView(LiveView),
   Text(HtmlText),
 }
 
@@ -42,7 +42,7 @@ impl ToTokens for Node {
       Node::Doctype(doctype) => doctype.to_tokens(tokens),
       Node::Element(element) => element.to_tokens(tokens),
       Node::Fragment(fragment) => fragment.to_tokens(tokens),
-      Node::Partial(partial) => partial.to_tokens(tokens),
+      Node::LiveView(live_view) => live_view.to_tokens(tokens),
       Node::Text(text) => text.to_tokens(tokens),
     }
   }
@@ -57,7 +57,7 @@ impl ToString for Node {
       Node::Doctype(doctype) => doctype.to_string(),
       Node::Element(element) => element.to_string(),
       Node::Fragment(fragment) => fragment.to_string(),
-      Node::Partial(partial) => partial.to_string(),
+      Node::LiveView(live_view) => live_view.to_string(),
       Node::Text(text) => text.to_string(),
     }
   }
@@ -111,19 +111,46 @@ impl Parse for Node {
         .expect("Ident to have at least one letter")
         .is_uppercase()
       {
-        if name.to_string().ends_with("Partial") || name.to_string().ends_with("Page") {
-          Ok(Node::Partial(HtmlPartial {
-            attributes,
-            children,
-            name,
-          }))
-        } else {
-          Ok(Node::CustomElement(HtmlCustomElement {
-            name,
-            attributes,
-            children,
-          }))
+        Ok(Node::CustomElement(HtmlCustomElement {
+          name,
+          attributes,
+          children,
+        }))
+      } else if name.to_string() == "live-view" {
+        if !attributes.key_exists("event") {
+          return Err(syn::Error::new(
+            name.span(),
+            "`live-view` must have an `event` attribute",
+          ));
+        } else if !attributes.key_exists("action") {
+          return Err(syn::Error::new(
+            name.span(),
+            "`live-view` must have a `action` attribute",
+          ));
         }
+        let id = if let Attribute::KeyValue(attr) = attributes
+          .attrs
+          .iter()
+          .find(|attr| match attr {
+            Attribute::KeyValue(attr) => attr.key == "action",
+            _ => false,
+          })
+          .unwrap()
+        {
+          attr.value.clone()
+        } else {
+          return Err(syn::Error::new(
+            name.span(),
+            "`live-view` must have a `action` attribute",
+          ));
+        };
+
+        Ok(Node::LiveView(LiveView {
+          attributes,
+          children,
+          // TODO: when stabilized Span::start() replace this https://github.com/rust-lang/rust/issues/54725
+          id,
+        }))
       } else {
         Ok(Node::Element(HtmlElement {
           name,

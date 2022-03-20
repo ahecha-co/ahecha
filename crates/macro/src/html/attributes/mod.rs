@@ -12,6 +12,12 @@ pub struct Attributes {
   pub attrs: Vec<Attribute>,
 }
 
+impl Attributes {
+  pub fn key_exists(&self, key: &str) -> bool {
+    self.attrs.iter().any(|attr| attr.key_exists(key))
+  }
+}
+
 impl From<Vec<Attribute>> for Attributes {
   fn from(attrs: Vec<Attribute>) -> Self {
     Self { attrs }

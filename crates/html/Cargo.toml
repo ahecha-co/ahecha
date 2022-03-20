@@ -13,9 +13,7 @@ readme = "README.md"
 [lib]
 
 [features]
-default = []
-time = ["sqlx/time", "time_"]
-chrono = ["sqlx/chrono"]
+default = ["time"]
 partials = ["async-trait", "serde_urlencoded"]
 
 [dependencies]
@@ -23,7 +21,6 @@ async-trait = { version = "0.1.52", optional = true }
 axum-core = "0.1.2"
 http = "0.2.5"
 http-body = "0.4.4"
-serde = { version = "1.0.136", features = ["derive"] }
-serde_urlencoded = { version = "0.7.1", optional = true }
-sqlx = { version = "0.5.11", features = ["runtime-tokio-rustls"], optional = true }
-time_ = { package = "time", version = "0.2.27", optional = true }
+serde = { version = "1.0", features = ["derive"] }
+serde_urlencoded = { version = "0.7", optional = true }
+time = { package = "time", version = "0.2.27", optional = true }

@@ -16,6 +16,7 @@ impl RenderString for Node {
       Self::Element(element) => element.render_into(writer)?,
       Self::Fragment(elements) => elements.render_into(writer)?,
       Self::None => (),
+      Self::LiveView(partial) => partial.render_into(writer)?,
       Self::Text(text) => text.render_into(writer)?,
     }
 

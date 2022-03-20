@@ -196,4 +196,20 @@ mod backend {
   //   let res = html! { <div>{Hello} {&World}</div> };
   //   assert_eq!(res.render(), r#"<div>Hello World</div>"#);
   // }
+
+  #[test]
+  fn test_live_view() {
+    let res = html! { <div><live-view event="test" action="/partial">I am alive</live-view></div> };
+    assert_eq!(
+      res.render(),
+      r#"<div><live-view event="test" action="/partial">I am alive</live-view></div>"#
+    );
+  }
+
+  #[test]
+  fn test_find_live_view() {
+    let res: Node = html! { <div><live-view event="test" action="/partial"><span>I am alive</span></live-view></div> };
+    let view = res.find_live_view("/partial");
+    assert_eq!(view.unwrap().render(), r#"<span>I am alive</span>"#);
+  }
 }

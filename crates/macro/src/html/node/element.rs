@@ -1,6 +1,6 @@
 use quote::{quote, ToTokens};
 
-use super::{HtmlCustomElement, HtmlPartial, Node};
+use super::{HtmlCustomElement, Node};
 use crate::html::{attributes::Attributes, children::Children, tag_name::TagName};
 
 #[derive(Debug)]
@@ -20,19 +20,19 @@ impl From<HtmlElement> for Node {
       .unwrap_or_default()
       .is_uppercase()
     {
-      if element.name.to_string().ends_with("Partial") {
-        Node::Partial(HtmlPartial {
-          attributes: element.attributes,
-          children: element.children,
-          name: element.name,
-        })
-      } else {
-        Node::CustomElement(HtmlCustomElement {
-          attributes: element.attributes,
-          children: element.children,
-          name: element.name,
-        })
-      }
+      // if element.name.to_string().ends_with("Partial") {
+      //   Node::LiveView(LiveView {
+      //     attributes: element.attributes,
+      //     children: element.children,
+      //     name: element.name,
+      //   })
+      // } else {
+      Node::CustomElement(HtmlCustomElement {
+        attributes: element.attributes,
+        children: element.children,
+        name: element.name,
+      })
+      // }
     } else {
       Node::Element(element)
     }

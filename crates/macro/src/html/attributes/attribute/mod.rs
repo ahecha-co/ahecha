@@ -15,6 +15,15 @@ pub enum Attribute {
   KeyValue(AttributeKeyValue),
 }
 
+impl Attribute {
+  pub fn key_exists(&self, key: &str) -> bool {
+    match self {
+      Attribute::Block(_) => false,
+      Attribute::KeyValue(key_value) => key_value.key.to_string() == key,
+    }
+  }
+}
+
 impl Parse for Attribute {
   fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
     if input.peek(Ident::peek_any) {

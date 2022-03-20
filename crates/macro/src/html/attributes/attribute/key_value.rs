@@ -4,6 +4,7 @@ use proc_macro2::{Ident, Span};
 use quote::{quote, ToTokens};
 use syn::{parse::Parse, Block, Lit, LitBool, LitStr};
 
+#[derive(Clone)]
 pub enum AttributeValue {
   Block(Block),
   Lit(Lit),
