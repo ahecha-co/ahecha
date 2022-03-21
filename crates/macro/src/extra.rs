@@ -62,15 +62,9 @@ impl ToTokens for PagePath {
   }
 }
 
-enum PageType {
-  Async,
-  Sync,
-}
-
 pub struct Page {
   item: ItemStruct,
   path: PagePath,
-  ty: PageType,
 }
 
 impl Parse for Page {
@@ -89,25 +83,14 @@ impl Parse for Page {
       ));
     };
 
-    let ty = if missing_field(&item.fields, "partial") {
-      PageType::Sync
-    } else if invalid_type(&item.fields, "partial", "PartialBuilder") {
-      return Err(syn::Error::new(
-        item.ident.span(),
-        "The field `partial` must be of type `ahecha::html::partials::PartialBuilder`",
-      ));
-    } else {
-      PageType::Async
-    };
-
-    Ok(Self { item, path, ty })
+    Ok(Self { item, path })
   }
 }
 
 impl ToTokens for Page {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
     let path = &self.path;
-    let internal_impl = internal_impl(&self.item, &self.path, &self.ty);
+    let internal_impl = internal_impl(&self.item, &self.path);
 
     quote!(
       #internal_impl
@@ -118,7 +101,7 @@ impl ToTokens for Page {
   }
 }
 
-fn internal_impl(item: &ItemStruct, path: &PagePath, ty: &PageType) -> TokenStream {
+fn internal_impl(item: &ItemStruct, path: &PagePath) -> TokenStream {
   let ident = &item.ident;
   let mod_ident = Ident::new(
     format!("__internal__{}", &item.ident).as_str(),
@@ -129,19 +112,27 @@ fn internal_impl(item: &ItemStruct, path: &PagePath, ty: &PageType) -> TokenStre
     .iter()
     .filter(|f| {
       if let Some(ident) = &f.ident {
-        ident.to_string() != "partial"
+        path
+          .fields
+          .iter()
+          .find(|f| {
+            f.ident
+              .as_ref()
+              .map_or_else(|| false, |f_ident| f_ident == ident)
+          })
+          .is_none()
       } else {
         false
       }
     })
     .collect::<Vec<_>>();
-  let params = &item.fields.iter().map(|f| &f.ident).collect::<Vec<_>>();
-  let page_component = impl_page_component(item, ty);
+  let params = fields.iter().map(|f| &f.ident).collect::<Vec<_>>();
+  let page_component = impl_page_component(item);
   let path_ident = &path.ident;
   let path_field = if path.fields.is_empty() {
     quote!(_: #path_ident)
   } else {
-    let path_fields = &path.fields;
+    let path_fields = &path.fields.iter().map(|f| &f.ident).collect::<Vec<_>>();
     quote!(
       #path_ident {
         #(#path_fields),*
@@ -149,57 +140,32 @@ fn internal_impl(item: &ItemStruct, path: &PagePath, ty: &PageType) -> TokenStre
     )
   };
   let path_params = &path.fields.iter().map(|f| &f.ident).collect::<Vec<_>>();
-  match ty {
-    PageType::Async => {
-      quote!(
-        #[doc(hidden)]
-        #[allow(non_snake_case)]
-        mod #mod_ident {
-          use super::{ #ident, #path_ident };
 
-          pub async fn handler(#path_field, ___layout: ahecha::html::partials::PartialLayout, #(#fields),*) -> axum::response::Response {
-            use axum::response::IntoResponse;
-            use ahecha_extra::AsyncComponent;
+  quote!(
+    #[doc(hidden)]
+    #[allow(non_snake_case)]
+    mod #mod_ident {
+      use super::*;
+      use super::{ #ident, #path_ident };
+      use axum::extract::FromRequest;
 
-            ___layout.render_async(|partial| async {
-              #ident {
-                #(#path_params),*
-                #(#params),*
-              }.view().await
-            }).await.into_response()
-          }
+      pub async fn handler(#path_field, #(#fields),*) -> axum::response::Response {
+        use axum::response::IntoResponse;
+        use ahecha_extra::Component;
 
-          #page_component
-        }
-      )
+
+        #ident {
+          #(#path_params,)*
+          #(#params,)*
+        }.view().await.into_response()
+      }
+
+      #page_component
     }
-    PageType::Sync => {
-      quote!(
-        #[doc(hidden)]
-        #[allow(non_snake_case)]
-        mod #mod_ident {
-          use super::{ #ident, #path_ident };
-
-          pub async fn handler(#path_field, ___layout: ahecha::html::partials::PartialLayout, #(#fields),*) -> axum::response::Response {
-            use axum::response::IntoResponse;
-            use ahecha_extra::Component;
-
-            ___layout.render(|partial| {
-              #ident {
-                #(#path_params),*
-                #(#params),*
-              }.view()
-            }).into_response()
-          }
-
-          #page_component
-        }
-      )
-    }
-  }
+  )
 }
 
-fn impl_page_component(item: &ItemStruct, ty: &PageType) -> TokenStream {
+fn impl_page_component(item: &ItemStruct) -> TokenStream {
   let ident = &item.ident;
   let generics = &item.generics;
   let generics_params = if item.generics.params.is_empty() {
@@ -208,50 +174,14 @@ fn impl_page_component(item: &ItemStruct, ty: &PageType) -> TokenStream {
     let params = &item.generics.params;
     quote!(< #params >)
   };
-  let page_ident = match ty {
-    PageType::Async => quote!(AsyncPageRoute),
-    PageType::Sync => quote!(PageRoute),
-  };
 
   quote!(
     #[doc(hidden)]
-    impl #generics_params ahecha_extra:: #page_ident for #ident #generics {
+    impl #generics_params ahecha_extra::PageRoute for #ident #generics {
       fn mount() -> axum::Router {
         use axum_extra::routing::RouterExt;
         axum::Router::new().typed_get(handler)
       }
     }
   )
-}
-
-fn missing_field(fields: &Fields, field: &str) -> bool {
-  fields
-    .iter()
-    .filter(|f| {
-      if let Some(f) = &f.ident {
-        f.to_string() == field
-      } else {
-        false
-      }
-    })
-    .collect::<Vec<_>>()
-    .is_empty()
-}
-
-fn invalid_type(fields: &Fields, field: &str, ty: &str) -> bool {
-  fields
-    .iter()
-    .filter(|f| {
-      if let Some(f) = &f.ident {
-        f.to_string() == field
-      } else {
-        false
-      }
-    })
-    .filter(|f| {
-      let f_ty = &f.ty;
-      quote!(#f_ty).to_string().contains(ty)
-    })
-    .collect::<Vec<_>>()
-    .is_empty()
 }
