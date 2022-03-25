@@ -4,6 +4,8 @@
 [![Crate](https://img.shields.io/crates/v/ahecha.svg?color=brightgreen&style=flat-square)](https://crates.io/crates/ahecha)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+# > ⚠️ Experimental, the readme might reflect the current state/goals of the project
+
 A View Model framework written in rust, inspired by [next.js](https://nextjs.org).
 
 ## Motivation
@@ -19,7 +21,7 @@ but still isn't enough, so my goal is to try to port a similar experience into R
 - Solid web app foundations
 - Fun to work with
 - Flexible
-- Eliminate the need to maintain routes
+- ~~Eliminate the need to maintain routes~~
 - ~~Brainless ORM/migration system~~
 
 ## Features
@@ -27,14 +29,8 @@ but still isn't enough, so my goal is to try to port a similar experience into R
 - [x] Html templating
 - [ ] Custom elements SSR
 - [ ] Custom elements hydrate
-- [ ] No more string routes references
-- [ ] Mutation API (POST, PUT, PATCH, DELETE requests) with server and client side support
-- [ ] Query API (GET request) with server and client side support
-- [ ] Rest API support
-- [ ] Page support
-- [ ] Warp integration
-- [ ] Rocket integration
-- [ ] Actix-web integration
+- [x] No more string routes references
+- [x] Page support
 
 ### Build component based webs
 
