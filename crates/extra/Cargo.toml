@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 ahecha_html = { path = "../html", version = "0.0.9" }
 ahecha_macro = { path = "../macro", version = "0.0.10", features = ["extra"] }
-axum = "0.4.8"
+axum = "0.4"
 dyn-clone = "1.0"
 http = "0.2"
 serde = "1.0"
@@ -17,6 +17,7 @@ tokio = { version = "1.0", features = ["macros"] }
 
 [dev-dependencies]
 ahecha = { path = "../lib", version = "0", features = ["partials"] }
-async-trait = "0.1.52"
-axum-extra = { version = "0.1.5", features = ["typed-routing"] }
+async-trait = "0.1"
+axum-extra = { version = "0.1", features = ["typed-routing"] }
+axum-macros = "0.1"
 serde = { version = "1.0", features = ["derive"] }

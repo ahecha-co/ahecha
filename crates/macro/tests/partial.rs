@@ -1,6 +1,6 @@
 use ahecha::{
   html::{partials::PartialView, Component, Node, RenderString},
-  prelude::html,
+  macros::html,
 };
 use ahecha_macro::Partial;
 

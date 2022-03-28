@@ -105,3 +105,19 @@ mod time {
 
   impl_into_attribute_value!(OffsetDateTime);
 }
+
+impl<K, V> From<Vec<(K, V)>> for Attributes
+where
+  K: Into<String>,
+  V: Into<AttributeValue>,
+{
+  fn from(attrs: Vec<(K, V)>) -> Self {
+    let mut res = Attributes::default();
+
+    for (key, value) in attrs {
+      res.attrs.push((key.into(), value.into()));
+    }
+
+    res
+  }
+}

@@ -1,16 +1,19 @@
-use std::{collections::HashMap, future::Future};
+use std::collections::HashMap;
 
-use ahecha_html::Node;
+use ahecha_html::{Children, Node};
 use axum::extract::{FromRequest, RequestParts};
 use dyn_clone::DynClone;
 use serde::Deserialize;
 
-pub struct Partial {
+use crate::PageComponent;
+
+#[derive(Default)]
+pub struct PartialManager {
   path: String,
   partials: HashMap<String, Box<dyn PartialView>>,
 }
 
-impl Partial {
+impl PartialManager {
   pub fn new<T>(path: T) -> Self
   where
     T: ToString,
@@ -25,15 +28,15 @@ impl Partial {
     self.partials.get(id)
   }
 
-  pub async fn render<P>(&mut self, partial: P) -> Node
+  pub async fn render<P>(&mut self, partial: P, scope: &mut Scope) -> Node
   where
     P: PartialView + 'static,
   {
-    let boxed: Box<dyn PartialView> = Box::new(partial);
+    let boxed = Box::new(partial);
     self
       .partials
       .insert(boxed.id(), dyn_clone::clone_box(&*boxed));
-    boxed.view().await
+    boxed.view(scope).await
   }
 
   pub fn url_for<P>(&self, partial: &P) -> String
@@ -44,20 +47,36 @@ impl Partial {
   }
 }
 
-pub trait PartialView: Component + DynClone {
+pub trait PartialView: Component + DynClone + Send + Sync {
   fn id(&self) -> String;
 }
 
 #[axum::async_trait]
 pub trait Component {
-  async fn view(&self) -> Node;
+  async fn view(&self, scope: &mut Scope) -> Node;
+}
+
+pub trait ErrorComponent {
+  fn view(&self) -> Node;
+  fn error(&self) -> Node;
+}
+
+impl ErrorComponent for () {
+  fn view(&self) -> Node {
+    Node::None
+  }
+
+  fn error(&self) -> Node {
+    Node::None
+  }
 }
 
 // TODO: Find an elegant way to require FromRequest<T> trait to be implemented for Layout
 pub trait Layout {
-  type Props: Clone;
+  type Error: ErrorComponent;
   type Slots: Default;
-  fn render<'a, P>(&self, scope: Scope<P, Self::Slots>, body: Node) -> Node;
+  fn can_render_errors(&self) -> bool;
+  fn render(&self, slots: Self::Slots, body: Node) -> Node;
 }
 
 #[derive(Deserialize)]
@@ -78,26 +97,32 @@ impl<L> View<L>
 where
   L: Layout,
 {
-  pub async fn render<F, P, O>(&mut self, view: F, props: P) -> Node
+  pub async fn render<P>(&mut self, page: P) -> Node
   where
-    F: Fn(Scope<P, L::Slots>) -> O,
-    O: Future<Output = Element<P, L::Slots>>,
+    P: PageComponent<L>,
   {
-    let scope = Scope {
+    let mut scope = Scope {
       partial_id: self.partial_id.clone(),
-      partials: Partial::new(&self.path),
-      props,
-      slots: Default::default(),
+      partials: PartialManager::new(&self.path),
     };
-    let (body, scope) = view(scope).await;
+    let body = match page.view(&mut scope).await {
+      Ok(body) => body,
+      Err(err) => {
+        if self.layout.can_render_errors() {
+          Node::Fragment(Children::default().set(err.view()).set(err.error()))
+        } else {
+          err.view()
+        }
+      }
+    };
 
     if let Some(partial_id) = self.partial_id.as_ref() {
       if let Some(partial) = scope.partials.get(partial_id) {
-        return partial.view().await;
+        return partial.view(&mut scope.clone()).await;
       }
     }
 
-    self.layout.render(scope, body)
+    self.layout.render(page.slots().await, body)
   }
 }
 
@@ -126,20 +151,17 @@ where
   }
 }
 
-pub struct Scope<Props = (), S = ()>
-where
-  S: Default,
-{
+#[derive(Default)]
+pub struct Scope {
   partial_id: Option<String>,
-  partials: Partial,
-  pub props: Props,
-  pub slots: S,
+  partials: PartialManager,
 }
 
-impl<Props, S> Scope<Props, S>
-where
-  S: Default,
-{
+impl Scope {
+  pub fn new() -> Self {
+    Default::default()
+  }
+
   pub async fn partial<P>(&mut self, partial: P) -> Node
   where
     P: PartialView + 'static,
@@ -151,11 +173,20 @@ where
       }
     }
 
-    self.partials.render(partial).await
+    self.partials.render(partial, &mut self.clone()).await
   }
 }
 
-pub type Element<P = (), S = ()> = (Node, Scope<P, S>);
+impl Clone for Scope {
+  fn clone(&self) -> Self {
+    Self {
+      partial_id: self.partial_id.clone(),
+      partials: Default::default(),
+    }
+  }
+}
+
+pub type Element = Node;
 
 #[cfg(test)]
 mod test {
@@ -171,81 +202,62 @@ mod test {
 
   #[tokio::test]
   async fn test_app() {
+    #[derive(axum_macros::FromRequest)]
     struct TestLayout;
 
     impl Layout for TestLayout {
-      type Props = ();
+      type Error = ();
       type Slots = ();
 
-      fn render<'a, P>(&self, _scope: Scope<P>, body: Node) -> Node {
+      fn can_render_errors(&self) -> bool {
+        true
+      }
+
+      fn render(&self, _slots: Self::Slots, body: Node) -> Node {
         body
       }
     }
 
-    #[axum::async_trait]
-    impl<B> FromRequest<B> for TestLayout
-    where
-      B: Send, // required by `async_trait`
-    {
-      type Rejection = http::StatusCode;
-
-      async fn from_request(_: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
-        Ok(TestLayout)
-      }
-    }
-
-    let mut view_engine = View {
+    let mut view = View {
       layout: TestLayout,
       partial_id: None,
       path: "/".to_owned(),
     };
 
-    async fn view(scope: Scope) -> Element {
-      let (_, scope) = view2(scope).await;
-      let b = view2(scope).await;
-      b
-    }
+    struct TestPage;
 
-    async fn view2(scope: Scope) -> Element {
-      (
-        Node::Element(ahecha_html::Element {
+    #[axum::async_trait]
+    impl PageComponent<TestLayout> for TestPage {
+      async fn view(&self, _scope: &mut Scope) -> Result<Node, <TestLayout as Layout>::Error> {
+        Ok(Node::Element(ahecha_html::Element {
           name: "div",
           attributes: Default::default(),
           children: Children::default().set(Node::Text("Hello".to_owned())),
-        }),
-        scope,
-      )
+        }))
+      }
     }
 
-    let el = view_engine.render(view, ()).await;
+    let el = view.render(TestPage).await;
     assert_eq!(el.render(), "<div>Hello</div>");
   }
 
   #[tokio::test]
   async fn test_partial() {
+    #[derive(axum_macros::FromRequest)]
     struct TestLayout;
 
     impl Layout for TestLayout {
-      type Props = ();
+      type Error = ();
       type Slots = ();
 
-      fn render<'a, P>(&self, _scope: Scope<P>, body: Node) -> Node {
+      fn can_render_errors(&self) -> bool {
+        true
+      }
+
+      fn render(&self, _slots: Self::Slots, body: Node) -> Node {
         body
       }
     }
-
-    #[axum::async_trait]
-    impl<B> FromRequest<B> for TestLayout
-    where
-      B: Send, // required by `async_trait`
-    {
-      type Rejection = http::StatusCode;
-
-      async fn from_request(_: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
-        Ok(TestLayout)
-      }
-    }
-
     #[derive(Clone)]
     struct TestPartial;
 
@@ -257,31 +269,33 @@ mod test {
 
     #[async_trait::async_trait]
     impl Component for TestPartial {
-      async fn view(&self) -> Node {
+      async fn view(&self, _: &mut Scope) -> Node {
         Node::Text("I am a partial".to_owned())
       }
     }
 
-    let mut view_engine = View {
+    let mut view = View {
       layout: TestLayout,
       partial_id: Some("test".to_owned()),
       path: "/".to_owned(),
     };
 
-    async fn view(mut scope: Scope) -> Element {
-      (
-        Node::Element(ahecha_html::Element {
+    struct TestPage;
+
+    #[axum::async_trait]
+    impl PageComponent<TestLayout> for TestPage {
+      async fn view(&self, scope: &mut Scope) -> Result<Node, <TestLayout as Layout>::Error> {
+        Ok(Node::Element(ahecha_html::Element {
           name: "div",
           attributes: Default::default(),
           children: Children::default()
             .set(Node::Text("Hello".to_owned()))
             .set(scope.partial(TestPartial).await),
-        }),
-        scope,
-      )
+        }))
+      }
     }
 
-    let el = view_engine.render(view, ()).await;
+    let el = view.render(TestPage).await;
     assert_eq!(el.render(), "I am a partial");
   }
 
@@ -290,10 +304,14 @@ mod test {
     struct TestLayout;
 
     impl Layout for TestLayout {
-      type Props = ();
+      type Error = ();
       type Slots = ();
 
-      fn render<'a, P>(&self, _scope: Scope<P>, body: Node) -> Node {
+      fn can_render_errors(&self) -> bool {
+        true
+      }
+
+      fn render(&self, _slots: Self::Slots, body: Node) -> Node {
         body
       }
     }

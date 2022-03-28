@@ -1,6 +1,8 @@
+use http::{StatusCode, Uri};
+
 use crate::{
   html::{Doctype, Element},
-  Children, LiveView,
+  Children, Component, LiveView,
 };
 
 #[derive(Debug, Clone)]
@@ -12,6 +14,8 @@ pub enum Node {
   Fragment(Children),
   None,
   LiveView(LiveView),
+  Raw(String),
+  Redirect(StatusCode, Uri),
   Text(String),
 }
 
@@ -53,6 +57,54 @@ impl From<Option<Vec<Node>>> for Node {
   fn from(item: Option<Vec<Node>>) -> Node {
     match item {
       Some(children) => Node::Fragment(Children { children }),
+      None => Node::None,
+    }
+  }
+}
+
+impl<C> From<std::slice::Iter<'_, C>> for Node
+where
+  C: Component,
+{
+  fn from(item: std::slice::Iter<C>) -> Node {
+    Node::Fragment(Children {
+      children: item.map(|c| c.view()).collect(),
+    })
+  }
+}
+
+impl<C> From<Vec<C>> for Node
+where
+  C: Component,
+{
+  fn from(item: Vec<C>) -> Node {
+    Node::Fragment(Children {
+      children: item.into_iter().map(|c| c.into()).collect(),
+    })
+  }
+}
+
+impl<C> From<Option<C>> for Node
+where
+  C: Component,
+{
+  fn from(item: Option<C>) -> Node {
+    match item {
+      Some(node) => node.into(),
+      None => Node::None,
+    }
+  }
+}
+
+impl<C> From<Option<Vec<C>>> for Node
+where
+  C: Component,
+{
+  fn from(item: Option<Vec<C>>) -> Node {
+    match item {
+      Some(item) => Node::Fragment(Children {
+        children: item.into_iter().map(|c| c.into()).collect(),
+      }),
       None => Node::None,
     }
   }

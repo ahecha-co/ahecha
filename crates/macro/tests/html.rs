@@ -1,6 +1,9 @@
 #[cfg(feature = "backend")]
 mod backend {
-  use ahecha::prelude::*;
+  use ahecha::{
+    html::{Node, RenderString},
+    macros::html,
+  };
   use pretty_assertions::assert_eq;
 
   #[test]

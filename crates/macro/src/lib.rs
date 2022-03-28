@@ -37,7 +37,7 @@ pub fn partial(item: TokenStream) -> TokenStream {
 }
 
 #[cfg(feature = "extra")]
-#[proc_macro_derive(Page, attributes(route))]
+#[proc_macro_derive(Page, attributes(layout, method, route))]
 pub fn page(input: TokenStream) -> TokenStream {
   let page = parse_macro_input!(input as extra::Page);
   quote!(#page).into()

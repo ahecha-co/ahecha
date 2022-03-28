@@ -1,40 +1,49 @@
-use ahecha_extra::view::{Component, Layout, View};
+use ahecha_extra::{
+  view::{Layout, Scope},
+  PageComponent,
+};
 use ahecha_html::Node;
 use ahecha_macro::{html, Page};
 use axum::extract::{FromRequest, RequestParts};
 
-// #[derive(Page)]
-// #[route("/simple_route")]
-// struct SimplePage {}
+#[derive(Page)]
+#[route("/simple_route")]
+#[layout(TestLayout)]
+struct SimplePage {}
 
-// #[axum::async_trait]
-// impl Component for SimplePage {
-//   async fn view(&self) -> Node {
-//     html!(<span>Hello component</span>)
-//   }
-// }
+#[axum::async_trait]
+impl PageComponent<TestLayout> for SimplePage {
+  async fn view(&self, _: &mut Scope) -> Result<Node, <TestLayout as Layout>::Error> {
+    Ok(html!(<span>Hello component</span>))
+  }
+}
 
-// #[derive(Page)]
-// #[route("/with_params/:id")]
-// struct WithParamsPage {
-//   id: String,
-// }
+#[derive(Page)]
+#[route("/with_params/:id")]
+#[layout(TestLayout)]
+struct WithParamsPage {
+  id: String,
+}
 
-// #[axum::async_trait]
-// impl Component for WithParamsPage {
-//   async fn view(&self) -> Node {
-//     html!(<span>Hello component</span>)
-//   }
-// }
+#[axum::async_trait]
+impl PageComponent<TestLayout> for WithParamsPage {
+  async fn view(&self, _: &mut Scope) -> Result<Node, <TestLayout as Layout>::Error> {
+    Ok(html!(<span>Hello component {&self.id}</span>))
+  }
+}
 
 pub struct TestLayout;
 
 impl Layout for TestLayout {
-  type Props = ();
+  type Error = ();
   type Slots = ();
 
-  fn render<'a, P>(&self, scope: ahecha_extra::view::Scope<P, Self::Slots>, body: Node) -> Node {
-    todo!()
+  fn can_render_errors(&self) -> bool {
+    false
+  }
+
+  fn render(&self, _: Self::Slots, body: Node) -> Node {
+    body
   }
 }
 
@@ -52,13 +61,12 @@ where
 
 #[derive(Page)]
 #[route("/partial_page")]
-struct PartialPage {
-  view: View<TestLayout>,
-}
+#[layout(TestLayout)]
+struct PartialPage;
 
 #[axum::async_trait]
-impl Component for PartialPage {
-  async fn view(&self) -> Node {
-    html!(<div>Hello async component</div>)
+impl PageComponent<TestLayout> for PartialPage {
+  async fn view(&self, _: &mut Scope) -> Result<Node, <TestLayout as Layout>::Error> {
+    Ok(html!(<div>Hello async component</div>))
   }
 }

@@ -17,6 +17,13 @@ impl RenderString for Node {
       Self::Fragment(elements) => elements.render_into(writer)?,
       Self::None => (),
       Self::LiveView(partial) => partial.render_into(writer)?,
+      Self::Raw(text) => write!(writer, "{}", text)?,
+      // FIXME: LOL
+      Self::Redirect(_, location) => write!(
+        writer,
+        "<script>window.location.href = '{}';</script>",
+        location
+      )?,
       Self::Text(text) => text.render_into(writer)?,
     }
 
