@@ -4,7 +4,7 @@
 [![Crate](https://img.shields.io/crates/v/ahecha.svg?color=brightgreen&style=flat-square)](https://crates.io/crates/ahecha)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-# > ⚠️ Experimental, the readme might reflect the current state/goals of the project
+# > ⚠️ Experimental, the readme might not reflect the current state/goals of the project
 
 A View Model framework written in rust, inspired by [next.js](https://nextjs.org).
 
