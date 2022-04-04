@@ -332,6 +332,6 @@ mod test {
       StatusCode::OK
     }
 
-    Router::<StatusCode>::new().route("/", get(handler));
+    // Router::new().route("/", get(handler));
   }
 }

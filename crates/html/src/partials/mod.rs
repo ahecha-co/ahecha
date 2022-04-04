@@ -3,7 +3,7 @@ use std::future::Future;
 
 use async_trait::async_trait;
 use axum_core::{
-  extract::{rejection::HeadersAlreadyExtracted, FromRequest, RequestParts},
+  extract::{FromRequest, RequestParts},
   response::{IntoResponse, Response},
 };
 use serde::Deserialize;
@@ -130,15 +130,11 @@ where
   }
 }
 
-pub enum PartialLayoutRejection {
-  HeadersAlreadyExtracted(HeadersAlreadyExtracted),
-}
+pub enum PartialLayoutRejection {}
 
 impl IntoResponse for PartialLayoutRejection {
   fn into_response(self) -> Response {
-    match self {
-      Self::HeadersAlreadyExtracted(inner) => inner.into_response(),
-    }
+    todo!("Implement PartialLayoutRejection")
   }
 }
 

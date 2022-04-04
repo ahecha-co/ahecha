@@ -1,8 +1,14 @@
 use ahecha_html::Node;
 pub use ahecha_macro::Page;
+pub mod image;
+// mod record;
+// mod server_component;
 pub mod view;
 
-pub use view::Component;
+pub use self::{
+  image::{AhechaImagePage, Image},
+  view::Component,
+};
 use view::{Layout, Scope};
 
 #[axum::async_trait]
