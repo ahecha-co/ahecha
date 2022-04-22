@@ -10,6 +10,7 @@ use crate::html::node::Node;
 #[cfg(feature = "extra")]
 mod extra;
 mod html;
+mod typed_html;
 
 #[proc_macro]
 pub fn html(input: TokenStream) -> TokenStream {
@@ -36,6 +37,22 @@ pub fn partial(item: TokenStream) -> TokenStream {
   .into()
 }
 
+#[cfg(feature = "extra")]
+#[proc_macro_derive(NestedPage, attributes(layout, method, route))]
+pub fn nested_page(input: TokenStream) -> TokenStream {
+  let mut item = parse_macro_input!(input as extra::PageV2);
+  item.set_nested(true);
+  quote!(#item).into()
+}
+
+#[cfg(feature = "extra")]
+#[proc_macro_derive(PageV2, attributes(layout, method, route))]
+pub fn page_v2(input: TokenStream) -> TokenStream {
+  let mut item = parse_macro_input!(input as extra::PageV2);
+  item.set_nested(false);
+  println!("{}", quote!(#item).to_string());
+  quote!(#item).into()
+}
 #[cfg(feature = "extra")]
 #[proc_macro_derive(Page, attributes(layout, method, route))]
 pub fn page(input: TokenStream) -> TokenStream {

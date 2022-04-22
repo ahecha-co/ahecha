@@ -3,9 +3,10 @@ use std::collections::HashMap;
 use ahecha_html::{Children, Node};
 use axum::extract::{FromRequest, RequestParts};
 use dyn_clone::DynClone;
+use http::StatusCode;
 use serde::Deserialize;
 
-use crate::PageComponent;
+use crate::{HttpMethod, PageComponent};
 
 #[derive(Default)]
 pub struct PartialManager {
@@ -28,7 +29,7 @@ impl PartialManager {
     self.partials.get(id)
   }
 
-  pub async fn render<P>(&mut self, partial: P, scope: &mut Scope) -> Node
+  pub async fn render<P>(&mut self, partial: P, scope: &mut PageScope) -> Node
   where
     P: PartialView + 'static,
   {
@@ -49,11 +50,15 @@ impl PartialManager {
 
 pub trait PartialView: Component + DynClone + Send + Sync {
   fn id(&self) -> String;
+
+  fn methods(&self) -> Vec<HttpMethod> {
+    vec![HttpMethod::GET]
+  }
 }
 
 #[axum::async_trait]
 pub trait Component {
-  async fn view(&self, scope: &mut Scope) -> Node;
+  async fn view(&self, scope: &mut PageScope) -> Node;
 }
 
 pub trait ErrorComponent {
@@ -75,7 +80,11 @@ impl ErrorComponent for () {
 pub trait Layout {
   type Error: ErrorComponent;
   type Slots: Default;
-  fn can_render_errors(&self) -> bool;
+
+  fn can_render_errors(&self) -> bool {
+    false
+  }
+
   fn render(&self, slots: Self::Slots, body: Node) -> Node;
 }
 
@@ -101,9 +110,10 @@ where
   where
     P: PageComponent<L>,
   {
-    let mut scope = Scope {
+    let mut scope = PageScope {
       partial_id: self.partial_id.clone(),
       partials: PartialManager::new(&self.path),
+      ..Default::default()
     };
     let body = match page.view(&mut scope).await {
       Ok(body) => body,
@@ -152,14 +162,28 @@ where
 }
 
 #[derive(Default)]
-pub struct Scope {
+pub struct Scope {}
+
+#[derive(Default)]
+pub struct PageScope {
+  debug_mode: bool,
+  is_partial: bool,
   partial_id: Option<String>,
   partials: PartialManager,
+  status: StatusCode,
 }
 
-impl Scope {
+impl PageScope {
   pub fn new() -> Self {
     Default::default()
+  }
+
+  pub fn is_debug(&self) -> bool {
+    self.debug_mode
+  }
+
+  pub fn is_partial(&self) -> bool {
+    self.is_partial
   }
 
   pub async fn partial<P>(&mut self, partial: P) -> Node
@@ -175,13 +199,32 @@ impl Scope {
 
     self.partials.render(partial, &mut self.clone()).await
   }
+
+  pub fn status(&self) -> StatusCode {
+    self.status
+  }
 }
 
-impl Clone for Scope {
+#[axum::async_trait]
+impl<B> FromRequest<B> for PageScope
+where
+  B: Sync + Send,
+{
+  type Rejection = (StatusCode, Node);
+
+  async fn from_request(_: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
+    Ok(Default::default())
+  }
+}
+
+impl Clone for PageScope {
   fn clone(&self) -> Self {
     Self {
+      debug_mode: self.debug_mode,
+      is_partial: self.is_partial,
       partial_id: self.partial_id.clone(),
       partials: Default::default(),
+      status: self.status,
     }
   }
 }
@@ -191,12 +234,7 @@ pub type Element = Node;
 #[cfg(test)]
 mod test {
   use ahecha_html::{Children, RenderString};
-  use axum::{
-    extract::FromRequest,
-    response::IntoResponse,
-    routing::{get, Router},
-  };
-  use http::StatusCode;
+  use axum::extract::FromRequest;
 
   use super::*;
 
@@ -228,7 +266,7 @@ mod test {
 
     #[axum::async_trait]
     impl PageComponent<TestLayout> for TestPage {
-      async fn view(&self, _scope: &mut Scope) -> Result<Node, <TestLayout as Layout>::Error> {
+      async fn view(&self, _scope: &mut PageScope) -> Result<Node, <TestLayout as Layout>::Error> {
         Ok(Node::Element(ahecha_html::Element {
           name: "div",
           attributes: Default::default(),
@@ -269,7 +307,7 @@ mod test {
 
     #[async_trait::async_trait]
     impl Component for TestPartial {
-      async fn view(&self, _: &mut Scope) -> Node {
+      async fn view(&self, _: &mut PageScope) -> Node {
         Node::Text("I am a partial".to_owned())
       }
     }
@@ -284,7 +322,7 @@ mod test {
 
     #[axum::async_trait]
     impl PageComponent<TestLayout> for TestPage {
-      async fn view(&self, scope: &mut Scope) -> Result<Node, <TestLayout as Layout>::Error> {
+      async fn view(&self, scope: &mut PageScope) -> Result<Node, <TestLayout as Layout>::Error> {
         Ok(Node::Element(ahecha_html::Element {
           name: "div",
           attributes: Default::default(),
@@ -328,9 +366,9 @@ mod test {
       }
     }
 
-    async fn handler(_: View<TestLayout>) -> impl IntoResponse {
-      StatusCode::OK
-    }
+    // async fn handler(_: View<TestLayout>) -> impl IntoResponse {
+    //   StatusCode::OK
+    // }
 
     // Router::new().route("/", get(handler));
   }

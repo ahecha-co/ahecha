@@ -1,4 +1,4 @@
-use proc_macro2::{Ident, TokenStream};
+use proc_macro2::{Ident, Span, TokenStream};
 use quote::{quote, ToTokens};
 use syn::{
   parse::{Parse, ParseStream},
@@ -6,31 +6,37 @@ use syn::{
 };
 
 enum Method {
-  DELETE,
-  GET,
-  PATCH,
-  POST,
-  PUT,
+  DELETE(Span),
+  GET(Span),
+  PATCH(Span),
+  POST(Span),
+  PUT(Span),
 }
 
 impl Method {
   pub fn from(path: &Path) -> Self {
-    match path
-      .segments
-      .first()
-      .unwrap()
-      .ident
-      .to_string()
-      .to_lowercase()
-      .as_str()
-    {
-      "delete" => Method::DELETE,
-      "get" => Method::GET,
-      "patch" => Method::PATCH,
-      "post" => Method::POST,
-      "put" => Method::PUT,
+    let ident = &path.segments.first().unwrap().ident;
+    match ident.to_string().to_lowercase().as_str() {
+      "delete" => Method::DELETE(ident.span()),
+      "get" => Method::GET(ident.span()),
+      "patch" => Method::PATCH(ident.span()),
+      "post" => Method::POST(ident.span()),
+      "put" => Method::PUT(ident.span()),
       _ => panic!("Unknown method"),
     }
+  }
+}
+
+impl ToTokens for Method {
+  fn to_tokens(&self, tokens: &mut TokenStream) {
+    let method = match self {
+      Method::DELETE(span) => Ident::new("DELETE", *span),
+      Method::GET(span) => Ident::new("GET", *span),
+      Method::PATCH(span) => Ident::new("PATH", *span),
+      Method::POST(span) => Ident::new("POST", *span),
+      Method::PUT(span) => Ident::new("PUT", *span),
+    };
+    quote!( ahecha_extra::HttpMethod:: #method ).to_tokens(tokens);
   }
 }
 
@@ -156,12 +162,13 @@ impl Parse for Page {
     } else {
       vec![]
     };
+    let span = item.ident.span();
 
     Ok(Self {
       item,
       layout_ident,
       methods: if methods.is_empty() {
-        vec![Method::GET]
+        vec![Method::GET(span)]
       } else {
         methods
       },
@@ -263,11 +270,11 @@ fn impl_page_component(item: &ItemStruct, page: &Page) -> TokenStream {
     .methods
     .iter()
     .map(|m| match m {
-      Method::DELETE => quote!(typed_delete),
-      Method::GET => quote!(typed_get),
-      Method::PATCH => quote!(typed_patch),
-      Method::POST => quote!(typed_post),
-      Method::PUT => quote!(typed_put),
+      Method::DELETE(_) => quote!(typed_delete),
+      Method::GET(_) => quote!(typed_get),
+      Method::PATCH(_) => quote!(typed_patch),
+      Method::POST(_) => quote!(typed_post),
+      Method::PUT(_) => quote!(typed_put),
     })
     .collect::<Vec<_>>();
 
@@ -280,4 +287,160 @@ fn impl_page_component(item: &ItemStruct, page: &Page) -> TokenStream {
       }
     }
   )
+}
+
+pub struct PageV2 {
+  is_nested: bool,
+  item: ItemStruct,
+  methods: Vec<Method>,
+  path: PagePath,
+}
+
+impl PageV2 {
+  pub fn set_nested(&mut self, is_nested: bool) {
+    self.is_nested = is_nested;
+  }
+}
+
+impl Parse for PageV2 {
+  fn parse(input: ParseStream) -> syn::Result<Self> {
+    let item: ItemStruct = input.parse()?;
+    let path = if let Some(attr) = item.attrs.iter().find(|a| {
+      let a_path = &a.path;
+      quote!(#a_path).to_string() == "route"
+    }) {
+      let path = attr.parse_args::<syn::LitStr>()?;
+      PagePath::new(path.value(), &item.ident, &item.fields)
+    } else {
+      return Err(syn::Error::new(
+        item.ident.span(),
+        "`#[route]` attribute is required",
+      ));
+    };
+    let methods = if let Some(attr) = item.attrs.iter().find(|a| {
+      let a_path = &a.path;
+      quote!(#a_path).to_string() == "method"
+    }) {
+      let meta = attr.parse_meta()?;
+
+      match meta {
+        syn::Meta::Path(value) => vec![Method::from(&value)],
+        syn::Meta::List(value) => value
+          .nested
+          .iter()
+          .map(|value| match value {
+            syn::NestedMeta::Meta(syn::Meta::Path(value)) => Method::from(&value),
+            _ => {
+              panic!("Unknown method")
+            }
+          })
+          .collect::<Vec<_>>(),
+        _ => {
+          return Err(syn::Error::new(
+            item.ident.span(),
+            "`#[method]` attribute doesn't support the specified syntax",
+          ))
+        }
+      }
+    } else {
+      vec![]
+    };
+
+    Ok(Self {
+      is_nested: false,
+      item,
+      methods,
+      path,
+    })
+  }
+}
+
+impl ToTokens for PageV2 {
+  fn to_tokens(&self, tokens: &mut TokenStream) {
+    let ident = &self.item.ident;
+    let generics_params = if self.item.generics.params.is_empty() {
+      quote!()
+    } else {
+      let params = &self.item.generics.params;
+      quote!(< #params >)
+    };
+    let page_path = &self.path;
+    let generics = &self.item.generics;
+    let fields_ty: Vec<TokenStream> = vec![];
+    let fields: Vec<TokenStream> = vec![];
+    let mut extra_fields_ty = vec![];
+    let path_ident = Ident::new(format!("{}Path", ident).as_str(), ident.span());
+    let path_fields = vec![quote!()];
+    let methods = &self.methods;
+
+    let render = if self.is_nested {
+      quote! { (status, body).into_response() }
+    } else {
+      extra_fields_ty.push(quote! { layout: <#ident as Page>::Layout });
+      quote! {
+        use ahecha_extra::Layout;
+        if scope.is_partial() {
+          (status, body).into_response()
+        } else {
+          layout.render(page.slots().await, body).into_response()
+        }
+      }
+    };
+
+    quote! {
+      #page_path
+
+      impl #generics_params ahecha_extra::page::NestedPage for #ident #generics {
+        type Path = #path_ident;
+
+        fn methods() -> Vec<ahecha_extra::HttpMethod> {
+          vec![#(#methods),*]
+        }
+      }
+
+      impl #generics_params #ident #generics {
+        pub fn mount(mut router: axum::Router) -> axum::Router {
+          use axum_extra::routing::RouterExt;
+          use ahecha_extra::page::Component;
+          async fn handler(
+            #path_ident { #(#path_fields),* }: #path_ident,
+            scope: ahecha_extra::Scope,
+            #(#extra_fields_ty),*
+            #(#fields_ty),*
+          ) -> axum::response::Response {
+            let page = #ident {
+              #(#path_fields),*
+              #(#fields),*
+            };
+
+            let (status, body, debug) = match page.render(scope.clone()).await {
+              Ok((scope, body)) => (scope.status(), body, Node::None),
+              Err((status, body, debug)) => (
+                status,
+                body,
+                if scope.is_debug() { debug } else { Node::None },
+              ),
+            };
+
+            let body = html!(<>{body}{debug}</>);
+
+            #render
+          }
+
+          for method in <#ident as ahecha_extra::page::NestedPage>::methods().iter() {
+            router = match method {
+              ahecha_extra::HttpMethod::DELETE => router.typed_delete(handler),
+              ahecha_extra::HttpMethod::GET => router.typed_get(handler),
+              ahecha_extra::HttpMethod::PATCH => router.typed_patch(handler),
+              ahecha_extra::HttpMethod::POST => router.typed_post(handler),
+              ahecha_extra::HttpMethod::PUT => router.typed_put(handler),
+            }
+          }
+
+          router
+        }
+      }
+    }
+    .to_tokens(tokens);
+  }
 }

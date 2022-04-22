@@ -1,15 +1,24 @@
 use ahecha_html::Node;
 pub use ahecha_macro::Page;
-pub mod image;
+// pub mod image;
+pub mod page;
 // mod record;
-// mod server_component;
+pub mod fn_component;
+// pub mod router;
+// pub mod typed_html;
 pub mod view;
 
-pub use self::{
-  image::{AhechaImagePage, Image},
-  view::Component,
-};
-use view::{Layout, Scope};
+#[derive(Copy, Clone)]
+pub enum HttpMethod {
+  DELETE,
+  GET,
+  PATCH,
+  POST,
+  PUT,
+}
+
+pub use self::view::Component;
+pub use view::{Layout, PageScope};
 
 #[axum::async_trait]
 pub trait PageComponent<L>: Send + Sync
@@ -20,5 +29,5 @@ where
     L::Slots::default()
   }
 
-  async fn view(&self, scope: &mut Scope) -> Result<Node, L::Error>;
+  async fn view(&self, scope: &mut PageScope) -> Result<Node, L::Error>;
 }

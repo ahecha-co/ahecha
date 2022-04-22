@@ -1,5 +1,5 @@
 use ahecha_extra::{
-  view::{Layout, Scope},
+  view::{Layout, PageScope},
   PageComponent,
 };
 use ahecha_html::Node;
@@ -13,7 +13,7 @@ struct SimplePage {}
 
 #[axum::async_trait]
 impl PageComponent<TestLayout> for SimplePage {
-  async fn view(&self, _: &mut Scope) -> Result<Node, <TestLayout as Layout>::Error> {
+  async fn view(&self, _: &mut PageScope) -> Result<Node, <TestLayout as Layout>::Error> {
     Ok(html!(<span>Hello component</span>))
   }
 }
@@ -27,7 +27,7 @@ struct WithParamsPage {
 
 #[axum::async_trait]
 impl PageComponent<TestLayout> for WithParamsPage {
-  async fn view(&self, _: &mut Scope) -> Result<Node, <TestLayout as Layout>::Error> {
+  async fn view(&self, _: &mut PageScope) -> Result<Node, <TestLayout as Layout>::Error> {
     Ok(html!(<span>Hello component {&self.id}</span>))
   }
 }
@@ -66,7 +66,7 @@ struct PartialPage;
 
 #[axum::async_trait]
 impl PageComponent<TestLayout> for PartialPage {
-  async fn view(&self, _: &mut Scope) -> Result<Node, <TestLayout as Layout>::Error> {
+  async fn view(&self, _: &mut PageScope) -> Result<Node, <TestLayout as Layout>::Error> {
     Ok(html!(<div>Hello async component</div>))
   }
 }

@@ -96,6 +96,8 @@ enum DataType {
 }
 
 // TODO: This needs to be implemented for each database engine
+
+#[cfg(feature = "mysql")]
 mod mysql {
   use super::{CreateTableInternal, DataType, Result, Write};
 
@@ -140,6 +142,35 @@ mod mysql {
           write!(w, ")")
         }
         DataType::Bool => write!(w, "BOOLEAN"),
+      }
+    }
+  }
+}
+
+// #[cfg(feature = "postgres")]
+mod postgres {
+  use super::{CreateTableInternal, DataType, Result, Write};
+
+  impl CreateTableInternal for DataType {
+    fn create_table_internal<W>(&self, w: &mut W) -> Result
+    where
+      W: Write,
+    {
+      match self {
+        DataType::I8 => write!(w, "SMALLINT"),
+        DataType::I16 => write!(w, "SMALLINT"),
+        DataType::I32 => write!(w, "INTEGER"),
+        DataType::I64 => write!(w, "BIGINT"),
+        DataType::U8 => write!(w, "SMALLINT"),
+        DataType::U16 => write!(w, "SMALLINT"),
+        DataType::U32 => write!(w, "INTEGER"),
+        DataType::U64 => write!(w, "BIGINT"),
+        DataType::F32 => write!(w, "REAL"),
+        DataType::F64 => write!(w, "DOUBLE PRECISION"),
+        DataType::DECIMAL(ld, rd) => write!(w, "DECIMAL({ld}, {rd})"),
+        DataType::String(_) => todo!(),
+        DataType::Enum(_) => todo!(),
+        DataType::Bool => todo!(),
       }
     }
   }
