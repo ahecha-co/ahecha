@@ -20,7 +20,7 @@ partials = ["async-trait", "serde_urlencoded"]
 
 [dependencies]
 async-trait = { version = "0.1.52", optional = true }
-axum-core = "0.1.2"
+axum-core = "0.2.3"
 http = "0.2.5"
 http-body = "0.4.4"
 serde = { version = "1.0.136", features = ["derive"] }
