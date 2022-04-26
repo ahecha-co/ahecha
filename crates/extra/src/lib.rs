@@ -3,7 +3,7 @@ pub use ahecha_macro::Page;
 // pub mod image;
 pub mod page;
 // mod record;
-pub mod fn_component;
+// pub mod fn_component;
 // pub mod router;
 // pub mod typed_html;
 pub mod view;

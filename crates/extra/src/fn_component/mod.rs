@@ -1,71 +1,126 @@
-// TODO: Deal with events
-// TODO: CSR (client side rendering)
-
 use std::{fmt::Display, rc::Rc};
 
-use serde::de::DeserializeOwned;
+use serde::{de::DeserializeOwned, Serialize};
 
-#[derive(Default)]
-pub struct SerializedProps {
-  props: Vec<(String, Option<String>)>,
-}
+// TODO: This trait will enable the state to tell the context that it has been updated
+pub trait ContextState: Serialize {}
 
-impl Display for SerializedProps {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    self.props.iter().try_for_each(|(key, value)| match value {
-      Some(value) => write!(f, r#" data-props-{}="{}""#, key, value),
-      None => write!(f, " {}", key),
-    })
-  }
-}
-
-pub trait Props: DeserializeOwned {
-  fn serialize_props(&self) -> SerializedProps;
-}
-
-impl Props for () {
-  fn serialize_props(&self) -> SerializedProps {
-    SerializedProps { props: vec![] }
-  }
-}
-
-pub struct Scope<P = (), C = ()>
+pub struct Context<S = ()>
 where
-  C: Context,
+  S: ContextState,
+{
+  pub state: S,
+  scope_id: usize,
+  // TODO: hide behind `frontend` feature flag
+  document: Option<web_sys::Document>,
+}
+
+impl<S> Context<S>
+where
+  S: ContextState,
+{
+  pub fn new() -> Self {
+    Self::from_state(())
+  }
+
+  pub fn from_state(state: S) -> Self {
+    Self {
+      state,
+      scope_id: 1,
+      document: None,
+    }
+  }
+
+  // TODO: hide behind `frontend` feature flag
+  pub fn from_document(document: web_sys::Document) -> Self {
+    Self {
+      // TODO: hydrate the context state, maybe write a script tag with the json state and read from there.
+      state: (),
+      scope_id: 1,
+      document: Some(document),
+    }
+  }
+
+  // TODO: add implementation for when the `frontend` feature flag is enabled and other without
+  fn scope<P>(&mut self) -> Scope<P, S>
+  where
+    P: Props,
+  {
+    if let Some(document) = self.document.as_ref() {
+      // TODO: get the scope params from the tag `data-props-*` attrs
+      self.scope_with_props(())
+    } else {
+      self.scope_with_props(())
+    }
+  }
+
+  fn scope_with_props<P>(&mut self, props: P) -> Scope<P, S>
+  where
+    P: Props,
+  {
+    let id = self.scope_id;
+    self.scope_id += 1;
+    Scope::new(id, Rc::new(&self), props)
+  }
+}
+
+impl Display for Context {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(
+      f,
+      "<script>const CONTEXT_STATE_DATA = {};</script>",
+      serde_json::to_string(&self.state)
+    )
+  }
+}
+
+pub struct Scope<P = (), S = ()>
+where
+  S: ContextState,
   P: Props,
 {
   id: String,
-  context: Rc<C>,
-  document: Option<web_sys::Document>,
+  scope_id: usize,
+  context: Rc<Context<S>>,
   props: P,
 }
 
-impl<P, C> Scope<P, C>
+impl<P, S> Scope<P, S>
 where
-  C: Context,
+  S: ContextState,
   P: Props,
 {
-  pub fn new<ID>(id: ID, context: Rc<C>, props: P) -> Self
-  where
-    ID: Display,
-  {
+  pub fn new(id: usize, context: Rc<Context<S>>, props: P) -> Self {
     Self {
       id: id.to_string(),
+      scope_id: 0,
       context,
-      document: None,
       props,
     }
   }
 
-  fn with<ID, PP>(cx: &Scope<PP, C>, id: ID, props: P) -> Self
+  fn child_scope<PP>(&mut self) -> Self
   where
-    ID: Display,
     PP: Props,
   {
+    if let Some(document) = self.context.document.as_ref() {
+      // TODO: hydrate
+      self.child_scope_with_props(())
+    } else {
+      self.child_scope_with_props(())
+    }
+  }
+
+  fn child_scope_with_scope<PP>(&mut self, props: PP) -> Self
+  where
+    PP: Props,
+  {
+    let id = self.scope_id;
+    self.scope_id += 1;
     Self {
-      id: format!("{}.{}", cx.id, id),
-      context: cx.context.clone(),
-      document: None,
+      id: format!("{}.{}", self.id, id),
+      scope_id: 0,
+      context: self.context.clone(),
       props,
     }
   }
@@ -77,20 +132,6 @@ where
       } else {
         None
       },
-    }
-  }
-
-  fn from_document<ID>(document: web_sys::Document, id: ID, context: C) -> Self
-  where
-    ID: Display,
-  {
-    let id = id.to_string();
-    let props = Self::get_props(&document, &id);
-    Self {
-      id,
-      context: Rc::new(context),
-      document: Some(document),
-      props,
     }
   }
 
@@ -121,6 +162,30 @@ where
     let json = serde_json::Value::Object(attrs);
     // TODO: deal with the error
     serde_json::from_value(json).unwrap()
+  }
+}
+
+#[derive(Default)]
+pub struct SerializedProps {
+  props: Vec<(String, Option<String>)>,
+}
+
+impl Display for SerializedProps {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    self.props.iter().try_for_each(|(key, value)| match value {
+      Some(value) => write!(f, r#" data-props-{}="{}""#, key, value),
+      None => write!(f, " {}", key),
+    })
+  }
+}
+
+pub trait Props: DeserializeOwned {
+  fn serialize_props(&self) -> SerializedProps;
+}
+
+impl Props for () {
+  fn serialize_props(&self) -> SerializedProps {
+    SerializedProps { props: vec![] }
   }
 }
 
