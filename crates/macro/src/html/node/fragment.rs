@@ -21,6 +21,7 @@ impl ToTokens for HtmlFragment {
     let element = quote!(
       ahecha::html::Node::Fragment(
         #children,
+        ahecha::html::NodeId::new(),
       )
     );
     element.to_tokens(tokens);

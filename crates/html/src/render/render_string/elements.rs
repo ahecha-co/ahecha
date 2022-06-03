@@ -161,7 +161,7 @@ impl RenderString for Element {
 #[cfg(test)]
 mod test {
   use super::*;
-  use crate::{html::Node, Attributes, Children};
+  use crate::{html::Node, Attributes, Children, NodeId};
 
   #[test]
   fn test_tag_element() {
@@ -196,11 +196,14 @@ mod test {
     let element = Element {
       name: "div",
       attributes: Attributes::default().set(Some(("class", "test"))),
-      children: Children::default().set(Node::Element(Element {
-        name: "h1",
-        attributes: Default::default(),
-        children: Children::default().set(Node::Text("Hello World".to_owned())),
-      })),
+      children: Children::default().set(Node::Element(
+        Element {
+          name: "h1",
+          attributes: Default::default(),
+          children: Children::default().set(Node::Text("Hello World".to_owned())),
+        },
+        NodeId::new(),
+      )),
     };
 
     assert_eq!(
@@ -215,22 +218,31 @@ mod test {
       name: "div",
       attributes: Attributes::default().set(Some(("class", "test"))),
       children: Children::default()
-        .set(Node::Element(Element {
-          name: "h1",
-          attributes: Default::default(),
-          children: Children::default()
-            .set(Node::Text("Hello ".to_owned()))
-            .set(Node::Element(Element {
-              name: "span",
-              attributes: Default::default(),
-              children: Children::default().set(Node::Text("World".to_owned())),
-            })),
-        }))
-        .set(Node::Element(Element {
-          name: "p",
-          attributes: Default::default(),
-          children: Children::default().set(Node::Text("This is a paragraph".to_owned())),
-        })),
+        .set(Node::Element(
+          Element {
+            name: "h1",
+            attributes: Default::default(),
+            children: Children::default()
+              .set(Node::Text("Hello ".to_owned()))
+              .set(Node::Element(
+                Element {
+                  name: "span",
+                  attributes: Default::default(),
+                  children: Children::default().set(Node::Text("World".to_owned())),
+                },
+                NodeId::new(),
+              )),
+          },
+          NodeId::new(),
+        ))
+        .set(Node::Element(
+          Element {
+            name: "p",
+            attributes: Default::default(),
+            children: Children::default().set(Node::Text("This is a paragraph".to_owned())),
+          },
+          NodeId::new(),
+        )),
     };
 
     assert_eq!(
@@ -244,21 +256,30 @@ mod test {
     let element = Element {
       name: "div",
       attributes: Attributes::default().set(Some(("class", "test"))),
-      children: Children::default().set(Node::Element(Element {
-        name: "ul",
-        attributes: Default::default(),
-        children: Children::default()
-          .set(Node::Element(Element {
-            name: "li",
-            attributes: Default::default(),
-            children: Children::default().set(Node::Text("Hello".to_owned())),
-          }))
-          .set(Node::Element(Element {
-            name: "li",
-            attributes: Default::default(),
-            children: Children::default().set(Node::Text("World".to_owned())),
-          })),
-      })),
+      children: Children::default().set(Node::Element(
+        Element {
+          name: "ul",
+          attributes: Default::default(),
+          children: Children::default()
+            .set(Node::Element(
+              Element {
+                name: "li",
+                attributes: Default::default(),
+                children: Children::default().set(Node::Text("Hello".to_owned())),
+              },
+              NodeId::new(),
+            ))
+            .set(Node::Element(
+              Element {
+                name: "li",
+                attributes: Default::default(),
+                children: Children::default().set(Node::Text("World".to_owned())),
+              },
+              NodeId::new(),
+            )),
+        },
+        NodeId::new(),
+      )),
     };
 
     assert_eq!(
@@ -272,21 +293,30 @@ mod test {
     let element = Element {
       name: "div",
       attributes: Default::default(),
-      children: Children::default().set(Node::Element(Element {
-        name: "ul",
-        attributes: Default::default(),
-        children: Children::default()
-          .set(Node::Element(Element {
-            name: "li",
-            attributes: Attributes::default().set(Some(("class", "active"))),
-            children: Children::default().set(Node::Text("Hello".to_owned())),
-          }))
-          .set(Node::Element(Element {
-            name: "li",
-            attributes: Attributes::default().set::<&str, &str>(None),
-            children: Children::default().set(Node::Text("World".to_owned())),
-          })),
-      })),
+      children: Children::default().set(Node::Element(
+        Element {
+          name: "ul",
+          attributes: Default::default(),
+          children: Children::default()
+            .set(Node::Element(
+              Element {
+                name: "li",
+                attributes: Attributes::default().set(Some(("class", "active"))),
+                children: Children::default().set(Node::Text("Hello".to_owned())),
+              },
+              NodeId::new(),
+            ))
+            .set(Node::Element(
+              Element {
+                name: "li",
+                attributes: Attributes::default().set::<&str, &str>(None),
+                children: Children::default().set(Node::Text("World".to_owned())),
+              },
+              NodeId::new(),
+            )),
+        },
+        NodeId::new(),
+      )),
     };
 
     assert_eq!(

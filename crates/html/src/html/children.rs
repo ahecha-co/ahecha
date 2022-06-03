@@ -22,4 +22,16 @@ impl Children {
   pub fn is_empty(&self) -> bool {
     self.children.is_empty()
   }
+
+  pub fn remove(&mut self, index: usize) {
+    self.children.remove(index);
+  }
+
+  pub fn iter(&self) -> std::slice::Iter<Node> {
+    self.children.iter()
+  }
+
+  pub fn iter_mut(&mut self) -> std::slice::IterMut<Node> {
+    self.children.iter_mut()
+  }
 }

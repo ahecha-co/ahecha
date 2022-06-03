@@ -9,5 +9,7 @@ pub use self::{
   children::Children,
   doctype::Doctype,
   elements::Element,
+  node::IntoNode,
   node::Node,
+  node::NodeId,
 };

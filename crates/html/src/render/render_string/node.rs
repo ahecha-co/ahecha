@@ -13,9 +13,11 @@ impl RenderString for Node {
         doctype.render_into(writer)?;
         elements.render_into(writer)?;
       }
-      Self::Element(element) => element.render_into(writer)?,
-      Self::Fragment(elements) => elements.render_into(writer)?,
+      Self::Element(element, _) => element.render_into(writer)?,
+      Self::Fragment(elements, _) => elements.render_into(writer)?,
       Self::None => (),
+      Self::Raw(html) => write!(writer, "{}", html)?,
+      Self::Redirect(_, _) => {}
       Self::Text(text) => text.render_into(writer)?,
     }
 

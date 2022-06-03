@@ -1,22 +1,22 @@
-use ahecha::{
-  html::{partials::PartialView, Component, Node, RenderString},
-  prelude::html,
-};
-use ahecha_macro::Partial;
+// use ahecha::{
+//   html::{partials::PartialView, Component, Node, RenderString},
+//   prelude::html,
+// };
+// use ahecha_macro::Partial;
 
-#[test]
-fn test_partial() {
-  #[derive(Partial)]
-  struct TestPartial;
+// #[test]
+// fn test_partial() {
+//   #[derive(Partial)]
+//   struct TestPartial;
 
-  impl Component for TestPartial {
-    fn view(&self) -> Node {
-      html!(<div>{ "Hello" }</div>)
-    }
-  }
+//   impl Component for TestPartial {
+//     fn view(&self) -> Node {
+//       html!(<div>{ "Hello" }</div>)
+//     }
+//   }
 
-  let partial = TestPartial;
+//   let partial = TestPartial;
 
-  assert_eq!("<div>Hello</div>", partial.view().render());
-  assert_eq!("test-partial", partial.id());
-}
+//   assert_eq!("<div>Hello</div>", partial.view().render());
+//   assert_eq!("test-partial", partial.id());
+// }
