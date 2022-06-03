@@ -25,7 +25,7 @@ mod test {
   use crate::{
     html::{Element, Node},
     render::RenderString,
-    Children,
+    Children, NodeId,
   };
 
   #[test]
@@ -34,14 +34,17 @@ mod test {
       name: "div",
       attributes: Default::default(),
       children: Children::default()
-        .set(Node::Element(Element {
-          name: "span",
-          attributes: Default::default(),
-          children: Children::default()
-            .set(Node::Text("Hello".to_owned()))
-            .set(Node::Text(" ".to_owned()))
-            .set(Node::Text("1".to_owned())),
-        }))
+        .set(Node::Element(
+          Element {
+            name: "span",
+            attributes: Default::default(),
+            children: Children::default()
+              .set(Node::Text("Hello".to_owned()))
+              .set(Node::Text(" ".to_owned()))
+              .set(Node::Text("1".to_owned())),
+          },
+          NodeId::new(),
+        ))
         .set(Node::Text(", World 2".to_owned())),
     };
 

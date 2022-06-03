@@ -50,7 +50,7 @@ impl ToTokens for HtmlElement {
         attributes: #attributes,
         children: #children,
         name: #name,
-      })
+      }, ahecha::html::NodeId::new())
     );
     element.to_tokens(tokens);
   }
