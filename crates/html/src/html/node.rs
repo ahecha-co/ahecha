@@ -101,7 +101,6 @@ impl Node {
     let filled_slot = match self {
       Node::Document(_, children) => iter_children(children, name, slot),
       Node::Element(el, _) => {
-        dbg!(el.has_attr_value("slot", name));
         let res_a = if el.has_attr_value("slot", name) {
           el.children = slot.children.clone();
           true
