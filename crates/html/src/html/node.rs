@@ -90,22 +90,27 @@ impl Node {
 
   fn fill_tag_with_slot(&mut self, name: &str, slot: &Element) -> bool {
     fn iter_children(children: &mut Children, name: &str, slot: &Element) -> bool {
+      let mut res = false;
       for node in children.iter_mut() {
         if node.fill_tag_with_slot(name, slot) {
-          return true;
+          res = true;
         }
       }
-      false
+      res
     }
     let filled_slot = match self {
       Node::Document(_, children) => iter_children(children, name, slot),
       Node::Element(el, _) => {
-        if el.has_attr_value("slot", name) {
+        dbg!(el.has_attr_value("slot", name));
+        let res_a = if el.has_attr_value("slot", name) {
           el.children = slot.children.clone();
           true
         } else {
-          iter_children(&mut el.children, name, slot)
-        }
+          false
+        };
+
+        let res_b = iter_children(&mut el.children, name, slot);
+        res_a || res_b
       }
       Node::Fragment(children, _) => iter_children(children, name, slot),
       _ => false,
