@@ -182,6 +182,12 @@ impl Node {
 //   }
 // }
 
+impl IntoNode for Node {
+  fn into_node(self) -> Node {
+    self
+  }
+}
+
 impl ToString for Node {
   fn to_string(&self) -> String {
     match self {

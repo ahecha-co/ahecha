@@ -97,11 +97,72 @@ impl_into_attribute_value!(
   bool, i8, i16, i32, i64, i128, f32, f64, u8, u16, u32, u64, u128, &str, String
 );
 
+impl<T> From<Result<String, T>> for AttributeValue
+where
+  T: ToString,
+{
+  fn from(item: Result<String, T>) -> Self {
+    match item {
+      Ok(value) => value.into(),
+      Err(e) => {
+        println!("{}", e.to_string());
+        AttributeValue::None
+      }
+    }
+  }
+}
+
 #[cfg(feature = "time")]
-mod time {
-  use time_::OffsetDateTime;
+mod _time {
+  use time::OffsetDateTime;
 
   use super::*;
 
-  impl_into_attribute_value!(OffsetDateTime);
+  impl_into_attribute_value!();
+
+  impl From<OffsetDateTime> for AttributeValue {
+    fn from(item: OffsetDateTime) -> Self {
+      let value = format!("{}", item);
+
+      if value.is_empty() {
+        AttributeValue::None
+      } else if let Ok(boolean) = value.parse::<bool>() {
+        AttributeValue::Bool(boolean)
+      } else {
+        AttributeValue::String(value)
+      }
+    }
+  }
+
+  impl From<Option<OffsetDateTime>> for AttributeValue {
+    fn from(item: Option<OffsetDateTime>) -> Self {
+      match item {
+        Some(value) => value.into(),
+        None => AttributeValue::None,
+      }
+    }
+  }
+
+  impl From<&OffsetDateTime> for AttributeValue {
+    fn from(item: &OffsetDateTime) -> Self {
+      let value = format!("{}", item);
+
+      if value.is_empty() {
+        AttributeValue::None
+      } else if let Ok(boolean) = value.parse::<bool>() {
+        AttributeValue::Bool(boolean)
+      } else {
+        AttributeValue::String(value)
+      }
+    }
+  }
+
+  impl From<Option<&OffsetDateTime>> for AttributeValue {
+    fn from(item: Option<&OffsetDateTime>) -> Self {
+      match item {
+        Some(value) => value.into(),
+        None => AttributeValue::None,
+      }
+    }
+  }
 }

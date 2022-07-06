@@ -104,20 +104,6 @@ where
   }
 }
 
-impl<C> Component for &Vec<C>
-where
-  C: Component + Clone,
-{
-  fn view(self) -> Node {
-    Node::Fragment(
-      Children {
-        children: self.iter().map(|c| c.clone().into_node()).collect(),
-      },
-      NodeId::new(),
-    )
-  }
-}
-
 impl<C> Component for Option<C>
 where
   C: Component,

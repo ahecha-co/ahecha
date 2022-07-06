@@ -13,7 +13,6 @@ readme = "README.md"
 [features]
 default = []
 backend = ["ahecha_macro/backend"]
-chrono = ["ahecha_html/chrono"]
 frontend = ["ahecha_macro/frontend"]
 partials = ["ahecha_html/partials"]
 time = ["ahecha_html/time"]

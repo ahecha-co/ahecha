@@ -1,11 +1,11 @@
-use ahecha::html::{Component, IntoNode, Node, RenderString};
+use ahecha::html::{IntoNode, Node};
 use axum::{
   extract::FromRequest,
   http::{
     header::{self},
     StatusCode,
   },
-  response::{Html, IntoResponse, Response},
+  response::{IntoResponse, Response},
   Json,
 };
 use serde::Serialize;
@@ -13,7 +13,16 @@ use serde::Serialize;
 pub trait Layout {
   fn view<B>(self, body: B) -> Node
   where
-    B: Into<Node>;
+    B: IntoNode;
+}
+
+impl Layout for () {
+  fn view<B>(self, body: B) -> Node
+  where
+    B: IntoNode,
+  {
+    body.into_node()
+  }
 }
 
 fn get_format_from_request<B>(req: &mut axum::extract::RequestParts<B>) -> (&str, &str)
@@ -47,59 +56,136 @@ where
 }
 
 #[derive(Debug)]
-pub enum Format {
-  Html,
+pub enum FormatResponse<L>
+where
+  L: Layout,
+{
+  Html(L),
   HtmlPartial,
   Json,
 }
 
+impl<L> FormatResponse<L>
+where
+  L: Layout,
+{
+  pub fn render<V>(self, view: V) -> Response
+  where
+    V: IntoNode + Serialize,
+  {
+    match self {
+      FormatResponse::Html(layout) => layout.view(view).into_response(),
+      FormatResponse::HtmlPartial => view.into_node().into_response(),
+      FormatResponse::Json => Json(view).into_response(),
+    }
+  }
+}
+
 #[async_trait::async_trait]
-impl<B> FromRequest<B> for Format
+impl<L, B> FromRequest<B> for FormatResponse<L>
 where
   B: Send,
+  L: Layout + FromRequest<B>,
 {
   type Rejection = (StatusCode, String);
 
   async fn from_request(req: &mut axum::extract::RequestParts<B>) -> Result<Self, Self::Rejection> {
     if supports_content_type(req, "json") {
-      Ok(Format::Json)
+      Ok(FormatResponse::Json)
     } else if supports_content_type(req, "partial") {
-      Ok(Format::HtmlPartial)
+      Ok(FormatResponse::HtmlPartial)
     } else if supports_content_type(req, "html") {
-      Ok(Format::Html)
+      let layout = req.extract::<L>().await.map_err(|_| {
+        (
+          StatusCode::INTERNAL_SERVER_ERROR,
+          "Couldn't extract the layout from request".to_string(),
+        )
+      })?;
+      Ok(FormatResponse::Html(layout))
     } else {
       Err((StatusCode::NOT_FOUND, "Not found".to_owned()))
     }
   }
 }
 
-pub enum HtmlFormat {
-  Html,
+pub enum HtmlResponse<L>
+where
+  L: Layout,
+{
+  Html(L),
   HtmlPartial,
 }
 
+impl<L> HtmlResponse<L>
+where
+  L: Layout,
+{
+  pub fn render<V>(self, view: V) -> Response
+  where
+    V: IntoNode,
+  {
+    match self {
+      HtmlResponse::Html(layout) => layout.view(view).into_response(),
+      HtmlResponse::HtmlPartial => view.into_node().into_response(),
+    }
+  }
+}
+
 #[async_trait::async_trait]
-impl<B> FromRequest<B> for HtmlFormat
+impl<L, B> FromRequest<B> for HtmlResponse<L>
 where
   B: Send,
+  L: Layout + FromRequest<B>,
 {
   type Rejection = (StatusCode, String);
 
   async fn from_request(req: &mut axum::extract::RequestParts<B>) -> Result<Self, Self::Rejection> {
     if supports_content_type(req, "partial") {
-      Ok(HtmlFormat::HtmlPartial)
+      Ok(HtmlResponse::HtmlPartial)
     } else if supports_content_type(req, "html") {
-      Ok(HtmlFormat::Html)
+      let layout = req.extract::<L>().await.map_err(|_| {
+        (
+          StatusCode::INTERNAL_SERVER_ERROR,
+          "Couldn't extract the layout from request".to_string(),
+        )
+      })?;
+      Ok(HtmlResponse::Html(layout))
     } else {
       Err((StatusCode::NOT_FOUND, "Not found".to_owned()))
     }
   }
 }
 
-pub struct HtmlPartialFormat;
+pub struct HtmlPartialResponse;
+
+impl HtmlPartialResponse {
+  pub fn render<V>(self, view: V) -> Response
+  where
+    V: IntoNode,
+  {
+    view.into_node().into_response()
+  }
+}
+
+pub enum PartialResponse {
+  Html,
+  Json,
+}
+
+impl PartialResponse {
+  pub fn render<V>(self, view: V) -> Response
+  where
+    V: IntoNode + Serialize,
+  {
+    match self {
+      PartialResponse::Html => view.into_node().into_response(),
+      PartialResponse::Json => Json(view).into_response(),
+    }
+  }
+}
 
 #[async_trait::async_trait]
-impl<B> FromRequest<B> for HtmlPartialFormat
+impl<B> FromRequest<B> for HtmlPartialResponse
 where
   B: Send,
 {
@@ -107,87 +193,9 @@ where
 
   async fn from_request(req: &mut axum::extract::RequestParts<B>) -> Result<Self, Self::Rejection> {
     if supports_content_type(req, "partial") {
-      Ok(HtmlPartialFormat)
+      Ok(HtmlPartialResponse)
     } else {
       Err((StatusCode::NOT_FOUND, "Not found".to_owned()))
     }
-  }
-}
-
-pub trait IntoFormattedResponse {
-  fn into_formatted_response(self) -> Response;
-}
-
-impl<L, C> IntoFormattedResponse for (Format, L, C)
-where
-  L: Layout,
-  C: Component + Serialize,
-{
-  fn into_formatted_response(self) -> Response {
-    let (format, layout, component) = self;
-
-    match format {
-      Format::Html => (
-        component.status_code(),
-        Html(
-          layout
-            .view(component.into_node())
-            .normalize()
-            .strip_slots()
-            .render(),
-        ),
-      )
-        .into_response(),
-      Format::HtmlPartial => (
-        component.status_code(),
-        Html(component.into_node().strip_slots().render()),
-      )
-        .into_response(),
-      Format::Json => (component.status_code(), Json(component)).into_response(),
-    }
-  }
-}
-
-impl<L, C> IntoFormattedResponse for (HtmlFormat, L, C)
-where
-  L: Layout,
-  C: Component,
-{
-  fn into_formatted_response(self) -> Response {
-    let (format, layout, component) = self;
-
-    match format {
-      HtmlFormat::Html => (
-        component.status_code(),
-        Html(
-          layout
-            .view(component.into_node())
-            .normalize()
-            .strip_slots()
-            .render(),
-        ),
-      )
-        .into_response(),
-      HtmlFormat::HtmlPartial => (
-        component.status_code(),
-        Html(component.into_node().strip_slots().render()),
-      )
-        .into_response(),
-    }
-  }
-}
-
-impl<C> IntoFormattedResponse for (HtmlPartialFormat, C)
-where
-  C: Component,
-{
-  fn into_formatted_response(self) -> Response {
-    let (_, component) = self;
-
-    (
-      component.status_code(),
-      Html(component.into_node().strip_slots().render()),
-    )
-      .into_response()
   }
 }
