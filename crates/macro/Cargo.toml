@@ -11,8 +11,9 @@ readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
-backend = []
+backend = ["record"]
 frontend = []
+record = []
 
 [lib]
 proc-macro=true

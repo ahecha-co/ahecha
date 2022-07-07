@@ -8,6 +8,7 @@ use syn::parse_macro_input;
 use crate::html::node::Node;
 
 mod html;
+mod record;
 
 #[proc_macro]
 pub fn html(input: TokenStream) -> TokenStream {
