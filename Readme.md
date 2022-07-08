@@ -73,3 +73,4 @@ the basic server and the developer can integrate his preferred libraries.
 
 - [Dioxus](http://dioxuslabs.com)
 - [Perseus](https://github.com/arctic-hen7/perseus)
+- [Sycamore](https://github.com/sycamore-rs/sycamore)
