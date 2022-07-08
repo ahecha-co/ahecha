@@ -86,7 +86,26 @@ impl ToTokens for AttributeKeyValue {
 
     match &self.value {
       AttributeValue::Block(value) => {
-        quote! { .set(Some(( #key, #value ))) }
+        if value.stmts.len() == 1 {
+          if let Some(expr) = value.stmts.iter().find(|s| match s {
+            syn::Stmt::Local(_) => false,
+            syn::Stmt::Item(_) => false,
+            syn::Stmt::Expr(expr) => {
+              let expr = expr.to_token_stream().to_string();
+              expr.starts_with("\"")
+                && expr.ends_with("\"")
+                && expr.contains("{")
+                && expr.contains("}")
+            }
+            syn::Stmt::Semi(_, _) => false,
+          }) {
+            quote! { .set(Some(( #key, format!( #expr ) ))) }
+          } else {
+            quote! { .set(Some(( #key, #value ))) }
+          }
+        } else {
+          quote! { .set(Some(( #key, #value ))) }
+        }
       }
       AttributeValue::Lit(value) => quote! { .set(Some(( #key, #value ))) },
     }

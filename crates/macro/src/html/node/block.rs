@@ -10,8 +10,9 @@ pub struct HtmlBlock {
 
 impl ToTokens for HtmlBlock {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-    let block = self.block.clone();
-    quote! ( #block ).to_tokens(tokens);
+    // TODO: figure out how to capture and format strings directly if the input is for example `"Hello {world}"`
+    let block = &self.block;
+    quote! { #block }.to_tokens(tokens);
   }
 }
 

@@ -170,9 +170,17 @@ mod backend {
 
   #[test]
   fn test_support_string_reference_for_text_nodes() {
-    let text = "Hello World".to_string();
-    let res = html! { <div>{&text}</div> };
+    let text = "Hello World";
+    let res = html! { <div>{text}</div> };
     assert_eq!(res.render(), r#"<div>Hello World</div>"#);
+  }
+
+  #[test]
+  fn test_format_string() {
+    let world = "World";
+    let class = "some-class";
+    let res = html! { <div class={"{class}"}>{format!("Hello {world}")}</div> };
+    assert_eq!(res.render(), r#"<div class="some-class">Hello World</div>"#);
   }
 
   // #[test]
