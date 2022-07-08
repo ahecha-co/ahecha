@@ -1,6 +1,6 @@
 use quote::{quote, ToTokens};
 
-use super::{HtmlCustomElement, HtmlPartial, Node};
+use super::Node;
 use crate::html::{attributes::Attributes, children::Children, tag_name::TagName};
 
 #[derive(Debug)]
@@ -12,30 +12,7 @@ pub struct HtmlElement {
 
 impl From<HtmlElement> for Node {
   fn from(element: HtmlElement) -> Self {
-    if element
-      .name
-      .to_string()
-      .chars()
-      .next()
-      .unwrap_or_default()
-      .is_uppercase()
-    {
-      if element.name.to_string().ends_with("Partial") {
-        Node::Partial(HtmlPartial {
-          attributes: element.attributes,
-          children: element.children,
-          name: element.name,
-        })
-      } else {
-        Node::CustomElement(HtmlCustomElement {
-          attributes: element.attributes,
-          children: element.children,
-          name: element.name,
-        })
-      }
-    } else {
-      Node::Element(element)
-    }
+    Node::Element(element)
   }
 }
 
@@ -46,11 +23,9 @@ impl ToTokens for HtmlElement {
     let name = &self.name.to_string();
 
     let element = quote!(
-      ahecha::html::Node::Element(ahecha::html::Element {
-        attributes: #attributes,
-        children: #children,
-        name: #name,
-      }, ahecha::html::NodeId::new())
+      ahecha::tag(#name)
+        #children
+        #attributes
     );
     element.to_tokens(tokens);
   }

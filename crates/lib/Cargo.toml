@@ -14,9 +14,10 @@ readme = "README.md"
 default = []
 backend = ["ahecha_macro/backend"]
 frontend = ["ahecha_macro/frontend"]
-partials = ["ahecha_html/partials"]
 time = ["ahecha_html/time"]
 
 [dependencies]
 ahecha_macro = { path="../macro", version="0.0.9" }
 ahecha_html = { path="../html", version="0.0.10" }
+
+sycamore = { version = "0.8.0-beta.7", features = ["hydrate", "serde", "ssr", "suspense", "wasm-bindgen-interning", "web"]}

@@ -24,6 +24,6 @@ impl Parse for AttributeBlock {
 impl ToTokens for AttributeBlock {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
     let block = &self.block;
-    quote! { .set( #block ) }.to_tokens(tokens);
+    quote! { .dyn_c( || #block ) }.to_tokens(tokens);
   }
 }

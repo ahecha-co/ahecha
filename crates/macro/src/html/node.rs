@@ -1,19 +1,15 @@
 mod block;
 mod comment;
-mod custom_element;
 mod doctype;
 mod element;
 mod fragment;
-mod partial;
 mod text;
 
 pub use block::HtmlBlock;
 pub use comment::HtmlComment;
-pub use custom_element::HtmlCustomElement;
 pub use doctype::HtmlDoctype;
 pub use element::HtmlElement;
 pub use fragment::HtmlFragment;
-pub use partial::HtmlPartial;
 use quote::ToTokens;
 use syn::parse::Parse;
 pub use text::HtmlText;
@@ -25,11 +21,9 @@ use crate::html::{attributes::Attributes, children::Children};
 pub enum Node {
   Block(HtmlBlock),
   Comment(HtmlComment),
-  CustomElement(HtmlCustomElement),
   Doctype(HtmlDoctype),
   Element(HtmlElement),
   Fragment(HtmlFragment),
-  Partial(HtmlPartial),
   Text(HtmlText),
 }
 
@@ -38,11 +32,9 @@ impl ToTokens for Node {
     match self {
       Node::Block(block) => block.to_tokens(tokens),
       Node::Comment(comment) => comment.to_tokens(tokens),
-      Node::CustomElement(custom_element) => custom_element.to_tokens(tokens),
       Node::Doctype(doctype) => doctype.to_tokens(tokens),
       Node::Element(element) => element.to_tokens(tokens),
       Node::Fragment(fragment) => fragment.to_tokens(tokens),
-      Node::Partial(partial) => partial.to_tokens(tokens),
       Node::Text(text) => text.to_tokens(tokens),
     }
   }
@@ -53,11 +45,9 @@ impl ToString for Node {
     match self {
       Node::Block(block) => block.to_string(),
       Node::Comment(comment) => comment.to_string(),
-      Node::CustomElement(custom_element) => custom_element.to_string(),
       Node::Doctype(doctype) => doctype.to_string(),
       Node::Element(element) => element.to_string(),
       Node::Fragment(fragment) => fragment.to_string(),
-      Node::Partial(partial) => partial.to_string(),
       Node::Text(text) => text.to_string(),
     }
   }
@@ -104,33 +94,11 @@ impl Parse for Node {
         children
       };
 
-      let name_str = name.to_string();
-      if name_str
-        .chars()
-        .next()
-        .expect("Ident to have at least one letter")
-        .is_uppercase()
-      {
-        if name.to_string().ends_with("Partial") || name.to_string().ends_with("Page") {
-          Ok(Node::Partial(HtmlPartial {
-            attributes,
-            children,
-            name,
-          }))
-        } else {
-          Ok(Node::CustomElement(HtmlCustomElement {
-            name,
-            attributes,
-            children,
-          }))
-        }
-      } else {
-        Ok(Node::Element(HtmlElement {
-          name,
-          attributes,
-          children,
-        }))
-      }
+      Ok(Node::Element(HtmlElement {
+        name,
+        attributes,
+        children,
+      }))
     } else if let Ok(fragment) = input.parse::<HtmlFragment>() {
       Ok(Node::Fragment(fragment))
     } else if let Ok(text) = input.parse::<HtmlText>() {

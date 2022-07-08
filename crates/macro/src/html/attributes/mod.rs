@@ -30,18 +30,15 @@ impl From<Option<Vec<Attribute>>> for Attributes {
 
 impl ToTokens for Attributes {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-    if self.attrs.is_empty() {
-      quote!(Default::default())
-    } else {
+    if !self.attrs.is_empty() {
       let mut list = vec![];
 
       for attr in self.attrs.iter() {
         list.push(quote!( #attr ));
       }
 
-      quote!( ahecha::html::Attributes::default() #(#list)* )
+      quote!( #(#list)* ).to_tokens(tokens);
     }
-    .to_tokens(tokens);
   }
 }
 

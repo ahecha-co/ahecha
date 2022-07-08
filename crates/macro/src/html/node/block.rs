@@ -10,8 +10,29 @@ pub struct HtmlBlock {
 
 impl ToTokens for HtmlBlock {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-    let block = self.block.clone();
-    quote! ( #block ).to_tokens(tokens);
+    let stringified = self.block.to_string();
+    let block = if stringified.contains(";") {
+      self.block.clone()
+    } else {
+      stringified
+        .replace("{", "")
+        .replace("}", "")
+        .parse()
+        .unwrap()
+    };
+
+    if stringified.contains("html!") || stringified.contains("ahecha::") {
+      dbg!(">>>>>>>>>>> new_dyn", &block.to_string());
+      quote! (
+        ahecha::sycamore::view::View::new_dyn(cx, move || {
+          ahecha::sycamore::view::IntoView::create( & #block )
+        })
+      )
+    } else {
+      dbg!(">>>>>>>>>>> IntoView", &block.to_string());
+      quote! (ahecha::sycamore::view::IntoView::create( & #block ) )
+    }
+    .to_tokens(tokens);
   }
 }
 

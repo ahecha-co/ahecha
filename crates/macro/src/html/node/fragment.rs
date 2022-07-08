@@ -7,6 +7,7 @@ use crate::html::children::Children;
 #[derive(Debug)]
 pub struct HtmlFragment {
   pub children: Children,
+  pub is_top_level: bool,
 }
 
 impl From<HtmlFragment> for Node {
@@ -18,13 +19,16 @@ impl From<HtmlFragment> for Node {
 impl ToTokens for HtmlFragment {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
     let children = &self.children;
-    let element = quote!(
-      ahecha::html::Node::Fragment(
-        #children,
-        ahecha::html::NodeId::new(),
+    if self.is_top_level {
+      quote!(
+        ahecha::fragment([
+          #children
+        ])
       )
-    );
-    element.to_tokens(tokens);
+    } else {
+      quote!( #children )
+    }
+    .to_tokens(tokens);
   }
 }
 
@@ -43,7 +47,10 @@ impl Parse for HtmlFragment {
       input.parse::<syn::Token![<]>()?;
       input.parse::<syn::Token![/]>()?;
       input.parse::<syn::Token![>]>()?;
-      Ok(HtmlFragment { children })
+      Ok(HtmlFragment {
+        children,
+        is_top_level: false,
+      })
     } else {
       Err(syn::Error::new(input.span(), "expected <...>"))
     }

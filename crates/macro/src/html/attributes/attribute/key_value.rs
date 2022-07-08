@@ -6,6 +6,7 @@ use syn::{parse::Parse, Block, Lit, LitBool, LitStr};
 
 pub enum AttributeValue {
   Block(Block),
+  Bool(bool),
   Lit(Lit),
 }
 
@@ -13,12 +14,26 @@ impl ToTokens for AttributeValue {
   fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
     match self {
       AttributeValue::Block(block) => {
-        quote! {
-          #block .into()
+        if block
+          .stmts
+          .iter()
+          .find(|s| match s {
+            syn::Stmt::Local(_) => true,
+            syn::Stmt::Item(_) => false,
+            syn::Stmt::Expr(_) => false,
+            syn::Stmt::Semi(_, _) => true,
+          })
+          .is_none()
+        {
+          let stmts = &block.stmts;
+          quote! { /* stmts */#(#stmts)* }
+        } else {
+          quote! { /* block */ #block }
         }
         .to_tokens(tokens);
       }
-      AttributeValue::Lit(s) => quote!(#s).to_tokens(tokens),
+      AttributeValue::Bool(s) => quote!(#s).to_tokens(tokens),
+      AttributeValue::Lit(s) => quote!( /* Lit */ #s).to_tokens(tokens),
     }
   }
 }
@@ -33,6 +48,7 @@ impl Debug for AttributeValue {
         }
         .fmt(f)
       }
+      AttributeValue::Bool(s) => quote! {#s}.fmt(f),
       AttributeValue::Lit(s) => quote! {#s}.fmt(f),
     }
   }
@@ -43,7 +59,11 @@ impl Parse for AttributeValue {
     if input.peek(syn::token::Brace) {
       Ok(AttributeValue::Block(input.parse::<Block>()?))
     } else {
-      Ok(AttributeValue::Lit(input.parse::<Lit>()?))
+      let value: Lit = input.parse::<Lit>()?;
+      match value {
+        Lit::Bool(LitBool { value, .. }) => Ok(AttributeValue::Bool(value)),
+        _ => Ok(AttributeValue::Lit(value)),
+      }
     }
   }
 }
@@ -86,9 +106,26 @@ impl ToTokens for AttributeKeyValue {
 
     match &self.value {
       AttributeValue::Block(value) => {
-        quote! { .set(Some(( #key, #value ))) }
+        let value = if value
+          .stmts
+          .iter()
+          .find(|s| match s {
+            syn::Stmt::Local(_) => true,
+            syn::Stmt::Item(_) => false,
+            syn::Stmt::Expr(_) => false,
+            syn::Stmt::Semi(_, _) => true,
+          })
+          .is_none()
+        {
+          let stmts = &value.stmts;
+          quote! { /* stmts */#(#stmts)* }
+        } else {
+          quote! { /* block */ #value }
+        };
+        quote! { .dyn_attr( #key, || Some(#value) ) }
       }
-      AttributeValue::Lit(value) => quote! { .set(Some(( #key, #value ))) },
+      AttributeValue::Bool(value) => quote! { .bool_attr( #key, #value ) },
+      AttributeValue::Lit(value) => quote! { .attr( #key, #value ) },
     }
     .to_tokens(tokens);
   }
@@ -127,7 +164,7 @@ impl Parse for AttributeKeyValue {
       input.parse::<syn::Token![=]>()?;
       input.parse()?
     } else {
-      AttributeValue::Lit(Lit::Bool(LitBool::new(true, Span::call_site())))
+      AttributeValue::Bool(true)
     };
 
     Ok(AttributeKeyValue {
