@@ -31,8 +31,9 @@ impl ToTokens for DeleteStatement {
 
     let query = format!("DELETE FROM {} {}", &self.table_name, where_query);
     quote!(
-      pub async fn #fn_ident <DB> (&self, mut pool: &mut sqlx::Pool<DB> #(, #fn_input)*) -> Result<(), sqlx::Error> where DB: sqlx::Database {
-        sqlx::query!(#query #(, #where_params)*).execute(&mut pool).await
+      pub async fn #fn_ident <DB> (&self, mut pool: <sqlx::Postgres as sqlx::Database>::QueryResult #(, #fn_input)*) -> Result<(), sqlx::Error> where DB: sqlx::Database {
+        sqlx::query!(#query #(, #where_params)*).execute(&mut pool).await?;
+        Ok(())
       }
     )
     .to_tokens(tokens);

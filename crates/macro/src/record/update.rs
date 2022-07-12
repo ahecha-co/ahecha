@@ -81,14 +81,15 @@ impl ToTokens for UpdateStatement {
 
     if self.returning.is_returning() {
       quote!(
-        pub async fn #fn_ident <DB, T> (&self, mut pool: &mut sqlx::Pool<DB> #(, #fn_input)*) -> Result<T, sqlx::Error> where DB: sqlx::Database {
-          sqlx::query!(#query #(, #query_params)*).fetch_one(&mut pool).await
+        pub async fn #fn_ident <DB, T> (&self, pool: &mut <sqlx::Postgres as sqlx::Database>::Connection #(, #fn_input)*) -> sqlx::Result<<sqlx::Postgres as sqlx::Database>::QueryResult> {
+          sqlx::query!(#query #(, #query_params)*).fetch_one(pool).await
         }
       ).to_tokens(tokens);
     } else {
       quote!(
-        pub async fn #fn_ident <DB> (&self, mut pool: &mut sqlx::Pool<DB> #(, #fn_input)*) -> Result<(), sqlx::Error> where DB: sqlx::Database {
-          sqlx::query!(#query #(, #query_params)*).execute(&mut pool).await
+        pub async fn #fn_ident <DB> (&self, pool: &mut <sqlx::Postgres as sqlx::Database>::Connection #(, #fn_input)*) -> sqlx::Result<()> {
+          sqlx::query!(#query #(, #query_params)*).execute(pool).await?;
+          Ok(())
         }
       ).to_tokens(tokens);
     }

@@ -251,7 +251,7 @@ fn parse_attr_args(tokens: TokenStream) -> (Option<String>, Vec<Field>, Vec<Acti
 
           if let Some(table_token) = iter.next() {
             if let proc_macro2::TokenTree::Literal(lit) = table_token {
-              table_name = Some(lit.to_string());
+              table_name = Some(lit.to_string().replace('"', ""));
             } else {
               abort!(
                 token,
@@ -316,6 +316,7 @@ fn parse_attr_args(tokens: TokenStream) -> (Option<String>, Vec<Field>, Vec<Acti
                     proc_macro2::TokenTree::Ident(item) => ty_tokens.push(item.to_token_stream()),
                     proc_macro2::TokenTree::Punct(item) => match item.as_char() {
                       ':' => ty_tokens.push(quote!( : )),
+                      ',' => break,
                       _ => abort!(item, "Expected an ident, but found `{}`", item),
                     },
                     proc_macro2::TokenTree::Literal(item) => {

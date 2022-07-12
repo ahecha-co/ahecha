@@ -1,6 +1,6 @@
 #[cfg(feature = "backend")]
 mod backend {
-  // use ahecha_macro::Record;
+  use ahecha_macro::Record;
 
   // #[test]
   // fn test_insert_record() {
@@ -55,4 +55,16 @@ mod backend {
   //     lastname: String,
   //   }
   // }
+
+  #[test]
+  fn test_delete_record_multiple_constraints() {
+    use sqlx::types::Uuid;
+
+    #[derive(Record)]
+    #[record(deleteable, constraint(id: Uuid, tenant_id: String), returning(id), table = "users")]
+    struct User {
+      firstname: String,
+      lastname: String,
+    }
+  }
 }
