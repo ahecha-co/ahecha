@@ -56,6 +56,8 @@ impl ToTokens for UpdateStatement {
       }
     );
 
+    let returning_fields = self.returning.fields.clone();
+
     let fn_ident = if self.constraint.fields.is_empty() {
       Ident::new("insert", self.span)
     } else {
@@ -81,8 +83,11 @@ impl ToTokens for UpdateStatement {
 
     if self.returning.is_returning() {
       quote!(
-        pub async fn #fn_ident <DB, T> (&self, pool: &mut <sqlx::Postgres as sqlx::Database>::Connection #(, #fn_input)*) -> sqlx::Result<<sqlx::Postgres as sqlx::Database>::QueryResult> {
-          sqlx::query!(#query #(, #query_params)*).fetch_one(pool).await
+        pub async fn #fn_ident <DB, T> (&self, pool: &mut <sqlx::Postgres as sqlx::Database>::Connection #(, #fn_input)*) -> sqlx::Result<T> {
+          pub struct QueryResult {
+            #(#returning_fields),*
+          }
+          sqlx::query_as!(QueryResult, #query #(, #query_params)*).fetch_one(pool).await
         }
       ).to_tokens(tokens);
     } else {

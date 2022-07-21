@@ -1,19 +1,32 @@
+mod config;
 mod delete;
 mod insert;
 mod update;
 
-use convert_case::Casing;
+use std::{fmt::Debug, str::FromStr};
+
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::abort;
 use quote::{quote, spanned::Spanned, ToTokens};
-use syn::{FieldsNamed, Ident, ItemStruct};
+use syn::{parse_macro_input, FieldsNamed, Ident, ItemStruct, Type};
 
-use self::{delete::*, insert::*, update::*};
+use self::{config::get_config, delete::*, insert::*, update::*};
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Field {
   name: Ident,
-  ty: TokenStream,
+  ty: Type,
+}
+
+impl Debug for Field {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(
+      f,
+      "Field {{ name: {}, ty: {} }}",
+      &self.name,
+      &self.ty.to_token_stream(),
+    )
+  }
 }
 
 impl ToTokens for Field {
@@ -25,7 +38,7 @@ impl ToTokens for Field {
 }
 
 pub struct Returning {
-  fields: Vec<Ident>,
+  fields: Vec<Field>,
 }
 
 impl Returning {
@@ -34,7 +47,7 @@ impl Returning {
   }
 
   fn build(&self) -> Vec<String> {
-    self.fields.iter().map(|f| format!("{}", &f)).collect()
+    self.fields.iter().map(|f| format!("{}", &f.name)).collect()
   }
 }
 
@@ -83,32 +96,36 @@ pub struct Record {
   table_name: String,
   fields: Vec<Field>,
   constraint: Vec<Field>,
-  returning: Vec<Ident>,
+  returning: Vec<Field>,
 }
 
 impl Record {
   pub fn new(item: ItemStruct) -> Self {
+    let config = get_config();
     let span = item.__span();
-    let default_table_name = item.ident.to_string().to_case(convert_case::Case::Snake);
     let fields = match item.fields {
       syn::Fields::Named(FieldsNamed {
         brace_token: _,
         named,
       }) => named
         .iter()
+        // .map(|f| {
+        //   let tokens = TokenStream::from_str(&f.ty).expect("{} is not a valid Type", &f.ty);
+        //   Field {
+        //     name: f.ident.as_ref().unwrap().clone(),
+        //     ty: parse_macro_input!(tokens as Type),
+        //   }
+        // })
         .map(|f| Field {
           name: f.ident.as_ref().unwrap().clone(),
-          ty: {
-            let ty = &f.ty;
-            quote!( #ty )
-          },
+          ty: f.ty.clone(),
         })
         .collect::<Vec<_>>(),
       syn::Fields::Unnamed(_) => panic!("Unnamed fields not supported"),
       syn::Fields::Unit => panic!("Unit fields not supported"),
     };
 
-    let (table_name, constraint, actions, returning) = if let Some(attr) =
+    let (table_name, _constraint, actions, returning) = if let Some(attr) =
       item.attrs.iter().find(|attr| {
         attr
           .path
@@ -141,10 +158,60 @@ impl Record {
       abort!(span, "Missing the `#[record()]` attribute")
     };
 
+    let table_name = match table_name {
+      Some(table_name) => table_name,
+      None => abort!(span, r#"the #[record(table = "table_name")] is missing"#),
+    };
+
+    let (constraint, returning) = match config.table(&table_name) {
+      Some(table) => (
+        table
+          .constraints
+          .clone()
+          .iter()
+          .map(|f| Field {
+            name: Ident::new(&f.name, span),
+            ty: {
+              let tokens = TokenStream::from_str(&f.ty)
+                .expect(format!("{} is not a valid Type", &f.ty).as_str());
+              parse_macro_input!(tokens as Type)
+              // let ty = f
+              //   .ty
+              //   .split("::")
+              //   .map(|v| Ident::new(&v, span))
+              //   .collect::<Vec<_>>();
+              // quote!( #(#ty)::* )
+            },
+          })
+          .collect::<Vec<_>>(),
+        table
+          .columns
+          .clone()
+          .iter()
+          .filter(|f| returning.contains(&f.name))
+          .map(|f| Field {
+            name: Ident::new(&f.name, span),
+            ty: {
+              let tokens = TokenStream::from_str(&f.ty)
+                .expect(format!("{} is not a valid Type", &f.ty).as_str());
+              parse_macro_input!(tokens as Type)
+              // let ty = f
+              //   .ty
+              //   .split("::")
+              //   .map(|v| Ident::new(&v, span))
+              //   .collect::<Vec<_>>();
+              // quote!( #(#ty)::* )
+            },
+          })
+          .collect::<Vec<_>>(),
+      ),
+      None => (vec![], vec![]),
+    };
+
     Self {
       actions,
       span,
-      table_name: table_name.unwrap_or_else(|| default_table_name),
+      table_name,
       fields,
       constraint,
       returning,
@@ -210,7 +277,7 @@ impl ToTokens for Record {
   }
 }
 
-fn parse_attr_args(tokens: TokenStream) -> (Option<String>, Vec<Field>, Vec<Action>, Vec<Ident>) {
+fn parse_attr_args(tokens: TokenStream) -> (Option<String>, Vec<Field>, Vec<Action>, Vec<String>) {
   let mut constraint = vec![];
   let mut actions = vec![];
   let mut returning = vec![];
@@ -358,7 +425,7 @@ fn parse_attr_args(tokens: TokenStream) -> (Option<String>, Vec<Field>, Vec<Acti
                   proc_macro2::TokenTree::Group(item) => {
                     abort!(item, "Expected ident, but found `{}`", item)
                   }
-                  proc_macro2::TokenTree::Ident(item) => item,
+                  proc_macro2::TokenTree::Ident(item) => item.to_string(),
                   proc_macro2::TokenTree::Punct(item) => {
                     abort!(item, "Expected ident, but found `{}`", item)
                   }
