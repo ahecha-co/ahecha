@@ -4,7 +4,7 @@ use convert_case::{Case, Casing};
 use proc_macro::TokenStream;
 use proc_macro_error::proc_macro_error;
 use quote::quote;
-use record::Record;
+use record::TableRecord;
 use syn::parse_macro_input;
 
 use crate::html::node::Node;
@@ -41,12 +41,7 @@ pub fn partial(item: TokenStream) -> TokenStream {
 #[proc_macro_error]
 pub fn record(item: TokenStream) -> TokenStream {
   let input = parse_macro_input!(item as syn::ItemStruct);
-  let ident = input.ident.clone();
-  let record = Record::new(input);
-  quote!(
-    impl #ident {
-      #record
-    }
-  )
-  .into()
+  let record = TableRecord::new(input);
+  let mod_record = record.mod_record();
+  quote!( #mod_record #record ).into()
 }

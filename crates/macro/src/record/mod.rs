@@ -1,86 +1,9 @@
-mod config;
-mod delete;
-mod insert;
-mod update;
-
-use std::{fmt::Debug, str::FromStr};
-
-use proc_macro2::{Span, TokenStream};
+use ahecha_cli::config::{get_config, Column, TableConfig};
+use proc_macro2::{Ident, Span, TokenStream};
 use proc_macro_error::abort;
-use quote::{quote, spanned::Spanned, ToTokens};
-use syn::{parse_macro_input, FieldsNamed, Ident, ItemStruct, Type};
-
-use self::{config::get_config, delete::*, insert::*, update::*};
-
-#[derive(Clone)]
-pub struct Field {
-  name: Ident,
-  ty: Type,
-}
-
-impl Debug for Field {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(
-      f,
-      "Field {{ name: {}, ty: {} }}",
-      &self.name,
-      &self.ty.to_token_stream(),
-    )
-  }
-}
-
-impl ToTokens for Field {
-  fn to_tokens(&self, tokens: &mut TokenStream) {
-    let name = &self.name;
-    let ty = &self.ty;
-    quote!(#name: #ty).to_tokens(tokens);
-  }
-}
-
-pub struct Returning {
-  fields: Vec<Field>,
-}
-
-impl Returning {
-  fn is_returning(&self) -> bool {
-    !self.fields.is_empty()
-  }
-
-  fn build(&self) -> Vec<String> {
-    self.fields.iter().map(|f| format!("{}", &f.name)).collect()
-  }
-}
-
-pub struct WhereConstraint {
-  fields: Vec<Field>,
-}
-
-impl WhereConstraint {
-  fn build(&self, index_offset: usize) -> (String, Vec<TokenStream>) {
-    let constraints = self
-      .fields
-      .iter()
-      .enumerate()
-      .map(|(i, f)| format!("{} = ${}", &f.name, i + index_offset + 1))
-      .collect::<Vec<_>>();
-
-    (
-      if !constraints.is_empty() {
-        format!("WHERE {}", constraints.join(" AND "))
-      } else {
-        "".to_owned()
-      },
-      self
-        .fields
-        .iter()
-        .map(|f| {
-          let name = &f.name;
-          quote!( & #name )
-        })
-        .collect(),
-    )
-  }
-}
+use quote::quote;
+use quote::{spanned::Spanned, ToTokens};
+use syn::{FieldsNamed, ItemStruct};
 
 #[derive(PartialEq, Clone)]
 enum Action {
@@ -89,51 +12,40 @@ enum Action {
   Update,
 }
 
-#[derive(Clone)]
-pub struct Record {
+pub struct TableRecord {
   actions: Vec<Action>,
+  config: TableConfig,
+  fields: Vec<String>,
+  ident: Ident,
+  returning: Vec<String>,
   span: Span,
   table_name: String,
-  fields: Vec<Field>,
-  constraint: Vec<Field>,
-  returning: Vec<Field>,
 }
 
-impl Record {
+impl TableRecord {
   pub fn new(item: ItemStruct) -> Self {
-    let config = get_config();
     let span = item.__span();
+    let ident = item.ident.clone();
     let fields = match item.fields {
       syn::Fields::Named(FieldsNamed {
         brace_token: _,
         named,
       }) => named
         .iter()
-        // .map(|f| {
-        //   let tokens = TokenStream::from_str(&f.ty).expect("{} is not a valid Type", &f.ty);
-        //   Field {
-        //     name: f.ident.as_ref().unwrap().clone(),
-        //     ty: parse_macro_input!(tokens as Type),
-        //   }
-        // })
-        .map(|f| Field {
-          name: f.ident.as_ref().unwrap().clone(),
-          ty: f.ty.clone(),
-        })
+        .map(|f| f.ident.as_ref().unwrap().to_string())
         .collect::<Vec<_>>(),
       syn::Fields::Unnamed(_) => panic!("Unnamed fields not supported"),
       syn::Fields::Unit => panic!("Unit fields not supported"),
     };
 
-    let (table_name, _constraint, actions, returning) = if let Some(attr) =
-      item.attrs.iter().find(|attr| {
-        attr
-          .path
-          .segments
-          .iter()
-          .find(|s| s.ident.to_string() == "record")
-          .is_some()
-      }) {
+    let (table_name, actions, returning) = if let Some(attr) = item.attrs.iter().find(|attr| {
+      attr
+        .path
+        .segments
+        .iter()
+        .find(|s| s.ident.to_string() == "record")
+        .is_some()
+    }) {
       let tokens = attr
         .tokens
         .clone()
@@ -163,122 +75,300 @@ impl Record {
       None => abort!(span, r#"the #[record(table = "table_name")] is missing"#),
     };
 
-    let (constraint, returning) = match config.table(&table_name) {
-      Some(table) => (
-        table
-          .constraints
-          .clone()
-          .iter()
-          .map(|f| Field {
-            name: Ident::new(&f.name, span),
-            ty: {
-              let tokens = TokenStream::from_str(&f.ty)
-                .expect(format!("{} is not a valid Type", &f.ty).as_str());
-              parse_macro_input!(tokens as Type)
-              // let ty = f
-              //   .ty
-              //   .split("::")
-              //   .map(|v| Ident::new(&v, span))
-              //   .collect::<Vec<_>>();
-              // quote!( #(#ty)::* )
-            },
-          })
-          .collect::<Vec<_>>(),
-        table
-          .columns
-          .clone()
-          .iter()
-          .filter(|f| returning.contains(&f.name))
-          .map(|f| Field {
-            name: Ident::new(&f.name, span),
-            ty: {
-              let tokens = TokenStream::from_str(&f.ty)
-                .expect(format!("{} is not a valid Type", &f.ty).as_str());
-              parse_macro_input!(tokens as Type)
-              // let ty = f
-              //   .ty
-              //   .split("::")
-              //   .map(|v| Ident::new(&v, span))
-              //   .collect::<Vec<_>>();
-              // quote!( #(#ty)::* )
-            },
-          })
-          .collect::<Vec<_>>(),
+    let config = match get_config().table(&table_name) {
+      Some(config) => config,
+      None => abort!(
+        span,
+        format!(
+          "`{}` is not present in record.json, please add it and run `ahecha` cli if needed",
+          &table_name
+        )
       ),
-      None => (vec![], vec![]),
     };
 
     Self {
       actions,
+      config,
+      fields,
+      ident,
+      returning,
       span,
       table_name,
-      fields,
-      constraint,
-      returning,
     }
+  }
+
+  pub fn mod_ident(&self) -> Ident {
+    Ident::new(
+      format!("AhechaRecord{}", self.ident.to_string()).as_str(),
+      self.span,
+    )
+  }
+
+  pub fn mod_record(&self) -> TokenStream {
+    let ident = self.mod_ident();
+    let fields = self.returning.iter().map(|field_name| {
+      let ident = Ident::new(field_name, self.span);
+      let column = match self.config.columns.iter().find(|c| &c.name == field_name) {
+        Some(column) => column,
+        None => abort!(self.span, "There is no column with name `{}` found in `{}` in the records.json, check it or run `ahecha` cli again", field_name, self.table_name),
+      };
+      let ty = get_type_for_column(&column , self.span);
+      quote!{ pub #ident : #ty }
+    }).collect::<Vec<_>>();
+
+    quote!(
+      #[allow(non_snake_case)]
+      pub mod #ident {
+        pub struct Record {
+         #(#fields),*
+        }
+      }
+    )
+    .into()
   }
 }
 
-impl ToTokens for Record {
+impl ToTokens for TableRecord {
   fn to_tokens(&self, tokens: &mut TokenStream) {
-    if self.actions.contains(&Action::Delete) {
-      let Record {
-        table_name,
-        constraint,
-        ..
-      } = self.clone();
-      DeleteStatement {
-        span: self.span,
-        table_name,
-        constraint: WhereConstraint { fields: constraint },
-      }
-      .to_tokens(tokens);
-    }
+    let delete_tokens = delete_stmt(&self);
+    let insert_tokens = insert_stmt(&self);
+    let update_tokens = update_stmt(&self);
+    let ident = &self.ident;
 
-    if self.actions.contains(&Action::Insert) {
-      let Record {
-        table_name,
-        fields,
-        constraint,
-        returning,
-        ..
-      } = self.clone();
-      InsertStatement {
-        span: self.span,
-        table_name,
-        constraint: InsertConstraint {
-          fields: constraint.clone(),
-        },
-        fields: InsertFieldsValues {
-          fields: [constraint, fields].concat(),
-        },
-        returning: Returning { fields: returning },
+    quote!(
+      impl #ident {
+        #delete_tokens
+        #insert_tokens
+        #update_tokens
       }
-      .to_tokens(tokens);
-    }
-
-    if self.actions.contains(&Action::Update) {
-      let Record {
-        table_name,
-        fields,
-        constraint,
-        returning,
-        ..
-      } = self.clone();
-      UpdateStatement {
-        span: self.span,
-        table_name,
-        constraint: WhereConstraint { fields: constraint },
-        fields: UpdateFieldsSet { fields },
-        returning: Returning { fields: returning },
-      }
-      .to_tokens(tokens);
-    }
+    )
+    .to_tokens(tokens);
   }
 }
 
-fn parse_attr_args(tokens: TokenStream) -> (Option<String>, Vec<Field>, Vec<Action>, Vec<String>) {
-  let mut constraint = vec![];
+fn delete_stmt(record: &TableRecord) -> TokenStream {
+  if record.actions.contains(&Action::Delete) {
+    let (_, where_args, fn_ident, fn_args) = where_parts(&record, "delete", 0);
+    let query = delete_query(&record);
+
+    quote!(
+      pub async fn #fn_ident <'a, 'c: 'a>(pool: impl sqlx::Executor<'c, Database = sqlx::Postgres> + 'a, #(#fn_args),* ) -> Result<(), sqlx::Error> {
+        sqlx::query!( #query, #(#where_args),* ).execute(pool).await?;
+        Ok(())
+      }
+    )
+  } else {
+    quote!()
+  }
+}
+
+fn delete_query(record: &TableRecord) -> String {
+  let (where_stmt, _, _, _) = where_parts(&record, "delete", 0);
+  format!("DELETE FROM {} {}", &record.table_name, where_stmt)
+}
+
+fn insert_stmt(record: &TableRecord) -> TokenStream {
+  if record.actions.contains(&Action::Insert) {
+    let query = insert_query(&record);
+    let query_args = vec![
+      record
+        .fields
+        .iter()
+        .map(|f| {
+          let ident = Ident::new(f, record.span);
+          quote!( &self. #ident )
+        })
+        .collect::<Vec<_>>(),
+      record
+        .config
+        .constraints
+        .iter()
+        .map(|f| {
+          let ident = Ident::new(f, record.span);
+          quote!( #ident )
+        })
+        .collect::<Vec<_>>(),
+    ]
+    .concat();
+
+    let fn_ident = Ident::new(
+      format!("insert_for_{}", record.config.constraints.join("_and_")).as_str(),
+      record.span,
+    );
+
+    let fn_args = get_fn_args(&record, record.config.constraints.clone());
+
+    if !record.returning.is_empty() {
+      let query = format!("{} RETURNING {}", query, record.returning.join(", "));
+      let mod_ident = record.mod_ident();
+
+      quote!(
+        pub async fn #fn_ident <'a, 'c: 'a>(&self, pool: impl sqlx::Executor<'c, Database = sqlx::Postgres> + 'a, #(#fn_args),* ) -> Result< #mod_ident::Record, sqlx::Error> {
+          sqlx::query_as!( #mod_ident::Record, #query, #(#query_args),* ).fetch_one(pool).await
+        }
+      )
+    } else {
+      quote!(
+        pub async fn #fn_ident <'a, 'c: 'a>(&self, pool: impl sqlx::Executor<'c, Database = sqlx::Postgres> + 'a, #(#fn_args),* ) -> Result<(), sqlx::Error> {
+          sqlx::query!( #query, #(#query_args),* ).execute(pool).await?;
+          Ok(())
+        }
+      )
+    }
+  } else {
+    quote!()
+  }
+}
+
+fn insert_query(record: &TableRecord) -> String {
+  let fields = vec![record.fields.clone(), record.config.constraints.clone()].concat();
+  format!(
+    "INSERT INTO {} ({}) VALUES ({})",
+    &record.table_name,
+    fields.join(", "),
+    fields
+      .iter()
+      .enumerate()
+      .map(|(i, _)| format!("${}", i + 1))
+      .collect::<Vec<_>>()
+      .join(", ")
+  )
+}
+
+fn update_stmt(record: &TableRecord) -> TokenStream {
+  if record.actions.contains(&Action::Update) {
+    let (_, where_args, fn_ident, fn_args) = where_parts(&record, "update", record.fields.len());
+    let set_args = record
+      .fields
+      .iter()
+      .map(|f| {
+        let ident = Ident::new(f, record.span);
+        quote!( self. #ident )
+      })
+      .collect::<Vec<_>>();
+    let query = update_string(&record);
+    let args = [set_args, where_args].concat();
+
+    if !record.returning.is_empty() {
+      let query = format!("{} RETURNING {}", query, record.returning.join(", "));
+      let mod_ident = record.mod_ident();
+
+      quote!(
+        pub async fn #fn_ident <'a, 'c: 'a>(&self, pool: impl sqlx::Executor<'c, Database = sqlx::Postgres> + 'a, #(#fn_args),* ) -> Result< #mod_ident::Record, ::sqlx::Error>
+        {
+          sqlx::query_as!( #mod_ident::Record, #query, #(#args),* ).fetch_one(pool).await
+        }
+      )
+    } else {
+      quote!(
+        pub async fn #fn_ident <'a, 'c: 'a>(&self, pool: impl sqlx::Executor<'c, Database = sqlx::Postgres> + 'a, #(#fn_args),* ) -> Result<(), sqlx::Error> {
+          sqlx::query!( #query, #(#args),* ).execute(pool).await?;
+          Ok(())
+        }
+      )
+    }
+  } else {
+    quote!()
+  }
+}
+
+fn update_string(record: &TableRecord) -> String {
+  let (where_stmt, _, _, _) = where_parts(&record, "update", record.fields.len());
+
+  let set = record
+    .fields
+    .iter()
+    .enumerate()
+    .map(|(i, f)| format!("{f} = ${}", i + 1))
+    .collect::<Vec<_>>();
+
+  format!(
+    "UPDATE {} SET {} {}",
+    &record.table_name,
+    set.join(", "),
+    where_stmt
+  )
+}
+
+fn where_parts(
+  record: &TableRecord,
+  method_prefix: &str,
+  index_offset: usize,
+) -> (String, Vec<TokenStream>, Ident, Vec<TokenStream>) {
+  let constraints = [
+    record.config.primary_keys.clone(),
+    record.config.constraints.clone(),
+  ]
+  .concat();
+  if !constraints.is_empty() {
+    let query = format!(
+      "WHERE {}",
+      constraints
+        .iter()
+        .enumerate()
+        .map(|(i, f)| format!("{f} = ${}", i + 1 + index_offset))
+        .collect::<Vec<_>>()
+        .join(" AND ")
+    );
+
+    let query_args = constraints
+      .iter()
+      .map(|f| {
+        let ident = Ident::new(f, record.span);
+        quote!(#ident)
+      })
+      .collect::<Vec<_>>();
+
+    let fn_ident = Ident::new(
+      format!("{method_prefix}_where_{}", constraints.join("_and_")).as_str(),
+      record.span,
+    );
+
+    let fn_args = get_fn_args(&record, constraints);
+
+    (query, query_args, fn_ident, fn_args)
+  } else {
+    (
+      "".to_owned(),
+      vec![],
+      Ident::new(method_prefix, record.span),
+      vec![],
+    )
+  }
+}
+
+fn get_fn_args(record: &TableRecord, field_names: Vec<String>) -> Vec<TokenStream> {
+  field_names.iter().map(|field_name| {
+    let ident = Ident::new(field_name, record.span);
+    let ty = match record.config.columns.iter().find(|c| &c.name == field_name) {
+      Some(column) => get_type_for_column(&column, record.span),
+      None => abort!(record.span, "There is no column with name `{}` found in `{}` in the records.json, check it or run `ahecha` cli again", field_name, record.table_name),
+    };
+    quote!( #ident : & #ty )
+  }).collect()
+}
+
+// TODO: Hide behind feature flag and implement for each database
+fn get_type_for_column(column: &Column, span: Span) -> TokenStream {
+  let ty = match column.ty.as_str() {
+    "varchar" => quote!(&str),
+    "int4" => quote!(i32),
+    "uuid" => quote!(ahecha::uuid::Uuid),
+    _ => abort!(
+      span,
+      "The type `{}` is not mapped to a rust type yet, please open an issue or PR",
+      &column.ty
+    ),
+  };
+
+  if column.is_nullable {
+    quote!( Option< #ty > )
+  } else {
+    ty
+  }
+}
+
+fn parse_attr_args(tokens: TokenStream) -> (Option<String>, Vec<Action>, Vec<String>) {
   let mut actions = vec![];
   let mut returning = vec![];
   let mut table_name = None;
@@ -288,9 +378,9 @@ fn parse_attr_args(tokens: TokenStream) -> (Option<String>, Vec<Field>, Vec<Acti
     match token.clone() {
       proc_macro2::TokenTree::Group(group) => abort!(group, "Unsupported group `{}`", group),
       proc_macro2::TokenTree::Ident(ident) => match ident.to_string().as_str() {
-        "deleteable" => actions.push(Action::Delete),
+        "deleteable" | "deletable" => actions.push(Action::Delete),
         "insertable" => actions.push(Action::Insert),
-        "updateable" => actions.push(Action::Update),
+        "updateable" | "updatable" => actions.push(Action::Update),
         "table" => {
           if let Some(table_token) = iter.next() {
             if let proc_macro2::TokenTree::Punct(p) = table_token {
@@ -330,89 +420,6 @@ fn parse_attr_args(tokens: TokenStream) -> (Option<String>, Vec<Field>, Vec<Acti
             abort!(
               token,
               "Expected table name. Example: #[record(table=\"user\")"
-            )
-          }
-        }
-        "constraint" => {
-          if let Some(constraint_token) = iter.next() {
-            if let proc_macro2::TokenTree::Group(g) = constraint_token {
-              let mut stream_iter = g.stream().into_iter();
-              while let Some(fn_arg_token) = stream_iter.next() {
-                // FnArg ident
-                let name = match fn_arg_token.clone() {
-                  proc_macro2::TokenTree::Group(item) => {
-                    abort!(item, "Expected ident, but found `{}`", item)
-                  }
-                  proc_macro2::TokenTree::Ident(item) => item,
-                  proc_macro2::TokenTree::Punct(item) => {
-                    abort!(item, "Expected ident, but found `{}`", item)
-                  }
-                  proc_macro2::TokenTree::Literal(item) => {
-                    abort!(item, "Expected ident, but found `{}`", item)
-                  }
-                };
-
-                // Colon
-                match stream_iter.next() {
-                  Some(colon_token) => match colon_token {
-                    proc_macro2::TokenTree::Group(item) => {
-                      abort!(item, "Expected `:`, but found `{}`", item)
-                    }
-                    proc_macro2::TokenTree::Ident(item) => {
-                      abort!(item, "Expected `:`, but found `{}`", item)
-                    }
-                    proc_macro2::TokenTree::Punct(item) => match item.as_char() {
-                      ':' => {}
-                      _ => abort!(item, "Expected `:`, but found `{}`", item.as_char()),
-                    },
-                    proc_macro2::TokenTree::Literal(item) => {
-                      abort!(item, "Expected `:`, but found `{}`", item)
-                    }
-                  },
-                  None => abort!(fn_arg_token, "Expected `:`, but found nothing"),
-                }
-
-                // FnArg type
-                // TODO: improve it to support `type::Path`, right now it only support ident
-                let mut ty_tokens = vec![];
-                while let Some(fn_arg_type_token) = stream_iter.next() {
-                  match fn_arg_type_token {
-                    proc_macro2::TokenTree::Group(item) => {
-                      abort!(item, "Expected an ident, but found `{}`", item)
-                    }
-                    proc_macro2::TokenTree::Ident(item) => ty_tokens.push(item.to_token_stream()),
-                    proc_macro2::TokenTree::Punct(item) => match item.as_char() {
-                      ':' => ty_tokens.push(quote!( : )),
-                      ',' => break,
-                      _ => abort!(item, "Expected an ident, but found `{}`", item),
-                    },
-                    proc_macro2::TokenTree::Literal(item) => {
-                      abort!(item, "Expected an ident, but found `{}`", item)
-                    }
-                  }
-                }
-
-                if ty_tokens.is_empty() {
-                  abort!(fn_arg_token, "Expected an ident, but found nothing")
-                }
-
-                // If we got here, name and type are set.
-                constraint.push(Field {
-                  name,
-                  ty: quote!( #(#ty_tokens)* ),
-                });
-              }
-            } else {
-              abort!(
-                constraint_token,
-                "Expected field and type list, but got `{}`",
-                constraint_token
-              )
-            }
-          } else {
-            abort!(
-              token,
-              "Expected constraint field and type list,but got nothing"
             )
           }
         }
@@ -474,5 +481,80 @@ fn parse_attr_args(tokens: TokenStream) -> (Option<String>, Vec<Field>, Vec<Acti
     }
   }
 
-  return (table_name, constraint, actions, returning);
+  return (table_name, actions, returning);
+}
+
+#[cfg(test)]
+mod test {
+  use super::*;
+  use ahecha_cli::config::Column;
+
+  fn test_record() -> TableRecord {
+    TableRecord {
+      actions: vec![],
+      config: TableConfig {
+        columns: vec![
+          Column {
+            name: "id".to_string(),
+            ty: "uuid".to_string(),
+            is_nullable: false,
+          },
+          Column {
+            name: "name".to_string(),
+            ty: "varchar".to_string(),
+            is_nullable: false,
+          },
+          Column {
+            name: "age".to_string(),
+            ty: "int4".to_string(),
+            is_nullable: true,
+          },
+          Column {
+            name: "tenant_id".to_string(),
+            ty: "varchar".to_string(),
+            is_nullable: false,
+          },
+        ],
+        primary_keys: vec!["id".to_string()],
+        constraints: vec!["tenant_id".to_string()],
+      },
+      fields: vec!["name".to_string(), "age".to_string()],
+      ident: Ident::new("TestRecord", Span::call_site()),
+      returning: vec!["id".to_string()],
+      span: Span::call_site(),
+      table_name: "users".to_owned(),
+    }
+  }
+
+  #[test]
+  fn test_simple_delete_string_query() {
+    let query = delete_query(&test_record());
+    assert_eq!("DELETE FROM users WHERE id = $1 AND tenant_id = $2", query);
+  }
+
+  #[test]
+  fn test_simple_insert_string_query() {
+    let query = insert_query(&test_record());
+    assert_eq!(
+      "INSERT INTO users (name, age, tenant_id) VALUES ($1, $2, $3)",
+      query
+    );
+  }
+
+  #[test]
+  fn test_simple_update_string_query() {
+    let query = update_string(&test_record());
+    assert_eq!(
+      "UPDATE users SET name = $1, age = $2 WHERE id = $3 AND tenant_id = $4",
+      query
+    );
+  }
+
+  #[test]
+  fn test_simple_returning_tokenstream() {
+    let mut config = test_record();
+    config.returning = vec!["age".to_string()];
+    let tokens = config.mod_record();
+    assert_eq!("", tokens.to_string());
+  }
 }
