@@ -1,6 +1,6 @@
 [package]
 name = "ahecha"
-version = "0.0.11"
+version = "0.0.12"
 edition = "2021"
 license = "MIT"
 description = "Ahecha crate"
@@ -19,5 +19,5 @@ time = ["ahecha_html/time"]
 
 [dependencies]
 ahecha_macro = { path="../macro", version="0.0.10" }
-ahecha_html = { path="../html", version="0.0.9" }
+ahecha_html = { path="../html", version="0.0.10" }
 uuid = "1"
