@@ -2,12 +2,15 @@ extern crate proc_macro;
 
 use convert_case::{Case, Casing};
 use proc_macro::TokenStream;
+use proc_macro_error::proc_macro_error;
 use quote::quote;
+use record::TableRecord;
 use syn::parse_macro_input;
 
 use crate::html::node::Node;
 
 mod html;
+mod record;
 
 #[proc_macro]
 pub fn html(input: TokenStream) -> TokenStream {
@@ -32,4 +35,13 @@ pub fn partial(item: TokenStream) -> TokenStream {
     }
   )
   .into()
+}
+
+#[proc_macro_derive(Record, attributes(record))]
+#[proc_macro_error]
+pub fn record(item: TokenStream) -> TokenStream {
+  let input = parse_macro_input!(item as syn::ItemStruct);
+  let record = TableRecord::new(input);
+  let mod_record = record.mod_record();
+  quote!( #mod_record #record ).into()
 }

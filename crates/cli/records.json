@@ -1,0 +1,28 @@
+{
+  "users": {
+    "columns": [
+      {
+        "name": "id",
+        "ty": "uuid"
+      },
+      {
+        "name": "name",
+        "ty": "varchar"
+      },
+      {
+        "name": "age",
+        "ty": "int4"
+      },
+      {
+        "name": "tenant_id",
+        "ty": "varchar"
+      }
+    ],
+    "constraints": [
+      "tenant_id"
+    ],
+    "primary_keys": [
+      "id"
+    ]
+  }
+}
