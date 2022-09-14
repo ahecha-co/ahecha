@@ -1,0 +1,16 @@
+[package]
+name = "router-macros"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+proc-macro = true
+
+[dependencies]
+hex = "0.4.3"
+quote = "1.0.21"
+serde = { version = "1.0.144", features = ["derive"] }
+serde_json = "1.0.85"
+sha2 = "0.10.5"
+syn = { version = "1.0.99", features = ["extra-traits"] }
