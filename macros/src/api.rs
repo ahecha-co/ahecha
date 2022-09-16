@@ -106,7 +106,6 @@ pub(crate) fn parse(item: ItemFn, attr: AttributeArgs) {
       }
       syn::ReturnType::Type(_, ty) => {
         let ty = ty.to_token_stream().to_string();
-        dbg!(&ty);
         if ty.starts_with("Json") {
           ReturnTy::Json
         } else if ty.starts_with("Result") {

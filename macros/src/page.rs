@@ -1,3 +1,5 @@
+mod component;
+
 use std::fs::{create_dir_all, read_dir, read_to_string};
 
 use proc_macro_error::{abort_call_site, emit_error};
@@ -5,6 +7,7 @@ use quote::{quote, ToTokens, __private::Span};
 use serde::{Deserialize, Serialize};
 use syn::{AttributeArgs, Ident, ItemFn};
 
+use self::component::Component;
 use crate::{
   api::ApiRoute, base_module_path, file_path_from_call_site, module_path_from_call_site,
   write_to_target, FnArg, Layout, Method, RenderStrategy, Route, TARGET_PATH,
@@ -38,20 +41,20 @@ pub(crate) struct StaticPageRoute {
 impl ToTokens for DynamicPageRoute {
   fn to_tokens(&self, tokens: &mut quote::__private::TokenStream) {
     let route_path = &self.path;
-    let props = self
-      .props
-      .iter()
-      .map(|p| {
-        let ident = Ident::new(p.ident.as_str(), Span::call_site());
-        quote!( #ident : #ident .clone() )
-      })
-      .collect::<Vec<_>>();
-    let app_body = wrap_page(
-      &self.module_path,
-      &self.ident,
-      Ident::new(&self.ident, Span::call_site().into()),
-      props.clone(),
-    );
+    // let props = self
+    //   .props
+    //   .iter()
+    //   .map(|p| {
+    //     let ident = Ident::new(p.ident.as_str(), Span::call_site());
+    //     quote!( #ident : #ident .clone() )
+    //   })
+    //   .collect::<Vec<_>>();
+    // let app_body = wrap_page(
+    //   &self.module_path,
+    //   &self.ident,
+    //   Ident::new(&self.ident, Span::call_site().into()),
+    //   props.clone(),
+    // );
 
     let api_route = match get_api_route_for(&self.server_props) {
       Some(value) => value,
@@ -114,6 +117,10 @@ impl ToTokens for DynamicPageRoute {
       ),
     };
 
+    let component = Component::build_recursive_up(self.into());
+    let use_tokens = component.use_tokens();
+    let cmp = quote!(#component);
+
     quote!(
       .route(#route_path, axum::routing::get(| #handler_args | async move {
         use dioxus::prelude::*;
@@ -126,7 +133,10 @@ impl ToTokens for DynamicPageRoute {
 
         fn app(cx: Scope<AppProps>) -> Element {
           let AppProps { #(#props_idents),* } = &cx.props;
-          #app_body
+          #use_tokens
+          cx.render(rsx!(
+            #component
+          ))
         }
 
         let res = #api_module_path ().await;
@@ -145,12 +155,14 @@ impl ToTokens for DynamicPageRoute {
 impl ToTokens for StaticPageRoute {
   fn to_tokens(&self, tokens: &mut quote::__private::TokenStream) {
     let route_path = &self.path;
-    let app_body = wrap_page(
-      &self.module_path,
-      &self.ident,
-      Ident::new(&self.ident, Span::call_site().into()),
-      vec![],
-    );
+    // let app_body = wrap_page(
+    //   &self.module_path,
+    //   &self.ident,
+    //   Ident::new(&self.ident, Span::call_site().into()),
+    //   vec![],
+    // );
+    let component = Component::build_recursive_up(self.into());
+    let use_tokens = component.use_tokens();
 
     quote!(
       .route(#route_path, axum::routing::get(|| async move {
@@ -158,7 +170,10 @@ impl ToTokens for StaticPageRoute {
         let index_html = include_str!("../index.html");
 
         fn app(cx: Scope) -> Element {
-          #app_body
+          #use_tokens
+          cx.render(rsx!(
+            #component
+          ))
         }
         let mut vdom = VirtualDom::new(app);
 
