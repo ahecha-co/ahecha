@@ -1,40 +1,129 @@
 #![feature(proc_macro_span)]
-use std::fs::{create_dir_all, read_dir, read_to_string, write};
+use std::fs::{create_dir_all, read_dir, read_to_string, remove_dir_all, write};
 
+use api::ApiRoute;
+use page::{DynamicPageRoute, StaticPageRoute};
 use proc_macro::{Span, TokenStream};
-use quote::quote;
+use proc_macro_error::proc_macro_error;
+use quote::{quote, ToTokens};
 use serde::{Deserialize, Serialize};
+use syn::{parse_macro_input, AttributeArgs, Ident, ItemFn};
+
+mod api;
+mod page;
+
+const TARGET_PATH: &'static str = "target/router";
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
-enum RouteType {
-  Api,
-  Page,
+enum RenderStrategy {
+  CSR,
+  SSR,
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+enum Method {
+  Delete,
+  Get,
+  Patch,
+  Post,
+  Put,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct Route {
+struct FnArg {
+  ident: String,
+  ty: String,
+}
+
+impl ToTokens for FnArg {
+  fn to_tokens(&self, tokens: &mut quote::__private::TokenStream) {
+    let ident = Ident::new(&self.ident, Span::call_site().into());
+    let ty = self
+      .ty
+      .clone()
+      .parse::<quote::__private::TokenStream>()
+      .unwrap();
+    quote!(#ident: #ty).to_tokens(tokens);
+  }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+enum Route {
+  Api(ApiRoute),
+  DynamicPage(DynamicPageRoute),
+  StaticPage(StaticPageRoute),
+}
+
+impl ToTokens for Route {
+  fn to_tokens(&self, tokens: &mut quote::__private::TokenStream) {
+    match self {
+      Route::Api(t) => quote!(#t).to_tokens(tokens),
+      Route::DynamicPage(t) => quote!(#t).to_tokens(tokens),
+      Route::StaticPage(t) => quote!(#t).to_tokens(tokens),
+    }
+  }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Layout {
+  ident: String,
   module_path: String,
-  path: String,
-  ty: RouteType,
 }
 
+#[proc_macro_error]
 #[proc_macro_attribute]
-pub fn page(_attr: TokenStream, item: TokenStream) -> TokenStream {
-  parse_route(item.clone(), RouteType::Page);
+pub fn layout(_attr: TokenStream, item: TokenStream) -> TokenStream {
+  {
+    let item = item.clone();
+    let item_fn = parse_macro_input!(item as ItemFn);
+    let layout = Layout {
+      ident: item_fn.sig.ident.to_string(),
+      module_path: module_path_from_call_site(),
+    };
+    write_to_target("layout", &layout.module_path.clone(), layout);
+  }
   item
 }
 
+#[proc_macro_error]
 #[proc_macro_attribute]
-pub fn route(_attr: TokenStream, item: TokenStream) -> TokenStream {
-  parse_route(item.clone(), RouteType::Api);
+pub fn page(attr: TokenStream, item: TokenStream) -> TokenStream {
+  page::parse(
+    {
+      let item = item.clone();
+      parse_macro_input!(item as ItemFn)
+    },
+    parse_macro_input!(attr as AttributeArgs),
+  );
   item
 }
 
+#[proc_macro_error]
+#[proc_macro_attribute]
+pub fn route(attr: TokenStream, item: TokenStream) -> TokenStream {
+  api::parse(
+    {
+      let item = item.clone();
+      parse_macro_input!(item as ItemFn)
+    },
+    parse_macro_input!(attr as AttributeArgs),
+  );
+  item
+}
+
+#[proc_macro_error]
+#[proc_macro]
+pub fn monkey_path_clean(item: TokenStream) -> TokenStream {
+  remove_dir_all(TARGET_PATH).unwrap();
+  create_dir_all(TARGET_PATH).unwrap();
+  item
+}
+
+#[proc_macro_error]
 #[proc_macro]
 pub fn router(_item: TokenStream) -> TokenStream {
-  let target_path = "target/router";
-  create_dir_all(target_path).unwrap();
-  let dir = read_dir(target_path).unwrap();
+  create_dir_all(TARGET_PATH).unwrap();
+  let dir = read_dir(TARGET_PATH).unwrap();
   let mut routes = vec![];
 
   for path in dir {
@@ -42,73 +131,62 @@ pub fn router(_item: TokenStream) -> TokenStream {
     let path_str = path.file_name().into_string().unwrap();
     if path_str.ends_with(".json") {
       let content = read_to_string(&path.path()).unwrap();
-      let route: Route = serde_json::from_str(&content).unwrap();
-      let route_path = &route.path;
-      let module_path = {
-        let tokens = route.module_path.parse::<TokenStream>().unwrap();
-        syn::parse_macro_input!(tokens as syn::Path)
-      };
-      match route.ty {
-        RouteType::Api => routes.push(quote!(
-          .route(#route_path, axum::routing::get( #module_path ))
-        )),
-        RouteType::Page => routes.push(quote!(
-          .route(#route_path, axum::routing::get(|| async move {
-            let mut vdom = dioxus::prelude::VirtualDom::new(#module_path);
-            let _ = vdom.rebuild();
-            axum::response::Html(
-              dioxus::ssr::render_vdom(&vdom)
-            )
-          }))
-        )),
+      if path_str.starts_with("route-") {
+        let route: Route = serde_json::from_str(&content).unwrap();
+        routes.push(route);
       }
     }
   }
 
+  let mut tokens = vec![];
+
+  for route in routes.iter() {
+    tokens.push(quote!(#route));
+  }
+
   quote!(
     server(
-      axum::Router::new() #(#routes)*
+      axum::Router::new() #(#tokens)*
     ).await
   )
   .into()
 }
 
-fn parse_route(item: TokenStream, ty: RouteType) {
-  create_dir_all("target/router/").unwrap();
-  let ident = item
-    .clone()
-    .into_iter()
-    .find(|t| match t {
-      proc_macro::TokenTree::Ident(ident) => {
-        !["async", "fn", "pub"].contains(&ident.to_string().as_str())
-      }
-      _ => false,
-    })
-    .map(|t| match t {
-      proc_macro::TokenTree::Ident(ident) => ident.to_string(),
-      _ => unreachable!(),
-    })
-    .unwrap();
-  let span = Span::call_site();
-  let file_path = span.source_file().path().display().to_string();
-  let parts = file_path.split("src/").collect::<Vec<_>>();
-  let path = parts.get(1).unwrap().trim_end_matches(".rs");
-  let module_path = path.replace('/', "::");
-  let name = format!("route-{}.json", hash_string(&module_path));
-  let route = Route {
-    module_path: format!("crate::{}::{}", module_path, ident),
-    path: format!("/{}", path.trim_end_matches("/")),
-    ty,
-  };
-  dbg!(&route);
+fn hash_string(input: &str) -> String {
+  use sha2::{Digest, Sha256};
+  hex::encode(Sha256::digest(input.as_bytes()))
+}
+
+fn write_to_target<C>(name: &str, string_to_hash: &str, content: C)
+where
+  C: Serialize + std::fmt::Debug,
+{
   write(
-    format!("target/router/{}", name),
-    serde_json::to_string_pretty(&route).unwrap(),
+    format!(
+      "{}/{}-{}.json",
+      TARGET_PATH,
+      name,
+      hash_string(string_to_hash)
+    ),
+    serde_json::to_string_pretty(&content).unwrap(),
   )
   .unwrap();
 }
 
-fn hash_string(input: &str) -> String {
-  use sha2::{Digest, Sha256};
-  hex::encode(Sha256::digest(input.as_bytes()))
+fn file_path_from_call_site() -> String {
+  let span = Span::call_site();
+  span.source_file().path().display().to_string()
+}
+
+fn module_path_from_call_site() -> String {
+  let file_path = file_path_from_call_site();
+  let parts = file_path.split("src/").collect::<Vec<_>>();
+  let file_path = parts.get(1).unwrap().trim_end_matches(".rs");
+  format!("crate::{}", file_path.replace('/', "::"))
+}
+
+fn base_module_path(module: &str) -> String {
+  let mut parts = module.split("::").collect::<Vec<_>>();
+  let _ = parts.remove(parts.len() - 1);
+  parts.join("::")
 }
