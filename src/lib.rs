@@ -61,12 +61,6 @@ pub fn BrowserRouter<'a>(
   cx.render(rsx!(children))
 }
 
-#[allow(non_snake_case)]
-pub fn Empty(_: Scope) -> Element {
-  tracing::trace!("Rendering empty component");
-  None
-}
-
 #[derive(Props)]
 pub struct RoutesProps<'a> {
   base_path: Option<&'a str>,
@@ -86,31 +80,30 @@ pub fn Routes<'a>(cx: Scope<'a, RoutesProps<'a>>) -> Element<'a> {
     .as_ref()
     .map_or_else(|| "".to_string(), |v| v.to_string());
 
-  tracing::trace!("Searching for a components to show");
-  let MatchedComponent = match router_context.read().location.as_ref() {
-    Some(location) => match context
-      .read()
-      .router
-      .at(location.as_str().trim_start_matches(&base_path))
-    {
-      Ok(res) => {
-        tracing::trace!("A route matched");
-        res.value.clone()
-      }
-      Err(err) => {
-        tracing::error!("{:?}", err);
-        Empty
-      }
-    },
-    None => {
-      tracing::trace!("No location found, to show a component a location must be provided");
-      Empty
-    }
-  };
-
   cx.render(rsx!(
     &cx.props.children
-    MatchedComponent {}
+
+    match router_context.read().location.as_ref() {
+      Some(location) => match context
+        .read()
+        .router
+        .at(location.as_str().trim_start_matches(&base_path))
+      {
+        Ok(res) => {
+          tracing::trace!("A route matched");
+          let C = res.value.clone();
+          rsx!( C {} )
+        }
+        Err(err) => {
+          tracing::error!("{:?}", err);
+          rsx!(Fragment {})
+        }
+      },
+      None => {
+        tracing::trace!("No location found, to show a component a location must be provided");
+        rsx!(Fragment {})
+      }
+    }
   ))
 }
 
