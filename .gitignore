@@ -87,3 +87,6 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+# Custom
+_ahecha_debug.rs

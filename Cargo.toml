@@ -1,5 +1,5 @@
 [package]
-name = "router"
+name = "ahecha"
 version = "0.1.0"
 edition = "2021"
 
@@ -14,4 +14,9 @@ exclude = [
 resolver = "2"
 
 [dependencies]
-router-macros = { path = "./macros" }
+ahecha-macros = { path = "./macros" }
+dioxus = { version = "0.2.4", features = ["web"] }
+web-sys = { version = "0.3.60", features = ["Window", "Document", "Location"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+web-sys = "0.3.60"

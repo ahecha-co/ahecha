@@ -9,6 +9,7 @@ use crate::{base_module_path, Layout, TARGET_PATH};
 
 #[derive(Clone, Debug)]
 pub(crate) struct Component {
+  pub(crate) alias: String,
   pub(crate) children: Vec<Component>,
   pub(crate) ident: String,
   pub(crate) module_path: String,
@@ -33,10 +34,11 @@ impl Component {
       }
     }
 
-    let mut module_path_parts = {
-      let base = base_module_path(&page.module_path);
-      base.split("::").map(|s| s.to_owned()).collect::<Vec<_>>()
-    };
+    let mut module_path_parts = page
+      .module_path
+      .split("::")
+      .map(|s| s.to_owned())
+      .collect::<Vec<_>>();
 
     while !module_path_parts.is_empty() {
       let module_path = module_path_parts.join("::");
@@ -68,7 +70,8 @@ impl Component {
     let module_path = format!("{}::{}", &self.module_path, &self.ident)
       .parse::<TokenStream>()
       .unwrap();
-    let mut tokens = vec![quote!( use #module_path ; )];
+    let alias = &self.alias.parse::<TokenStream>().unwrap();
+    let mut tokens = vec![quote!( use #module_path as #alias; )];
     for child in self.children.iter() {
       tokens.push(child.use_tokens());
     }
@@ -78,7 +81,7 @@ impl Component {
 
 impl ToTokens for Component {
   fn to_tokens(&self, tokens: &mut TokenStream) {
-    let ident = Ident::new(&self.ident, Span::call_site().into());
+    let ident = Ident::new(&self.alias, Span::call_site().into());
     let props = self
       .props
       .iter()
@@ -102,6 +105,7 @@ impl ToTokens for Component {
 impl From<&DynamicPageRoute> for Component {
   fn from(item: &DynamicPageRoute) -> Self {
     Self {
+      alias: alias_from_module_path(&item.module_path, &item.ident),
       children: vec![],
       ident: item.ident.clone(),
       module_path: item.module_path.clone(),
@@ -113,6 +117,7 @@ impl From<&DynamicPageRoute> for Component {
 impl From<&StaticPageRoute> for Component {
   fn from(item: &StaticPageRoute) -> Self {
     Self {
+      alias: alias_from_module_path(&item.module_path, &item.ident),
       children: vec![],
       ident: item.ident.clone(),
       module_path: item.module_path.clone(),
@@ -124,10 +129,35 @@ impl From<&StaticPageRoute> for Component {
 impl From<&Layout> for Component {
   fn from(item: &Layout) -> Self {
     Self {
+      alias: alias_from_module_path(&item.module_path, &item.ident),
       children: vec![],
       ident: item.ident.clone(),
       module_path: item.module_path.clone(),
       props: vec![],
     }
   }
+}
+
+fn alias_from_module_path(module_path: &str, ident: &str) -> String {
+  let last_part = module_path
+    .split("::")
+    .map(uppercase_first)
+    .collect::<Vec<_>>()
+    .join("");
+  format!("{}{}", last_part, ident)
+}
+
+fn uppercase_first(data: &str) -> String {
+  // Uppercase first letter.
+  let mut result = String::new();
+  let mut first = true;
+  for value in data.chars() {
+    if first {
+      result.push(value.to_ascii_uppercase());
+      first = false;
+    } else {
+      result.push(value);
+    }
+  }
+  result
 }

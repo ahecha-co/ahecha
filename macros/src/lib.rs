@@ -144,12 +144,15 @@ pub fn router(_item: TokenStream) -> TokenStream {
     tokens.push(quote!(#route));
   }
 
-  quote!(
+  let tokens = quote!(
     server(
       axum::Router::new() #(#tokens)*
     ).await
-  )
-  .into()
+  );
+
+  write("../../_ahecha_debug.rs", &tokens.to_string()).unwrap();
+
+  tokens.into()
 }
 
 fn hash_string(input: &str) -> String {
