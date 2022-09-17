@@ -1,5 +1,3 @@
-use std::{cell::RefCell, rc::Rc, sync::Arc};
-
 pub use ahecha_macros::*;
 use dioxus::prelude::*;
 
@@ -64,7 +62,7 @@ pub fn BrowserRouter<'a>(
 }
 
 #[allow(non_snake_case)]
-pub fn Empty(cx: Scope) -> Element {
+pub fn Empty(_: Scope) -> Element {
   tracing::trace!("Rendering empty component");
   None
 }
@@ -82,16 +80,25 @@ pub fn Routes<'a>(cx: Scope<'a, RoutesProps<'a>>) -> Element<'a> {
   });
   let context = use_context::<RoutesContext>(&cx)?;
   let router_context = use_context::<RouterContext>(&cx)?;
+  let base_path = cx
+    .props
+    .base_path
+    .as_ref()
+    .map_or_else(|| "".to_string(), |v| v.to_string());
 
   tracing::trace!("Searching for a components to show");
   let MatchedComponent = match router_context.read().location.as_ref() {
-    Some(location) => match context.read().router.at(location.as_str()) {
+    Some(location) => match context
+      .read()
+      .router
+      .at(location.as_str().trim_start_matches(&base_path))
+    {
       Ok(res) => {
         tracing::trace!("A route matched");
         res.value.clone()
       }
       Err(err) => {
-        tracing::error!("{}", err);
+        tracing::error!("{:?}", err);
         Empty
       }
     },
@@ -139,10 +146,13 @@ pub fn Route<'a>(
       relative_path: path.to_string(),
     });
 
-    context
+    if let Err(err) = context
       .write()
       .router
-      .insert(route_context.absolute_path, element.clone());
+      .insert(route_context.absolute_path, element.clone())
+    {
+      tracing::error!("{:?}", err);
+    }
   });
 
   cx.render(rsx!(children))
