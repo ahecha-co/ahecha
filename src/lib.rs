@@ -9,24 +9,29 @@ pub struct RouterContext {
 }
 
 impl RouterContext {
-  pub fn new() -> Self {
-    #[cfg(target_arch = "wasm32")]
-    let location = match web_sys::window() {
-      Some(window) => match window.document() {
-        Some(document) => match document.location() {
-          Some(location) => match location.pathname() {
-            Ok(pathname) => Some(pathname),
-            Err(_) => None,
+  pub fn new(location: &Option<&str>) -> Self {
+    let location = match location {
+      Some(location) => Some(location.to_string()),
+      None => {
+        #[cfg(target_arch = "wasm32")]
+        match web_sys::window() {
+          Some(window) => match window.document() {
+            Some(document) => match document.location() {
+              Some(location) => match location.pathname() {
+                Ok(pathname) => Some(pathname),
+                Err(_) => None,
+              },
+              None => None,
+            },
+            None => None,
           },
           None => None,
-        },
-        None => None,
-      },
-      None => None,
-    };
+        }
 
-    #[cfg(not(target_arch = "wasm32"))]
-    let location = None;
+        #[cfg(not(target_arch = "wasm32"))]
+        None
+      }
+    };
 
     Self { location }
   }
@@ -49,8 +54,12 @@ impl RoutesContext {
 
 #[allow(non_snake_case)]
 #[inline_props]
-pub fn BrowserRouter<'a>(cx: Scope, children: Element<'a>) -> Element {
-  use_context_provider(&cx, || RouterContext::new());
+pub fn BrowserRouter<'a>(
+  cx: Scope<'a>,
+  location: Option<&'a str>,
+  children: Element<'a>,
+) -> Element<'a> {
+  use_context_provider(&cx, || RouterContext::new(location));
   cx.render(rsx!(children))
 }
 
