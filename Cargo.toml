@@ -15,7 +15,12 @@ resolver = "2"
 
 [dependencies]
 ahecha-macros = { path = "./macros" }
-dioxus = { version = "0.2.4", features = ["web"] }
+dioxus = { git = "https://github.com/dioxuslabs/dioxus" }
+dioxus-web = { git = "https://github.com/dioxuslabs/dioxus" }
+hex = "0.4.3"
+matchit = "0.6.0"
+sha2 = "0.10.6"
+tracing = "0.1.36"
 web-sys = { version = "0.3.60", features = ["Window", "Document", "Location"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]

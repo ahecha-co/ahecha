@@ -1,60 +1,140 @@
-use std::collections::HashMap;
+use std::{cell::RefCell, rc::Rc, sync::Arc};
 
 pub use ahecha_macros::*;
 use dioxus::prelude::*;
 
-// TODO: Implement link
-// TODO: Implement CSR router
-// TODO: Implement CSR route
-
-#[allow(dead_code)]
-pub struct RouterService {
-  initial_url: Option<String>,
-  routes: HashMap<String, ()>,
+#[derive(Clone)]
+pub struct RouterContext {
+  pub location: Option<String>,
 }
 
-impl RouterService {
-  fn new(routes: HashMap<String, ()>) -> Self {
-    #[cfg(not(target_arch = "wasm32"))]
-    let initial_url = None;
-
+impl RouterContext {
+  pub fn new() -> Self {
     #[cfg(target_arch = "wasm32")]
-    let initial_url = Some(
-      web_sys::window()
-        .unwrap()
-        .document()
-        .unwrap()
-        .location()
-        .unwrap()
-        .href()
-        .unwrap(),
-    );
+    let location = match web_sys::window() {
+      Some(window) => match window.document() {
+        Some(document) => match document.location() {
+          Some(location) => match location.pathname() {
+            Ok(pathname) => Some(pathname),
+            Err(_) => None,
+          },
+          None => None,
+        },
+        None => None,
+      },
+      None => None,
+    };
 
+    #[cfg(not(target_arch = "wasm32"))]
+    let location = None;
+
+    Self { location }
+  }
+}
+
+#[derive(Clone)]
+pub struct RoutesContext {
+  base_path: Option<String>,
+  router: matchit::Router<Component>,
+}
+
+impl RoutesContext {
+  pub fn new(base_path: Option<String>) -> Self {
     Self {
-      initial_url,
-      routes,
+      base_path,
+      router: matchit::Router::new(),
     }
   }
 }
 
-pub struct Router {
-  routes: HashMap<String, ()>,
-}
-
-impl Router {
-  pub fn get(mut self, route: &str, page: ()) -> Self {
-    // TODO: panic if route is already set
-    self.routes.insert(route.to_owned(), page);
-    self
-  }
-
-  pub fn into_make_service(self) -> RouterService {
-    RouterService::new(self.routes)
-  }
+#[allow(non_snake_case)]
+#[inline_props]
+pub fn BrowserRouter<'a>(cx: Scope, children: Element<'a>) -> Element {
+  use_context_provider(&cx, || RouterContext::new());
+  cx.render(rsx!(children))
 }
 
 #[allow(non_snake_case)]
-pub fn RouterComponent(cx: Scope) -> Element {
-  let _service = use_context::<RouterService>(&cx)?;
-  cx.render(rsx!("Router"))
+pub fn Empty(cx: Scope) -> Element {
+  tracing::trace!("Rendering empty component");
+  None
+}
+
+#[derive(Props)]
+pub struct RoutesProps<'a> {
+  base_path: Option<&'a str>,
+  children: Element<'a>,
+}
+
+#[allow(non_snake_case)]
+pub fn Routes<'a>(cx: Scope<'a, RoutesProps<'a>>) -> Element<'a> {
+  use_context_provider(&cx, || {
+    RoutesContext::new(cx.props.base_path.map(|s| s.to_string()))
+  });
+  let context = use_context::<RoutesContext>(&cx)?;
+  let router_context = use_context::<RouterContext>(&cx)?;
+
+  tracing::trace!("Searching for a components to show");
+  let MatchedComponent = match router_context.read().location.as_ref() {
+    Some(location) => match context.read().router.at(location.as_str()) {
+      Ok(res) => {
+        tracing::trace!("A route matched");
+        res.value.clone()
+      }
+      Err(err) => {
+        tracing::error!("{}", err);
+        Empty
+      }
+    },
+    None => {
+      tracing::trace!("No location found, to show a component a location must be provided");
+      Empty
+    }
+  };
+
+  cx.render(rsx!(
+    &cx.props.children
+    MatchedComponent {}
+  ))
+}
+
+#[derive(Clone)]
+pub struct RouteContext {
+  absolute_path: String,
+  relative_path: String,
+}
+
+#[allow(non_snake_case)]
+#[inline_props]
+pub fn Route<'a>(
+  cx: Scope<'a>,
+  path: &'a str,
+  children: Element<'a>,
+  element: Component,
+) -> Element<'a> {
+  let context = use_context::<RoutesContext>(&cx)?;
+
+  cx.use_hook(|| {
+    tracing::trace!("Registering route: {}", path);
+    let absolute_path = match cx.consume_context::<RouteContext>() {
+      Some(parent_context) => format!(
+        "{}/{}",
+        parent_context.absolute_path.trim_end_matches("/"),
+        path
+      ),
+      None => path.to_string(),
+    };
+
+    let route_context = cx.provide_context(RouteContext {
+      absolute_path,
+      relative_path: path.to_string(),
+    });
+
+    context
+      .write()
+      .router
+      .insert(route_context.absolute_path, element.clone());
+  });
+
+  cx.render(rsx!(children))
 }

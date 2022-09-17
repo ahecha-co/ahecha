@@ -90,3 +90,4 @@ $RECYCLE.BIN/
 
 # Custom
 _ahecha_debug.rs
+dist/
