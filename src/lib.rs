@@ -111,19 +111,19 @@ pub fn BrowserRouter<'a>(
   children: Element<'a>,
 ) -> Element<'a> {
   use_context_provider(&cx, || RouterCore::new(&location));
-  let context = use_context::<RouterCore>(&cx)?;
-  cx.use_hook(|| {
-    // TODO: figure out how to update the location
-    // #[cfg(target_arch = "wasm32")]
-    // {
-    //   let context = std::sync::Arc::new(context);
-    //   gloo::events::EventListener::new(&web_sys::window().unwrap(), "popstate", move |_| {
-    //     let location = web_sys::window().unwrap().location().pathname().unwrap();
-    //     tracing::trace!("window.popstate. Location {}", location);
-    //     context.read().replace(location);
-    //   });
-    // }
-  });
+  // let context = use_context::<RouterCore>(&cx)?;
+  // cx.use_hook(|| {
+  //   // TODO: figure out how to update the location
+  //   #[cfg(target_arch = "wasm32")]
+  //   {
+  //     let context = std::sync::Arc::new(context);
+  //     gloo::events::EventListener::new(&web_sys::window().unwrap(), "popstate", move |_| {
+  //       let location = web_sys::window().unwrap().location().pathname().unwrap();
+  //       tracing::trace!("window.popstate. Location {}", location);
+  //       context.read().replace(location);
+  //     });
+  //   }
+  // });
   cx.render(rsx!(children))
 }
 
@@ -209,16 +209,43 @@ pub fn NavLink<'a>(
   active_class: Option<&'a str>,
   children: Element<'a>,
 ) -> Element {
-  let context = use_context::<RoutesContext>(&cx)?;
-  let class = active_class.map_or_else(|| context.read().active_class.clone(), |s| s.to_owned());
-  let navigate = use_navigate(&cx);
-  cx.render(rsx!(a {
-    href: "{to}",
-    class: "{class}",
-    prevent_default: "onclick",
-    onclick: move |_| navigate(to),
-    children
-  }))
+  let router_core = use_context::<RouterCore>(&cx)?;
+  let context = use_context::<RoutesContext>(&cx);
+
+  if let Some(context) = context {
+    let active_router = use_state(&cx, || {
+      let mut active_router = matchit::Router::new();
+      active_router.insert(to.to_string(), true).unwrap();
+      active_router
+    });
+    let class = if active_router
+      .get()
+      .at(
+        &router_core
+          .read()
+          .location
+          .clone()
+          .unwrap_or_else(|| "".to_owned()),
+      )
+      .is_ok()
+    {
+      active_class.map_or_else(|| context.read().active_class.clone(), |s| s.to_owned())
+    } else {
+      "".to_owned()
+    };
+    let navigate = use_navigate(&cx);
+    cx.render(rsx!(a {
+      href: "{to}",
+      class: "{class}",
+      prevent_default: "onclick",
+      onclick: move |_| navigate(to),
+      children
+    }))
+  } else {
+    cx.render(rsx!(InternalError {
+      error: "`NavLink` can be used only as a child of `Routes`".to_owned()
+    }))
+  }
 }
 
 #[derive(Props)]
@@ -238,13 +265,13 @@ pub fn Routes<'a>(cx: Scope<'a, RoutesProps<'a>>) -> Element<'a> {
   } = &cx.props;
   use_context_provider(&cx, || RoutesContext::new(base_path, active_class));
   let context = use_context::<RoutesContext>(&cx)?;
-  let router_context = use_context::<RouterCore>(&cx)?;
+  let router_core = use_context::<RouterCore>(&cx)?;
   let base_path = &context.read().base_path;
 
   cx.render(rsx!(
     children
 
-    match router_context.read().location.as_ref() {
+    match router_core.read().location.as_ref() {
       Some(location) => match context
         .read()
         .router

@@ -11,20 +11,22 @@ fn app(cx: Scope) -> Element {
   cx.render(rsx! {
     BrowserRouter {
       Routes {
-        Route {
-          path: "/",
-          element: Home,
-        }
-        Route {
-          path: "/posts",
-          element: Blog,
+        Layout {
           Route {
-            path: ":id"
-            element: Post
+            path: "/",
+            element: Home,
           }
-        }
-        Fallback {
-          element: NotFound,
+          Route {
+            path: "/posts",
+            element: Blog,
+            Route {
+              path: ":id"
+              element: Post
+            }
+          }
+          Fallback {
+            element: NotFound,
+          }
         }
       }
     }
@@ -32,9 +34,21 @@ fn app(cx: Scope) -> Element {
 }
 
 #[allow(non_snake_case)]
+#[inline_props]
+fn Layout<'a>(cx: Scope<'a>, children: Element<'a>) -> Element<'a> {
+  cx.render(rsx! {
+    NavLink { to: "/", "Home" }
+    " | "
+    NavLink { to: "/posts", "Posts" }
+    div {
+      children
+    }
+  })
+}
+
+#[allow(non_snake_case)]
 fn Home(cx: Scope) -> Element {
   cx.render(rsx! {
-    Link { to: "/posts", "Posts" }
     div { "Home" }
   })
 }
@@ -42,7 +56,6 @@ fn Home(cx: Scope) -> Element {
 #[allow(non_snake_case)]
 fn Blog(cx: Scope) -> Element {
   cx.render(rsx! {
-    Link { to: "/", "Home" }
     div { "Blog" }
   })
 }
