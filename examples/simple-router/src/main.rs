@@ -11,6 +11,12 @@ fn app(cx: Scope) -> Element {
   cx.render(rsx! {
     BrowserRouter {
       Routes {
+        Route {
+          path: "/posts",
+          element: Promo,
+        }
+      }
+      Routes {
         Layout {
           Route {
             path: "/",
@@ -41,6 +47,7 @@ fn Layout<'a>(cx: Scope<'a>, children: Element<'a>) -> Element<'a> {
     " | "
     NavLink { to: "/posts", "Posts" }
     div {
+      style: "padding: .75rem;",
       children
     }
   })
@@ -57,6 +64,14 @@ fn Home(cx: Scope) -> Element {
 fn Blog(cx: Scope) -> Element {
   cx.render(rsx! {
     div { "Blog" }
+    ul {
+      li {
+        Link {
+          to: "/posts/1",
+          "Post #1"
+        }
+      }
+    }
   })
 }
 
@@ -70,6 +85,17 @@ fn NotFound(cx: Scope) -> Element {
 #[allow(non_snake_case)]
 fn Post(cx: Scope) -> Element {
   cx.render(rsx! {
-    div { "Post" }
+    div { "Post #1" }
+  })
+}
+
+#[allow(non_snake_case)]
+fn Promo(cx: Scope) -> Element {
+  cx.render(rsx! {
+    p {
+      i {
+        "This is a promo shown only in the Blog section"
+      }
+    }
   })
 }
