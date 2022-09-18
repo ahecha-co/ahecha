@@ -23,6 +23,9 @@ fn app(cx: Scope) -> Element {
             element: Post
           }
         }
+        Fallback {
+          element: NotFound,
+        }
       }
     }
   })
@@ -31,6 +34,7 @@ fn app(cx: Scope) -> Element {
 #[allow(non_snake_case)]
 fn Home(cx: Scope) -> Element {
   cx.render(rsx! {
+    Link { to: "/posts", "Posts" }
     div { "Home" }
   })
 }
@@ -38,7 +42,15 @@ fn Home(cx: Scope) -> Element {
 #[allow(non_snake_case)]
 fn Blog(cx: Scope) -> Element {
   cx.render(rsx! {
+    Link { to: "/", "Home" }
     div { "Blog" }
+  })
+}
+
+#[allow(non_snake_case)]
+fn NotFound(cx: Scope) -> Element {
+  cx.render(rsx! {
+    div { "Not Found" }
   })
 }
 

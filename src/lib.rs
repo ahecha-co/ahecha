@@ -1,12 +1,21 @@
 pub use ahecha_macros::*;
 use dioxus::prelude::*;
 
-#[derive(Clone)]
-pub struct RouterContext {
-  pub location: Option<String>,
+pub trait RouterHistory {
+  fn back(&mut self);
+  fn forward(&mut self);
+  fn push_state(&mut self, state: (), title: impl AsRef<str>, url: impl AsRef<str>);
+  fn replace_state(&mut self, state: (), title: impl AsRef<str>, url: impl AsRef<str>);
 }
 
-impl RouterContext {
+#[derive(Clone)]
+pub struct RouterCore {
+  pub location: Option<String>,
+  #[cfg(target_arch = "wasm32")]
+  history: web_sys::History,
+}
+
+impl RouterCore {
   pub fn new(location: &Option<&str>) -> Self {
     let location = match location {
       Some(location) => Some(location.to_string()),
@@ -31,13 +40,48 @@ impl RouterContext {
       }
     };
 
-    Self { location }
+    Self {
+      location,
+      #[cfg(target_arch = "wasm32")]
+      history: web_sys::window().unwrap().history().unwrap(),
+    }
+  }
+}
+
+impl RouterHistory for RouterCore {
+  fn push_state(&mut self, state: (), title: impl AsRef<str>, url: impl AsRef<str>) {
+    self.location = Some(url.as_ref().to_owned());
+    #[cfg(target_arch = "wasm32")]
+    self.history.push_state_with_url(
+      &wasm_bindgen::JsValue::NULL,
+      title.as_ref(),
+      Some(url.as_ref()),
+    );
+  }
+
+  fn replace_state(&mut self, state: (), title: impl AsRef<str>, url: impl AsRef<str>) {
+    self.location = Some(url.as_ref().to_owned());
+    #[cfg(target_arch = "wasm32")]
+    self.history.replace_state_with_url(
+      &wasm_bindgen::JsValue::NULL,
+      title.as_ref(),
+      Some(url.as_ref()),
+    );
+  }
+
+  fn back(&mut self) {
+    todo!()
+  }
+
+  fn forward(&mut self) {
+    todo!()
   }
 }
 
 #[derive(Clone)]
 pub struct RoutesContext {
   base_path: Option<String>,
+  fallback: Option<Component>,
   router: matchit::Router<Component>,
 }
 
@@ -45,6 +89,7 @@ impl RoutesContext {
   pub fn new(base_path: Option<String>) -> Self {
     Self {
       base_path,
+      fallback: None,
       router: matchit::Router::new(),
     }
   }
@@ -57,8 +102,90 @@ pub fn BrowserRouter<'a>(
   location: Option<&'a str>,
   children: Element<'a>,
 ) -> Element<'a> {
-  use_context_provider(&cx, || RouterContext::new(location));
+  use_context_provider(&cx, || RouterCore::new(&location));
+  let context = use_context::<RouterCore>(&cx)?;
+  cx.use_hook(|| {
+    tracing::trace!("Setup window history change listener #1");
+    // cx.consume_context::<RouterCore>().unwrap();
+    // gloo::events::EventListener::new(web_sys::window().unwrap(), "popstate", move |_| {
+    // context.pop_
+    // });
+    // TODO: listen to window popstate event
+  });
   cx.render(rsx!(children))
+}
+
+#[allow(non_snake_case)]
+#[inline_props]
+pub fn Fallback<'a>(cx: Scope<'a>, element: Component, children: Element<'a>) -> Element {
+  let context = use_context::<RoutesContext>(&cx)?;
+
+  cx.use_hook(|| {
+    tracing::trace!("Registering fallback component");
+    context.write().fallback = Some(element.clone());
+  });
+
+  None
+}
+
+#[allow(non_snake_case)]
+#[inline_props]
+fn InternalError(cx: Scope<'a>, error: String) -> Element {
+  cx.render(rsx!(
+    div {
+      style: r#"
+        background-color: rgb(254 242 242);
+        border-radius: .375rem;
+        padding: 1rem;
+      "#,
+      div {
+        style: "display: flex",
+        div {
+          style: "flex-shrink: 0",
+          svg {
+            style: r#"
+              color: rgb(248 113 113);
+              height: 1.25rem;
+              width: 1.25rem;
+            "#,
+            xmlns:"http://www.w3.org/2000/svg",
+            view_box: "0 0 20 20",
+            fill:"currentColor",
+            path {
+              fill_rule:"evenodd",
+              d:"M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z",
+              clip_rule: "evenodd",
+            }
+          }
+        }
+        div {
+          style: "margin-left: 0.75rem;",
+          p {
+            style: r#"
+              color: rgb(153 27 27);
+              font-weight: 500;
+              font-size: 0.875rem;
+              line-height: 1.25rem;
+              margin: 0;
+            "#,
+            "{error}"
+          }
+        }
+      }
+    }
+  ))
+}
+
+#[allow(non_snake_case)]
+#[inline_props]
+pub fn Link<'a>(cx: Scope<'a>, to: &'a str, children: Element<'a>) -> Element {
+  let navigate = use_navigate(&cx);
+  cx.render(rsx!(a {
+    href: "{to}",
+    prevent_default: "onclick",
+    onclick: move |_| navigate(to),
+    children
+  }))
 }
 
 #[derive(Props)]
@@ -73,7 +200,7 @@ pub fn Routes<'a>(cx: Scope<'a, RoutesProps<'a>>) -> Element<'a> {
     RoutesContext::new(cx.props.base_path.map(|s| s.to_string()))
   });
   let context = use_context::<RoutesContext>(&cx)?;
-  let router_context = use_context::<RouterContext>(&cx)?;
+  let router_context = use_context::<RouterCore>(&cx)?;
   let base_path = cx
     .props
     .base_path
@@ -95,13 +222,16 @@ pub fn Routes<'a>(cx: Scope<'a, RoutesProps<'a>>) -> Element<'a> {
           rsx!( C {} )
         }
         Err(err) => {
-          tracing::error!("{:?}", err);
-          rsx!(Fragment {})
+          tracing::error!("{:?}", &err);
+          match context.read().fallback {
+            Some(Fallback) => rsx!(Fallback {}),
+            None => rsx!(Fragment {}),
+          }
         }
       },
       None => {
         tracing::trace!("No location found, to show a component a location must be provided");
-        rsx!(Fragment {})
+        rsx!(InternalError { error: "`RouterCore.location` is not set".to_owned() })
       }
     }
   ))
@@ -149,4 +279,10 @@ pub fn Route<'a>(
   });
 
   cx.render(rsx!(children))
+}
+
+pub fn use_navigate(cx: &ScopeState) -> impl FnOnce(&str) + '_ + Copy {
+  let context = use_context::<RouterCore>(&cx)
+    .expect("`use_navigate` can be used in components wraped by `BrowserRouter`");
+  move |path| context.write().push_state((), "", path)
 }
