@@ -15,6 +15,10 @@ fn app(cx: Scope) -> Element {
           path: "/posts",
           element: Promo,
         }
+        Route {
+          path: "/posts/*p",
+          element: Promo,
+        }
       }
       Routes {
         Layout {
