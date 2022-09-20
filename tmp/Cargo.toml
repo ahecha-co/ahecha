@@ -1,0 +1,28 @@
+[package]
+name = "ahecha"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[workspace]
+members = [
+  "macros",
+]
+exclude = [
+  "examples",
+]
+resolver = "2"
+
+[dependencies]
+ahecha-macros = { path = "./macros" }
+dioxus = { git = "https://github.com/dioxuslabs/dioxus" }
+dioxus-web = { git = "https://github.com/dioxuslabs/dioxus" }
+hex = "0.4.3"
+matchit = "0.6.0"
+sha2 = "0.10.6"
+tracing = "0.1.36"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+gloo = "0.8.0"
+wasm-bindgen = "0.2.83"
+web-sys = { version = "0.3.60", features = ["Document", "History", "Location", "Window"] }
