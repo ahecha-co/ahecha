@@ -1,3 +1,0 @@
-tab_spaces = 2
-imports_granularity = "Crate"
-group_imports = "StdExternalCrate"
