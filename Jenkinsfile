@@ -10,7 +10,7 @@ pipeline {
       }
       steps {
         echo "building"
-        sh "cargo build --release"
+        sh "cargo build"
       }
     }
   }
