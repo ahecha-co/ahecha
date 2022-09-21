@@ -1,2 +1,1 @@
-pub mod posts;
-pub mod root;
+pub mod index;
