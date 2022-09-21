@@ -182,7 +182,13 @@ pub(crate) fn parse(item: ItemFn, attr: AttributeArgs) {
     ident: ident.to_string(),
     methods: attr.methods,
     module_path,
-    path: format!("/{}", path.trim_start_matches("/").trim_end_matches("/")),
+    path: format!(
+      "/api/{}",
+      path
+        .trim_start_matches("/")
+        .trim_start_matches("api/")
+        .trim_end_matches("/")
+    ),
     return_ty,
   };
   write_to_target(
