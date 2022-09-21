@@ -1,5 +1,5 @@
 [package]
-name = "hello-world"
+name = "api-example"
 version = "0.1.0"
 edition = "2021"
 publish = false
@@ -11,4 +11,3 @@ axum = { version = "0.5.16", features = ["macros"] }
 dioxus = { version = "0.2.4", features = ["web", "ssr"] }
 ahecha = { path = "../../" }
 tokio = { version = "1.21.1", features = ["macros", "rt", "rt-multi-thread"] }
-tower-http = { version = "0.3.4", features = ["fs"] }
