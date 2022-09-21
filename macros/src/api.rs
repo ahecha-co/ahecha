@@ -40,8 +40,30 @@ impl ToTokens for ApiRoute {
       format!("{}::{}", &self.module_path, &self.ident)
         .parse::<quote::__private::TokenStream>()
         .unwrap();
+    let mut routing = vec![];
+
+    for method in self.methods.iter() {
+      routing.push(if routing.is_empty() {
+        match method {
+          Method::Delete => quote!( axum::routing::delete( #module_path ) ),
+          Method::Get => quote!( axum::routing::get( #module_path ) ),
+          Method::Patch => quote!( axum::routing::patch( #module_path ) ),
+          Method::Post => quote!( axum::routing::post( #module_path ) ),
+          Method::Put => quote!( axum::routing::put( #module_path ) ),
+        }
+      } else {
+        match method {
+          Method::Delete => quote!( .delete( #module_path ) ),
+          Method::Get => quote!( .get( #module_path ) ),
+          Method::Patch => quote!( .patch( #module_path ) ),
+          Method::Post => quote!( .post( #module_path ) ),
+          Method::Put => quote!( .put( #module_path ) ),
+        }
+      });
+    }
+
     quote!(
-      .route(#route_path, axum::routing::get( #module_path ))
+      .route(#route_path, #(#routing)*)
     )
     .to_tokens(tokens);
   }
@@ -61,7 +83,7 @@ fn parse_attributes(attr: AttributeArgs) -> ApiAttributes {
             match ident_str.as_str() {
               "DELETE" => methods.push(Method::Delete),
               "GET" => methods.push(Method::Get),
-              "PATCh" => methods.push(Method::Patch),
+              "PATCH" => methods.push(Method::Patch),
               "POST" => methods.push(Method::Post),
               "PUT" => methods.push(Method::Put),
               _ => {
@@ -123,6 +145,13 @@ pub(crate) fn parse(item: ItemFn, attr: AttributeArgs) {
       syn::FnArg::Typed(arg) => {
         let ident = match arg.pat.as_ref() {
           syn::Pat::Ident(value) => value.ident.to_string(),
+          syn::Pat::TupleStruct(value) => match value.path.get_ident() {
+            Some(value_ident) => value_ident.to_string(),
+            None => {
+              dbg!(&value);
+              todo!()
+            }
+          },
           _ => {
             dbg!(&arg.pat);
             todo!()

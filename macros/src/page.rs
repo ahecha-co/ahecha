@@ -124,7 +124,7 @@ impl ToTokens for DynamicPageRoute {
     quote!(
       .route(#route_path, axum::routing::get(| #handler_args | async move {
         use dioxus::prelude::*;
-        let index_html = include_str!("../index.html");
+        let index_html = include_str!("../public/dist/index.html");
 
         #[derive(Props, PartialEq)]
         struct AppProps {
@@ -144,7 +144,7 @@ impl ToTokens for DynamicPageRoute {
 
         let _ = vdom.rebuild();
         axum::response::Html(
-          index_html.replace(r#"<div id="main"></div>"#, &dioxus::ssr::render_vdom(&vdom))
+          index_html.replace(r#"<div id="main"></div>"#, &format!(r#"<div id="main">{}</div>"#, &dioxus::ssr::render_vdom(&vdom)))
         )
       }))
     )
@@ -161,7 +161,7 @@ impl ToTokens for StaticPageRoute {
     quote!(
       .route(#route_path, axum::routing::get(|| async move {
         use dioxus::prelude::*;
-        let index_html = include_str!("../index.html");
+        let index_html = include_str!("../public/dist/index.html");
 
         fn app(cx: Scope) -> Element {
           #use_tokens
@@ -173,7 +173,7 @@ impl ToTokens for StaticPageRoute {
 
         let _ = vdom.rebuild();
         axum::response::Html(
-          index_html.replace(r#"<div id="main"></div>"#, &dioxus::ssr::render_vdom(&vdom))
+          index_html.replace(r#"<div id="main"></div>"#, &format!(r#"<div id="main">{}</div>"#, &dioxus::ssr::render_vdom(&vdom)))
         )
       }))
     )

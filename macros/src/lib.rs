@@ -101,14 +101,9 @@ pub fn page(attr: TokenStream, item: TokenStream) -> TokenStream {
 #[proc_macro_error]
 #[proc_macro_attribute]
 pub fn route(attr: TokenStream, item: TokenStream) -> TokenStream {
-  api::parse(
-    {
-      let item = item.clone();
-      parse_macro_input!(item as ItemFn)
-    },
-    parse_macro_input!(attr as AttributeArgs),
-  );
-  item
+  let item_fn = parse_macro_input!(item as ItemFn);
+  api::parse(item_fn.clone(), parse_macro_input!(attr as AttributeArgs));
+  quote!( #[cfg(not(target_arch = "wasm32"))] #item_fn ).into()
 }
 
 #[proc_macro_error]
