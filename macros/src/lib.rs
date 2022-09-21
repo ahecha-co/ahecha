@@ -12,7 +12,7 @@ use syn::{parse_macro_input, AttributeArgs, Ident, ItemFn};
 mod api;
 mod page;
 
-const TARGET_PATH: &'static str = "target/router";
+const TARGET_PATH: &'static str = "target/ahecha";
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 enum RenderStrategy {
@@ -114,8 +114,8 @@ pub fn route(attr: TokenStream, item: TokenStream) -> TokenStream {
 #[proc_macro_error]
 #[proc_macro]
 pub fn monkey_path_clean(item: TokenStream) -> TokenStream {
-  remove_dir_all(TARGET_PATH).unwrap();
-  create_dir_all(TARGET_PATH).unwrap();
+  let _ = remove_dir_all(TARGET_PATH);
+  let _ = create_dir_all(TARGET_PATH);
   item
 }
 
