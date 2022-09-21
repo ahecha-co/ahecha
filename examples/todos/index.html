@@ -1,0 +1,20 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="todo.css">
+</head>
+
+<body>
+  <div id="main"></div>
+  <script>
+    const parent = document.querySelector("#main");
+    while (parent.lastChild) {
+      parent.removeChild(parent.lastChild);
+    }
+  </script>
+</body>
+
+</html>
