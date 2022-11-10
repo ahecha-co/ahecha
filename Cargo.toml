@@ -18,7 +18,7 @@ ahecha-macros = { path = "./macros" }
 dioxus = { git = "https://github.com/dioxuslabs/dioxus" }
 dioxus-web = { git = "https://github.com/dioxuslabs/dioxus" }
 hex = "0.4.3"
-matchit = "0.6.0"
+matchit = "0.7.0"
 sha2 = "0.10.6"
 tracing = "0.1.36"
 
